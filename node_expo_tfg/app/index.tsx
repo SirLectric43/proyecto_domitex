@@ -1,9 +1,20 @@
 import { Text, View, Image, StyleSheet, ImageBackground, Pressable, useWindowDimensions } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { useEffect, useContext } from "react";
+import { AuthContext } from './auth-context';
+
 
 export default function LandingPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
+  const auth = useContext(AuthContext);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (auth?.usuario) {
+      router.replace('/catalogo');
+    }
+  }, [auth?.usuario]);
 
   return (
     <View style={styles.contenedor}>

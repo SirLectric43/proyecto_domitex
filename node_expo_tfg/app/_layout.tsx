@@ -1,9 +1,12 @@
-import NavbarPublico from "@/app/navbar-publico";
-import Footer from "./footer";
-import { useEffect } from 'react';
+import { useEffect, useContext } from 'react';
 import { Slot } from 'expo-router';
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, ActivityIndicator } from "react-native";
 import * as SplashScreen from 'expo-splash-screen';
+import NavbarPublico from "@/app/navbar-publico";
+import NavbarPrivado from "@/app/navbar-privado"; 
+import Footer from "./footer";
+import { AuthProvider, AuthContext } from './auth-context';
+
 import { 
   useFonts, 
   Inter_400Regular, 
@@ -18,6 +21,29 @@ import {
 } from '@expo-google-fonts/montserrat';
 
 SplashScreen.preventAutoHideAsync();
+
+function EnrutadorPrincipal() {
+  const auth = useContext(AuthContext);
+
+  if (auth?.cargando) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+        <ActivityIndicator size="large" color="#29166F" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      {auth?.usuario ? <NavbarPrivado /> : <NavbarPublico />}
+      
+      <ScrollView style={{flex: 1}}>
+        <Slot/>
+        <Footer/>
+      </ScrollView>
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fuentesCargadas, errorFuentes] = useFonts({
@@ -41,12 +67,8 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <NavbarPublico />
-      <ScrollView style={{flex: 1}}>
-        <Slot/>
-        <Footer/>
-      </ScrollView>
-    </View>
+    <AuthProvider>
+      <EnrutadorPrincipal />
+    </AuthProvider>
   );
 }

@@ -3,3 +3,5 @@
 **/.env
 **/.expo
 **/__pycache__
+**/.vscode
+**/comandos.txt
