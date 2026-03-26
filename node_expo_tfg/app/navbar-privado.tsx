@@ -145,31 +145,32 @@ export default function NavbarPrivado() {
 
 const styles = StyleSheet.create({
   navbar: {
+    backgroundColor: '#ffffff',
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#eeeeee',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 3,
+    width: '100%',
   },
   navbarWeb: {
     paddingHorizontal: 50, 
   },
   contenedorLogo: {
-    height: 50,
-    width: 150,
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   logoPc: {
     width: 250, 
     height: 60,
-    flexShrink: 1,
+    flexShrink: 0,
   },
   logoMovil: {
     width: 200,
@@ -211,15 +212,15 @@ const styles = StyleSheet.create({
   },
   textoCatalogo: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 18,
     color: '#000',
   },
   iconoAccion: {
     padding: 5,
   },
   iconoAccionImagen: {
-    width: 26,
-    height: 26,
+    width: 50,
+    height: 50,
   },
   contenedorUsuario: {
     position: 'relative',
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   },
   textoUsuario: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 18,
     color: '#000',
   },
   menuDesplegable: {

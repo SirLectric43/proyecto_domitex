@@ -33,7 +33,7 @@ export default function Footer() {
         </View>
 
         <View style={styles.columnaCentralDerecha}>
-          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24 }]}>Clientes</Text>
+          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, marginTop: 60 }]}>Clientes</Text>
           <View style={styles.contenedorLinks}>
             <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Explorar catálogo</Link>
             <Link href="/cuenta" style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Mi cuenta</Link>

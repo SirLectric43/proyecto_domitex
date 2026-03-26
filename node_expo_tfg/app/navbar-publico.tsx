@@ -203,6 +203,6 @@ const styles = StyleSheet.create({
   logoPc: {
     width: 250, 
     height: 60,
-    flexShrink: 1,
+    flexShrink: 0,
   },
 });
