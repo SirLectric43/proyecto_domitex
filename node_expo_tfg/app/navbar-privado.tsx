@@ -7,7 +7,10 @@ import { AuthContext } from './auth-context';
 export default function NavbarPrivado() {
   const auth = useContext(AuthContext);
   const router = useRouter();
+  
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [busquedaAbierta, setBusquedaAbierta] = useState(false);
+  
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
 
@@ -19,8 +22,18 @@ export default function NavbarPrivado() {
     }
   };
 
+  const toggleMenu = () => {
+    setMenuAbierto(!menuAbierto);
+    if (busquedaAbierta) setBusquedaAbierta(false);
+  };
+
+  const toggleBusqueda = () => {
+    setBusquedaAbierta(!busquedaAbierta);
+    if (menuAbierto) setMenuAbierto(false);
+  };
+
   return (
-    <View style={{ zIndex: 999 }}>
+    <>
       <View style={[styles.navbar, Platform.OS === 'web' && !esMovil && styles.navbarWeb]}>
         
         <Link href="/catalogo" asChild>
@@ -99,12 +112,12 @@ export default function NavbarPrivado() {
           <View style={styles.contenedorAccionesMovil}>
             <Pressable style={styles.iconoAccionMovil}>
               <Image 
-                source={require('@/assets/images/iconoCarrito.png')} 
+                source={require('@/assets/images/iconoCampana.png')} 
                 style={styles.iconoAccionImagenMovil} 
                 resizeMode="contain" 
               />
             </Pressable>
-            <Pressable onPress={() => setMenuAbierto(!menuAbierto)}>
+            <Pressable onPress={toggleMenu}>
               <Image source={require('@/assets/images/iconoMenu.png')} style={styles.iconoMenu} />
             </Pressable>
           </View>
@@ -113,28 +126,13 @@ export default function NavbarPrivado() {
 
       {esMovil && menuAbierto && (
         <View style={styles.desplegableMovil}>
-          <View style={styles.contenedorBusquedaMovil}>
-            <TextInput 
-              style={styles.inputBusqueda} 
-              placeholder="Buscar..." 
-              placeholderTextColor="#999"
-            />
-            <Pressable style={styles.botonBuscar}>
-              <Image 
-                source={require('@/assets/images/iconoLupa.png')} 
-                style={styles.iconoBusqueda} 
-                resizeMode="contain" 
-              />
-            </Pressable>
-          </View>
-
           <Link href="/perfil-usuario" asChild>
-            <Pressable style={styles.itemMenuMovil} onPress={() => { setMenuAbierto(false); }}>
+            <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
               <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
             </Pressable>
           </Link>
           
-          <Pressable style={styles.itemMenuMovil} onPress={() => { setMenuAbierto(false); }}>
+          <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
             <Text style={styles.textoItemMenu}>Historial de compra</Text>
           </Pressable>
 
@@ -143,7 +141,44 @@ export default function NavbarPrivado() {
           </Pressable>
         </View>
       )}
-    </View>
+
+      {esMovil && busquedaAbierta && (
+        <View style={styles.contenedorBusquedaMovilFlotante}>
+          <TextInput 
+            style={styles.inputBusqueda} 
+            placeholder="Buscar artículos..." 
+            placeholderTextColor="#999"
+          />
+          <Pressable style={styles.botonBuscar}>
+            <Image 
+              source={require('@/assets/images/iconoLupa.png')} 
+              style={styles.iconoBusqueda} 
+              resizeMode="contain" 
+            />
+          </Pressable>
+        </View>
+      )}
+
+      {esMovil && (
+        <View style={styles.barraNavegacionInferior}>
+          <Link href="/catalogo" asChild>
+            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); }}>
+              <Image source={require('@/assets/images/iconoInicio.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+            </Pressable>
+          </Link>
+
+          <Pressable style={styles.itemBarraInferior} onPress={toggleBusqueda}>
+            <Image source={require('@/assets/images/iconoBusqueda.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+          </Pressable>
+
+          <Link href="/carrito" asChild>
+            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); }}>
+              <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+            </Pressable>
+          </Link>
+        </View>
+      )}
+    </>
   );
 }
 
@@ -163,6 +198,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
     width: '100%',
+    zIndex: 999,
   },
   navbarWeb: {
     paddingHorizontal: 50, 
@@ -192,12 +228,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#FFF',
   },
-  inputBusqueda: {
+  inputBusqueda: Platform.OS === 'web' ? {
     flex: 1,
     paddingHorizontal: 15,
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    outlineColor: 'transparent', 
+    outlineStyle: 'none', 
+  } as any : {
+    flex: 1,
+    paddingHorizontal: 15,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
   },
   botonBuscar: {
     backgroundColor: '#DB3632',
@@ -228,6 +269,7 @@ const styles = StyleSheet.create({
   },
   contenedorUsuario: {
     position: 'relative',
+    zIndex: 1000,
   },
   botonUsuario: {
     flexDirection: 'row',
@@ -252,6 +294,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5, 
+    zIndex: 1000,
   },
   itemMenu: {
     paddingVertical: 15,
@@ -269,7 +312,6 @@ const styles = StyleSheet.create({
     color: '#000',
     textAlign: 'center',
   },
-
   contenedorAccionesMovil: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -279,8 +321,8 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   iconoAccionImagenMovil: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
   },
   iconoMenu: {
     width: 40,
@@ -289,7 +331,7 @@ const styles = StyleSheet.create({
   },
   desplegableMovil: {
     position: 'absolute',
-    top: 82,
+    top: 82, 
     right: 20,
     backgroundColor: '#FFFFFF',
     width: 250,
@@ -300,13 +342,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
-  },
-  contenedorBusquedaMovil: {
-    flexDirection: 'row',
-    height: 40,
-    borderBottomWidth: 2,
-    borderBottomColor: '#29166F',
-    backgroundColor: '#FFF',
+    zIndex: 1000,
   },
   itemMenuMovil: {
     paddingVertical: 15,
@@ -314,5 +350,66 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#29166F',
     alignItems: 'center',
+  },
+  contenedorBusquedaMovilFlotante: {
+    position: 'absolute',
+    top: 90, 
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    height: 45,
+    borderWidth: 2,
+    borderColor: '#29166F',
+    borderRadius: 8,
+    backgroundColor: '#FFF',
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  barraNavegacionInferior: Platform.OS === 'web' ? {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    zIndex: 1000,
+  } as any : {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    zIndex: 1000,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  itemBarraInferior: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  iconoBarraInferior: {
+    width: 40,
+    height: 40,
   }
 });
