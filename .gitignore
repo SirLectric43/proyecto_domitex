@@ -1,6 +1,5 @@
 **/node_modules
 **/expo-env.d.ts
-**/.env
 **/.expo
 **/__pycache__
 **/.vscode
