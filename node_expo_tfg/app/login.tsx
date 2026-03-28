@@ -57,7 +57,7 @@ export default function LoginPage() {
         mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
 
         if (auth?.iniciarSesionContext) {
-            await auth.iniciarSesionContext(datos.nombre, datos.token);
+            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id);
         }
 
         mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
