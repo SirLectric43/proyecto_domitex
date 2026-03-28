@@ -37,8 +37,14 @@ function EnrutadorPrincipal() {
     <View style={{ flex: 1 }}>
       {auth?.usuario ? <NavbarPrivado /> : <NavbarPublico />}
       
-      <ScrollView style={{flex: 1}}>
-        <Slot/>
+      <ScrollView 
+        style={{flex: 1}} 
+        contentContainerStyle={{ flexGrow: 1 }} 
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ flex: 1 }}>
+          <Slot/>
+        </View>
         <Footer/>
       </ScrollView>
     </View>

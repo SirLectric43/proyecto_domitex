@@ -79,9 +79,11 @@ export default function NavbarPrivado() {
 
                 {menuAbierto && (
                   <View style={styles.menuDesplegable}>
-                    <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
-                      <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
-                    </Pressable>
+                    <Link href="/perfil-usuario" asChild>
+                      <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
+                        <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
+                      </Pressable>
+                    </Link>
                     <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
                       <Text style={styles.textoItemMenu}>Historial de compra</Text>
                     </Pressable>
@@ -126,9 +128,11 @@ export default function NavbarPrivado() {
             </Pressable>
           </View>
 
-          <Pressable style={styles.itemMenuMovil} onPress={() => { setMenuAbierto(false); }}>
-            <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
-          </Pressable>
+          <Link href="/perfil-usuario" asChild>
+            <Pressable style={styles.itemMenuMovil} onPress={() => { setMenuAbierto(false); }}>
+              <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
+            </Pressable>
+          </Link>
           
           <Pressable style={styles.itemMenuMovil} onPress={() => { setMenuAbierto(false); }}>
             <Text style={styles.textoItemMenu}>Historial de compra</Text>
