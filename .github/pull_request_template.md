@@ -1,12 +1,21 @@
 ### 📝 Descripción
-Se ha rediseñado y mejorado la navegación exclusiva para dispositivos móviles (`navbar-privado.tsx`), optimizando el espacio y la experiencia de usuario:
+Implementación de la vista principal del Catálogo y su integración completa (Full-Stack).
 
-* **Barra de navegación inferior (Mobile-only):** Se ha implementado un *Bottom Tab Nav* fijado al fondo de la pantalla (`bottom: 0`). Contiene accesos directos al Catálogo (Inicio), Búsqueda y Carrito de compras.
-* **Búsqueda flotante:** Se eliminó la barra de búsqueda dentro del menú desplegable. Ahora, al pulsar la lupa en la barra inferior, se despliega una barra de búsqueda flotante justo debajo del navbar superior.
-* **Reorganización del Navbar superior:** Se ha añadido el icono de notificaciones (Campana) al navbar superior en la vista móvil, acompañando al icono del menú desplegable.
+**Frontend (React Native):**
+* Vista responsiva: Carrusel táctil en móvil (`FlatList`) y paginación con flechas en PC (`ScrollView` con `scrollTo`).
+* Función "Ver todo / Ver menos" con animación nativa (`LayoutAnimation`).
+* Tarjetas de tamaño fijo con enlaces (`expo-router`) a la vista detallada del producto.
+
+**Backend (FastAPI):**
+* Nuevo endpoint `GET /articulos`.
+* Lógica de servidor para devolver los artículos ya agrupados por categoría (`itertools.groupby`), optimizando el rendimiento de la app.
+
+**Base de Datos (Supabase):**
+* Tabla `articulos` con datos de prueba y bucket público en **Storage** para las imágenes.
+* Políticas **RLS de solo lectura** configuradas.
 
 ## 🔗 Issue relacionado
-Closes #21
+Closes #11
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -17,8 +26,8 @@ Closes #21
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | --- |
-| --- | ![alt text](capturaMovil.jpeg) |
+| --- | ![alt text](capturaPC.png) |
+| --- | ![alt text](capturaMovil.png) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -30,4 +39,6 @@ Closes #21
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Arquitectura de Layout:** Para evitar conflictos con el área segura (Safe Area) y asegurar que el footer móvil quede al final del todo, se han evitado contenedores globales con `zIndex` restrictivo en favor del uso de fragmentos (`<></>`) y `bottom: 0` estricto, lo que garantiza el correcto funcionamiento en cualquier tamaño de pantalla de iOS o Android.
+* **Arquitectura:** La agrupación por categoría se hace en el backend para quitarle carga de procesamiento al dispositivo móvil.
+* **Seguridad:** El RLS está estricto en lectura. El cliente no puede alterar precios ni stock; eso se gestionará de forma segura por backend en la fase del carrito.
+* **Animaciones:** Se ha habilitado `UIManager` para Android para que la expansión de la cuadrícula funcione fluidamente.![alt text](image.png)
