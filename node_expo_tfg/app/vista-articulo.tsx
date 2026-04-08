@@ -106,7 +106,7 @@ export default function VistaArticuloPage() {
                   <Text style={styles.precio}>
                     {medidaSeleccionada ? `${medidaSeleccionada.precio.toFixed(2).replace('.', ',')} €` : '-- €'}
                   </Text>
-                  <Text style={styles.textoUnitario}>(Precio unitario)</Text>
+                  <Text style={[styles.textoUnitario, esMovil && {marginBottom: 100}]}>(Precio unitario)</Text>
                 </View>
               </View>
               <View style={styles.cajaMedidas}>
@@ -301,6 +301,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular', 
     fontSize: 12, 
     color: '#666666', 
-    marginTop: 2 
+    marginTop: 2,
   },
 });
