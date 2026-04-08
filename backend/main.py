@@ -1,12 +1,11 @@
 import os
 from datetime import datetime, timezone
-from typing import Optional, Dict, List  # Añadimos Dict y List aquí
+from typing import Optional
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from itertools import groupby  # Añadimos esta importación para agrupar las categorías
 
 load_dotenv()
 
@@ -23,12 +22,6 @@ app.add_middleware(
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-class ArticuloResponse(BaseModel):
-    id: str
-    nombre: str
-    imagen_url: str
-    categoria: str
 
 class RegistroUsuario(BaseModel):
     correo: str
@@ -166,25 +159,3 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
         raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail="Hubo un error al cambiar la contraseña.")
-
-@app.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
-def obtener_catalogo_agrupado(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado.")
-    
-    try:
-        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria").execute()
-        
-        if not respuesta.data:
-            return {}
-
-        datos_ordenados = sorted(respuesta.data, key=lambda x: x.get('categoria') or 'Otros')
-        
-        catalogo_agrupado = {}
-        for categoria, articulos in groupby(datos_ordenados, key=lambda x: x.get('categoria') or 'Otros'):
-            catalogo_agrupado[categoria] = list(articulos)
-
-        return catalogo_agrupado
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
