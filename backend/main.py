@@ -188,3 +188,20 @@ def obtener_catalogo_agrupado(authorization: str = Header(None)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/articulos/{articulo_id}")
+def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)):
+    try:
+        resp_articulo = supabase.table("articulos").select("*").eq("id", articulo_id).execute()
+        if not resp_articulo.data:
+            raise HTTPException(status_code=404, detail="Artículo no encontrado")
+        
+        articulo = resp_articulo.data[0]
+        
+        resp_medidas = supabase.table("articulos_medidas").select("*").eq("articulo_id", articulo_id).execute()
+        
+        articulo["medidas"] = resp_medidas.data if resp_medidas.data else []
+        
+        return articulo
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

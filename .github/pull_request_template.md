@@ -1,21 +1,21 @@
 ### 📝 Descripción
-Implementación de la vista principal del Catálogo y su integración completa (Full-Stack).
+Implementación del flujo de navegación entre el Catálogo y la Vista Detallada de Producto (Full-Stack).
 
 **Frontend (React Native):**
-* Vista responsiva: Carrusel táctil en móvil (`FlatList`) y paginación con flechas en PC (`ScrollView` con `scrollTo`).
-* Función "Ver todo / Ver menos" con animación nativa (`LayoutAnimation`).
-* Tarjetas de tamaño fijo con enlaces (`expo-router`) a la vista detallada del producto.
+* **Catálogo:** Vista responsiva (carrusel táctil en móvil, paginación nativa en PC) y enlaces a la vista detallada.
+* **Vista Detallada (`vista-articulo.tsx`):** Diseño responsivo (grid en PC, columna en móvil). Incluye selector de medidas que actualiza el precio dinámicamente, contador de cantidad unitaria (+/-) y botón para añadir a la cesta.
 
 **Backend (FastAPI):**
-* Nuevo endpoint `GET /articulos`.
-* Lógica de servidor para devolver los artículos ya agrupados por categoría (`itertools.groupby`), optimizando el rendimiento de la app.
+* **Catálogo (`GET /articulos`):** Agrupación lógica en servidor (`itertools.groupby`).
+* **Detalle (`GET /articulos/{id}`):** Consulta del artículo principal y anidación relacional de sus medidas/variantes.
 
 **Base de Datos (Supabase):**
-* Tabla `articulos` con datos de prueba y bucket público en **Storage** para las imágenes.
-* Políticas **RLS de solo lectura** configuradas.
+* Estructura relacional completa: `articulos` (datos base) y `articulos_medidas` (variantes, precios y stock).
+* Políticas **RLS estricto de solo lectura** configuradas para los clientes.
+* *Nota:* Definida la arquitectura relacional futura para el carrito de compras (`carritos` y `carrito_items`).
 
 ## 🔗 Issue relacionado
-Closes #11
+Closes #12
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -39,6 +39,5 @@ Closes #11
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Arquitectura:** La agrupación por categoría se hace en el backend para quitarle carga de procesamiento al dispositivo móvil.
-* **Seguridad:** El RLS está estricto en lectura. El cliente no puede alterar precios ni stock; eso se gestionará de forma segura por backend en la fase del carrito.
-* **Animaciones:** Se ha habilitado `UIManager` para Android para que la expansión de la cuadrícula funcione fluidamente.![alt text](image.png)
+* **UX/UI:** En la vista detallada, el precio cambia dinámicamente al seleccionar la medida. Se ha añadido la etiqueta "(Precio unitario)" para evitar confusiones al aumentar la cantidad a comprar.
+* **Arquitectura de Base de Datos:** Se ha normalizado el producto separando los datos generales de sus variantes. Esto es vital para llevar un control estricto del stock y precios específicos en la futura implementación del carrito y pagos.
