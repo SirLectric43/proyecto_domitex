@@ -1,17 +1,28 @@
 ### 📝 Descripción
-Implementación del motor de búsqueda predictivo en la barra de navegación y corrección de rutas en el servidor (Full-Stack).
+Implementación completa de la funcionalidad del carrito de compras (cesta), incluyendo el diseño responsivo, la integración con la base de datos y la sincronización global del estado mediante Context API.
 
-**Frontend (React Native):**
-* **Buscador Predictivo (`NavbarPrivado`):** Se ha integrado un input de búsqueda con un menú desplegable flotante (Dropdown) que muestra coincidencias en tiempo real (imagen y nombre del artículo).
-* **Navegación Dinámica:** Al hacer clic en un resultado del menú, la aplicación navega directamente a la vista detallada de ese artículo (`/vista-articulo`).
-* **Optimización (Debounce):** Se ha implementado un retraso de 300ms (*debounce*) en la entrada de texto para no saturar la base de datos con peticiones por cada tecla pulsada.
-* **UI/UX Respetada:** El menú desplegable se adaptó con posicionamiento absoluto tanto para móvil como para web/PC, garantizando que no altere ni deforme la estructura original de la barra de navegación.
+**Backend (FastAPI & Supabase):**
+* **Modelo de Datos Permanente:** Se han creado las tablas `carritos` (único por usuario) y `carrito_items` (almacena las referencias a las variantes exactas de `articulos_medidas`).
+* **Seguridad y Aislamiento (RLS):** Se implementaron políticas Row Level Security en Supabase para asegurar que un usuario solo pueda acceder a su propia cesta. Además, FastAPI utiliza ahora la `SUPABASE_SERVICE_ROLE_KEY` para operar como backend autorizado de confianza.
+* **Automatización de Base de Datos:** Creación de un Trigger (`crear_carrito_para_nuevo_usuario`) que inicializa automáticamente un carrito vacío en Supabase cada vez que un nuevo cliente se registra.
+* **Endpoints CRUD del Carrito:**
+    * `POST /carrito/anadir`: Añade artículos. Incluye lógica "upsert" (agrupa artículos idénticos sumando su cantidad en lugar de duplicar filas).
+    * `GET /carrito`: Recupera los ítems haciendo un JOIN con las tablas de artículos y medidas.
+    * `PUT /carrito/items/{item_id}`: Permite modificar la cantidad de un producto o eliminarlo de la base de datos si la cantidad llega a 0.
 
-**Backend (FastAPI):**
-* **Endpoint de Búsqueda:** Utiliza la función `.ilike()` de Supabase para coincidencias de texto parciales (insensibles a mayúsculas/minúsculas) con un límite de 5 resultados por consulta.
+**Frontend (React Native & Expo):**
+* **Página del Carrito (`app/carrito.tsx`):**
+    * Listado dinámico de los productos añadidos, mostrando imagen, nombre, medida y precio unitario.
+    * Controles interactivos para incrementar, decrementar o introducir la cantidad manualmente en un input, así como un botón "X" para eliminar artículos.
+    * Panel de resumen lateral en escritorio, y apilado en móvil, con cálculos automáticos de Subtotal, IVA (21%) y Total de la compra.
+* **Sincronización Reactiva (AuthContext):**
+    * Se ha ampliado el `AuthContext` para almacenar el número total de artículos en la cesta de forma global.
+    * La bolita de notificaciones (badge) del carrito en la barra de navegación (tanto en la versión de escritorio como en la barra inferior móvil) se actualiza instantáneamente desde cualquier pantalla de la aplicación gracias al estado global.
+* **Añadir a la Cesta (`vista-articulo.tsx`):**
+    * El botón ahora envía la petición asíncrona al backend para almacenar el artículo específico con su medida y cantidad exactas, actualizando el contexto global en caso de éxito.
 
 ## 🔗 Issue relacionado
-Closes #28
+Closes #10
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -22,8 +33,8 @@ Closes #28
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](capturaPCantes.png) | ![alt text](capturaPCdespues.png) |
-| ![alt text](capturaMovilAntes.png) | ![alt text](capturaMovildespues.png) |
+| --- | ![alt text](capturaPC.png) |
+| --- | ![alt text](capturaMovil.png) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -35,4 +46,5 @@ Closes #28
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Rendimiento Frontend:** El uso de un *timeout* (*debounce*) en el `useEffect` de la búsqueda previene llamadas innecesarias a la API, mejorando enormemente la eficiencia y reduciendo costes de lectura en la base de datos.
+* Se ha implementado el modelo de "Carrito Permanente", asegurando que la cesta del usuario persiste entre sesiones al almacenarse en la base de datos, en lugar de utilizar estados efímeros.
+* Para garantizar la consistencia de los datos y evitar problemas de precios desactualizados, el carrito solo almacena los identificadores y las cantidades. El cálculo del precio total se realiza de forma dinámica y actualizada al recuperar los datos.
