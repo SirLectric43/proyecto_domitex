@@ -51,6 +51,9 @@ export default function Carrito() {
   const cambiarCantidad = async (itemId: string, nuevaCantidad: number) => {
     if (nuevaCantidad < 0) return;
 
+    const itemActual = items.find(i => i.id === itemId);
+    const diferencia = nuevaCantidad - (itemActual?.cantidad || 0);
+
     setItems((prevItems) =>
       nuevaCantidad === 0
         ? prevItems.filter((item) => item.id !== itemId)
@@ -58,6 +61,10 @@ export default function Carrito() {
             item.id === itemId ? { ...item, cantidad: nuevaCantidad } : item,
           ),
     );
+
+    if (auth?.setCantidadCesta) {
+      auth.setCantidadCesta((prev: number) => Math.max(0, prev + diferencia));
+    }
 
     try {
       const urlApi =
@@ -96,12 +103,11 @@ export default function Carrito() {
     }
   };
 
-  // Cálculos del precio
   const precioTotal = items.reduce((total, item) => {
     return total + item.cantidad * item.articulos_medidas.precio;
   }, 0);
   
-  const subtotal = precioTotal / 1.21; // Suponiendo un IVA del 21%
+  const subtotal = precioTotal / 1.21;
   const iva = precioTotal - subtotal;
 
   if (cargando) {
@@ -130,7 +136,6 @@ export default function Carrito() {
         ) : (
           <View style={[styles.contenedorListaYResumen, esMovil && styles.contenedorListaYResumenMovil]}>
             
-            {/* COLUMNA IZQUIERDA: LISTA DE PRODUCTOS */}
             <View style={[styles.listaProductos, !esMovil && { flex: 1, marginRight: 30 }]}>
               {items.map((item) => {
                 const articulo = item.articulos_medidas.articulos;
@@ -149,17 +154,17 @@ export default function Carrito() {
                     </Pressable>
                     <Image
                       source={{ uri: articulo.imagen_url }}
-                      style={styles.imagenProducto}
+                      style={[styles.imagenProducto, esMovil && styles.imagenProductoMovil]}
                       resizeMode="contain"
                     />
-                    <View style={styles.infoProducto}>
-                      <Text style={styles.nombreProducto} numberOfLines={2}>
+                    <View style={[styles.infoProducto, esMovil && styles.infoProductoMovil]}>
+                      <Text style={[styles.nombreProducto, esMovil && styles.textoCentradoMovil]} numberOfLines={2}>
                         {articulo.nombre}
                       </Text>
-                      <Text style={styles.textoMedida}>
+                      <Text style={[styles.textoMedida, esMovil && styles.textoCentradoMovil]}>
                         Medida: {item.articulos_medidas.medida}
                       </Text>
-                      <Text style={styles.precioUnitario}>
+                      <Text style={[styles.precioUnitario, esMovil && styles.textoCentradoMovil]}>
                         {precioUnidad.toFixed(2).replace(".", ",")} € / Ud
                       </Text>
                     </View>
@@ -208,7 +213,6 @@ export default function Carrito() {
               })}
             </View>
 
-            {/* COLUMNA DERECHA: TARJETA DE RESUMEN (ESTILO AMAZON) */}
             <View style={[
               styles.tarjetaResumen, 
               esMovil && styles.tarjetaResumenMovil,
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
         color: "#000",
         marginBottom: 30,
         width: "100%",
-        maxWidth: 1200, // Aumentado para dar espacio a las dos columnas
+        maxWidth: 1200, 
         textAlign: "left",
     },
     contenedorVacio: { 
@@ -296,13 +300,11 @@ const styles = StyleSheet.create({
         fontFamily: "Montserrat_700Bold",
         fontSize: 16,
     },
-    
-    // NUEVOS ESTILOS PARA EL LAYOUT DE 2 COLUMNAS
     contenedorListaYResumen: {
         flexDirection: "row",
         width: "100%",
         maxWidth: 1200,
-        alignItems: "flex-start", // Alinea los elementos arriba
+        alignItems: "flex-start", 
     },
     contenedorListaYResumenMovil: {
         flexDirection: "column",
@@ -310,8 +312,6 @@ const styles = StyleSheet.create({
     listaProductos: {
         width: "100%",
     },
-    
-    // TARJETA DE PRODUCTO (Sin cambios)
     tarjetaProducto: {
         flexDirection: "row",
         backgroundColor: "#FFFFFF",
@@ -329,16 +329,24 @@ const styles = StyleSheet.create({
     },
     tarjetaProductoMovil: {
         flexDirection: "column",
-        alignItems: "flex-start",
+        alignItems: "center",
     },
     imagenProducto: {
         width: 100,
         height: 100,
         marginRight: 20,
     },
+    imagenProductoMovil: {
+        marginRight: 0,
+        marginBottom: 15,
+    },
     infoProducto: {
         flex: 1,
         justifyContent: "center",
+    },
+    infoProductoMovil: {
+        width: '100%',
+        alignItems: 'center',
     },
     nombreProducto: {
         fontFamily: "Montserrat_700Bold",
@@ -356,6 +364,9 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_700Bold",
         fontSize: 20,
         color: "#DB3632",
+    },
+    textoCentradoMovil: {
+        textAlign: 'center',
     },
     contenedorCantidadDerecha: {
         alignItems: "center",
@@ -375,7 +386,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
         paddingTop: 15,
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "center",
     },
     selectorCantidad: {
         flexDirection: "row",
@@ -409,8 +420,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: '#DB3632', 
     },
-
-    // NUEVA TARJETA DE RESUMEN (Estilo Amazon)
     tarjetaResumen: {
         backgroundColor: "#FFF",
         padding: 25,
