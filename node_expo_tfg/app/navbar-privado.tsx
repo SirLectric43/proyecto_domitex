@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
@@ -11,8 +11,41 @@ export default function NavbarPrivado() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busquedaAbierta, setBusquedaAbierta] = useState(false);
   
+  const [busqueda, setBusqueda] = useState('');
+  const [resultados, setResultados] = useState<any[]>([]);
+  const [mostrarDropdown, setMostrarDropdown] = useState(false);
+
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
+
+  useEffect(() => {
+    if (busqueda.trim().length < 2) {
+      setResultados([]);
+      setMostrarDropdown(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const urlApi = Platform.OS === 'web' 
+          ? `http://localhost:8000/articulos/buscar?q=${encodeURIComponent(busqueda)}` 
+          : `http://192.168.1.43:8000/articulos/buscar?q=${encodeURIComponent(busqueda)}`;
+          
+        const respuesta = await fetch(urlApi, {
+          headers: auth?.usuario?.token ? { 'Authorization': `Bearer ${auth.usuario.token}` } : {}
+        });
+        
+        if (respuesta.ok) {
+          const datos = await respuesta.json();
+          setResultados(datos);
+          setMostrarDropdown(true);
+        }
+      } catch (error) {
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
 
   const handleCerrarSesion = async () => {
     setMenuAbierto(false);
@@ -30,6 +63,17 @@ export default function NavbarPrivado() {
   const toggleBusqueda = () => {
     setBusquedaAbierta(!busquedaAbierta);
     if (menuAbierto) setMenuAbierto(false);
+    if (busquedaAbierta) {
+      setBusqueda('');
+      setMostrarDropdown(false);
+    }
+  };
+
+  const irAlArticulo = (id: string) => {
+    setBusqueda('');
+    setMostrarDropdown(false);
+    setBusquedaAbierta(false);
+    router.push({ pathname: '/vista-articulo', params: { id } });
   };
 
   return (
@@ -48,11 +92,13 @@ export default function NavbarPrivado() {
 
         {!esMovil ? (
           <>
-            <View style={styles.contenedorBusqueda}>
+            <View style={[styles.contenedorBusqueda, mostrarDropdown && { overflow: 'visible', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}>
               <TextInput 
                 style={styles.inputBusqueda} 
                 placeholder="Buscar artículos..." 
                 placeholderTextColor="#999"
+                value={busqueda}
+                onChangeText={setBusqueda}
               />
               <Pressable style={styles.botonBuscar}>
                 <Image 
@@ -61,6 +107,21 @@ export default function NavbarPrivado() {
                   resizeMode="contain" 
                 />
               </Pressable>
+
+              {mostrarDropdown && (
+                <View style={styles.dropdownBuscadorPc}>
+                  {resultados.length > 0 ? (
+                    resultados.map((articulo) => (
+                      <Pressable key={articulo.id} style={styles.itemResultado} onPress={() => irAlArticulo(articulo.id)}>
+                        <Image source={{ uri: articulo.imagen_url }} style={styles.imagenMiniatura} />
+                        <Text style={styles.textoResultado} numberOfLines={1}>{articulo.nombre}</Text>
+                      </Pressable>
+                    ))
+                  ) : (
+                    <Text style={styles.textoSinResultados}>No se encontraron artículos.</Text>
+                  )}
+                </View>
+              )}
             </View>
 
             <View style={styles.contenedorAcciones}>
@@ -143,11 +204,13 @@ export default function NavbarPrivado() {
       )}
 
       {esMovil && busquedaAbierta && (
-        <View style={styles.contenedorBusquedaMovilFlotante}>
+        <View style={[styles.contenedorBusquedaMovilFlotante, mostrarDropdown && { overflow: 'visible', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}>
           <TextInput 
             style={styles.inputBusqueda} 
             placeholder="Buscar artículos..." 
             placeholderTextColor="#999"
+            value={busqueda}
+            onChangeText={setBusqueda}
           />
           <Pressable style={styles.botonBuscar}>
             <Image 
@@ -156,6 +219,21 @@ export default function NavbarPrivado() {
               resizeMode="contain" 
             />
           </Pressable>
+
+          {mostrarDropdown && (
+            <View style={styles.dropdownBuscadorMovil}>
+              {resultados.length > 0 ? (
+                resultados.map((articulo) => (
+                  <Pressable key={articulo.id} style={styles.itemResultado} onPress={() => irAlArticulo(articulo.id)}>
+                    <Image source={{ uri: articulo.imagen_url }} style={styles.imagenMiniatura} />
+                    <Text style={styles.textoResultado} numberOfLines={1}>{articulo.nombre}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={styles.textoSinResultados}>No se encontraron artículos.</Text>
+              )}
+            </View>
+          )}
         </View>
       )}
 
@@ -411,5 +489,59 @@ const styles = StyleSheet.create({
   iconoBarraInferior: {
     width: 40,
     height: 40,
+  },
+  dropdownBuscadorPc: {
+    position: 'absolute',
+    top: 38,
+    left: -2,
+    right: -2,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#29166F',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    zIndex: 1000,
+  },
+  dropdownBuscadorMovil: {
+    position: 'absolute',
+    top: 43,
+    left: -2,
+    right: -2,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#29166F',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    zIndex: 1000,
+  },
+  itemResultado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    backgroundColor: '#FFFFFF',
+  },
+  imagenMiniatura: {
+    width: 40,
+    height: 40,
+    marginRight: 15,
+    resizeMode: 'contain',
+  },
+  textoResultado: {
+    flex: 1,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#000',
+  },
+  textoSinResultados: {
+    padding: 15,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    backgroundColor: '#FFFFFF',
   }
 });

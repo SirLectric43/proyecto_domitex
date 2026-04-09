@@ -1,21 +1,17 @@
 ### 📝 Descripción
-Implementación del flujo de navegación entre el Catálogo y la Vista Detallada de Producto (Full-Stack).
+Implementación del motor de búsqueda predictivo en la barra de navegación y corrección de rutas en el servidor (Full-Stack).
 
 **Frontend (React Native):**
-* **Catálogo:** Vista responsiva (carrusel táctil en móvil, paginación nativa en PC) y enlaces a la vista detallada.
-* **Vista Detallada (`vista-articulo.tsx`):** Diseño responsivo (grid en PC, columna en móvil). Incluye selector de medidas que actualiza el precio dinámicamente, contador de cantidad unitaria (+/-) y botón para añadir a la cesta.
+* **Buscador Predictivo (`NavbarPrivado`):** Se ha integrado un input de búsqueda con un menú desplegable flotante (Dropdown) que muestra coincidencias en tiempo real (imagen y nombre del artículo).
+* **Navegación Dinámica:** Al hacer clic en un resultado del menú, la aplicación navega directamente a la vista detallada de ese artículo (`/vista-articulo`).
+* **Optimización (Debounce):** Se ha implementado un retraso de 300ms (*debounce*) en la entrada de texto para no saturar la base de datos con peticiones por cada tecla pulsada.
+* **UI/UX Respetada:** El menú desplegable se adaptó con posicionamiento absoluto tanto para móvil como para web/PC, garantizando que no altere ni deforme la estructura original de la barra de navegación.
 
 **Backend (FastAPI):**
-* **Catálogo (`GET /articulos`):** Agrupación lógica en servidor (`itertools.groupby`).
-* **Detalle (`GET /articulos/{id}`):** Consulta del artículo principal y anidación relacional de sus medidas/variantes.
-
-**Base de Datos (Supabase):**
-* Estructura relacional completa: `articulos` (datos base) y `articulos_medidas` (variantes, precios y stock).
-* Políticas **RLS estricto de solo lectura** configuradas para los clientes.
-* *Nota:* Definida la arquitectura relacional futura para el carrito de compras (`carritos` y `carrito_items`).
+* **Endpoint de Búsqueda:** Utiliza la función `.ilike()` de Supabase para coincidencias de texto parciales (insensibles a mayúsculas/minúsculas) con un límite de 5 resultados por consulta.
 
 ## 🔗 Issue relacionado
-Closes #12
+Closes #28
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -26,8 +22,8 @@ Closes #12
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | ![alt text](capturaPC.png) |
-| --- | ![alt text](capturaMovil.png) |
+| ![alt text](capturaPCantes.png) | ![alt text](capturaPCdespues.png) |
+| ![alt text](capturaMovilAntes.png) | ![alt text](capturaMovildespues.png) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -39,5 +35,4 @@ Closes #12
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **UX/UI:** En la vista detallada, el precio cambia dinámicamente al seleccionar la medida. Se ha añadido la etiqueta "(Precio unitario)" para evitar confusiones al aumentar la cantidad a comprar.
-* **Arquitectura de Base de Datos:** Se ha normalizado el producto separando los datos generales de sus variantes. Esto es vital para llevar un control estricto del stock y precios específicos en la futura implementación del carrito y pagos.
+* **Rendimiento Frontend:** El uso de un *timeout* (*debounce*) en el `useEffect` de la búsqueda previene llamadas innecesarias a la API, mejorando enormemente la eficiencia y reduciendo costes de lectura en la base de datos.
