@@ -189,6 +189,16 @@ def obtener_catalogo_agrupado(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+@app.get("/articulos/buscar")
+def buscar_articulos(q: str):
+    try:
+        if not q or len(q.strip()) < 2:
+            return []
+        respuesta = supabase.table("articulos").select("id, nombre, imagen_url").ilike("nombre", f"%{q}%").execute()
+        return respuesta.data[:5] if respuesta.data else []
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 @app.get("/articulos/{articulo_id}")
 def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)):
     try:
