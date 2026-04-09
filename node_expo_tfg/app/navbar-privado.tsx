@@ -137,13 +137,22 @@ export default function NavbarPrivado() {
                 />
               </Pressable>
               
-              <Pressable style={styles.iconoAccion}>
-                <Image 
-                  source={require('@/assets/images/iconoCarrito.png')} 
-                  style={styles.iconoAccionImagen} 
-                  resizeMode="contain" 
-                />
-              </Pressable>
+              <Link href="/carrito" asChild>
+                <Pressable style={styles.contenedorIconoConBadge}>
+                  <Image 
+                    source={require('@/assets/images/iconoCarrito.png')} 
+                    style={styles.iconoAccionImagen} 
+                    resizeMode="contain" 
+                  />
+                  {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
+                    <View style={styles.badgeCarrito}>
+                      <Text style={styles.textoBadge}>
+                        {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              </Link>
 
               <View style={styles.contenedorUsuario}>
                 <Pressable style={styles.botonUsuario} onPress={() => setMenuAbierto(!menuAbierto)}>
@@ -251,7 +260,16 @@ export default function NavbarPrivado() {
 
           <Link href="/carrito" asChild>
             <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); }}>
-              <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+              <View style={styles.contenedorIconoConBadge}>
+                <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+                {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
+                  <View style={styles.badgeCarrito}>
+                    <Text style={styles.textoBadge}>
+                      {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </Pressable>
           </Link>
         </View>
@@ -543,5 +561,30 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     backgroundColor: '#FFFFFF',
-  }
+  },
+  contenedorIconoConBadge: {
+    position: 'relative',
+    padding: 5,
+  },
+  badgeCarrito: {
+    position: 'absolute',
+    top: -2,
+    right: -5,
+    backgroundColor: '#DB3632',
+    borderRadius: 10,
+    minWidth: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  textoBadge: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: 'Montserrat_700Bold',
+    textAlign: 'center',
+  },
 });

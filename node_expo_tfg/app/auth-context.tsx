@@ -1,11 +1,15 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 type AuthContextType = {
   usuario: { nombre: string; token: string; usuario_id: string } | null;
   iniciarSesionContext: (nombre: string, token: string, usuario_id: string) => Promise<void>;
   cerrarSesionContext: () => Promise<void>;
   cargando: boolean;
+  cantidadCesta: number;
+  setCantidadCesta: React.Dispatch<React.SetStateAction<number>>;
+  refrescarCarrito: () => Promise<void>;
 };
 
 /*Creamos el contexto de autenticación que importaremos en otras pantallas 
@@ -17,6 +21,7 @@ Todo lo que esté dentro de 'children' podrá acceder a la información de sesi�
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuario, setUsuario] = useState<{ nombre: string; token: string; usuario_id: string } | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [cantidadCesta, setCantidadCesta] = useState(0);
 
   useEffect(() => {
     const cargarSesion = async () => {
@@ -52,8 +57,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUsuario(null);
   };
 
+  /* Función global para consultar la base de datos y tener el número real de artículos en el carrito. */
+  const refrescarCarrito = async () => {
+    if (!usuario?.token) {
+      setCantidadCesta(0);
+      return;
+    }
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? `http://localhost:8000/carrito` 
+        : `http://192.168.1.43:8000/carrito`;
+        
+      const respuesta = await fetch(urlApi, {
+        headers: { 'Authorization': `Bearer ${usuario.token}` }
+      });
+      
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        // Sumamos la cantidad de todos los artículos para saber el total real
+        const totalArticulos = datos.reduce((total: number, item: any) => total + item.cantidad, 0);
+        setCantidadCesta(totalArticulos);
+      }
+    } catch (error) {
+      console.error("Error al refrescar carrito global:", error);
+    }
+  };
+
+  useEffect(() => {
+    refrescarCarrito();
+  }, [usuario]);
+
   return (
-    <AuthContext.Provider value={{ usuario, iniciarSesionContext, cerrarSesionContext, cargando }}>
+    <AuthContext.Provider value={{ 
+      usuario, 
+      iniciarSesionContext, 
+      cerrarSesionContext, 
+      cargando,
+      cantidadCesta,
+      setCantidadCesta,
+      refrescarCarrito
+    }}>
       {children}
     </AuthContext.Provider>
   );
