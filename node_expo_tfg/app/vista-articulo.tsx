@@ -50,12 +50,42 @@ export default function VistaArticuloPage() {
   const incrementar = () => setCantidad(String(Number(cantidad || 0) + 1));
   const decrementar = () => setCantidad(String(Math.max(1, Number(cantidad || 0) - 1)));
 
-  const anadirAlCarrito = () => {
+  const anadirAlCarrito = async () => {
     if (!medidaSeleccionada) return;
     const cantNum = Number(cantidad);
     if (cantNum <= 0) return alert("Introduce una cantidad válida");
     
-    alert(`Añadido al carrito:\n${cantNum}x ${articulo.nombre} (${medidaSeleccionada.medida})`);
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? `http://localhost:8000/carrito/anadir` 
+        : `http://192.168.1.43:8000/carrito/anadir`;
+
+      const respuesta = await fetch(urlApi, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': auth?.usuario?.token ? `Bearer ${auth.usuario.token}` : ''
+        },
+        body: JSON.stringify({
+          articulo_medida_id: medidaSeleccionada.id,
+          cantidad: cantNum
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (respuesta.ok) {
+        alert(`¡Añadido a la cesta!\n${cantNum}x ${articulo.nombre} (${medidaSeleccionada.medida})`);
+        if (auth?.refrescarCarrito) {
+          auth.refrescarCarrito();
+        }
+      } else {
+        alert(`Error al añadir: ${datos.detail || 'Revisa tu conexión'}`);
+      }
+    } catch (error) {
+      console.error("Error al añadir al carrito:", error);
+      alert("Hubo un problema al conectar con el servidor.");
+    }
   };
 
   if (cargando) {

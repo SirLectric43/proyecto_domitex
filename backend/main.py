@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class ArticuloResponse(BaseModel):
@@ -50,6 +50,13 @@ class ActualizarUsuario(BaseModel):
 class CambiarContrasena(BaseModel):
     contrasena_actual: str
     nueva_contrasena: str
+    
+class ActualizarCantidad(BaseModel):
+    cantidad: int
+
+class AnadirItem(BaseModel):
+    articulo_medida_id: str
+    cantidad: int
 
 @app.get("/")
 def read_root():
@@ -214,4 +221,75 @@ def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)
         
         return articulo
     except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/carrito")
+def obtener_carrito(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        # 1. Buscar el carrito del usuario
+        resp_carrito = supabase.table("carritos").select("id").eq("usuario_id", usuario_id).execute()
+        if not resp_carrito.data:
+            return []
+        carrito_id = resp_carrito.data[0]["id"]
+
+        # 2. Obtener los items haciendo JOIN con las medidas y los artículos principales
+        resp_items = supabase.table("carrito_items") \
+            .select("id, cantidad, articulos_medidas(id, medida, precio, articulos(id, nombre, imagen_url))") \
+            .eq("carrito_id", carrito_id) \
+            .order("id") \
+            .execute()
+            
+        return resp_items.data if resp_items.data else []
+    except Exception as e:
+        print(f"Error GET carrito: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/carrito/items/{item_id}")
+def actualizar_cantidad_item(item_id: str, datos: ActualizarCantidad, authorization: str = Header(None)):
+    try:
+        if datos.cantidad > 0:
+            supabase.table("carrito_items").update({"cantidad": datos.cantidad}).eq("id", item_id).execute()
+        else:
+            # Si la cantidad baja a 0, borramos el artículo del carrito
+            supabase.table("carrito_items").delete().eq("id", item_id).execute()
+        return {"exito": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/carrito/anadir")
+def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        resp_carrito = supabase.table("carritos").select("id").eq("usuario_id", usuario_id).execute()
+        if not resp_carrito.data:
+            raise HTTPException(status_code=400, detail="El carrito no existe. Error de base de datos.")
+        carrito_id = resp_carrito.data[0]["id"]
+
+        # Comprobar si ya existe ese artículo con esa medida exacta en la cesta
+        resp_existe = supabase.table("carrito_items").select("id, cantidad").eq("carrito_id", carrito_id).eq("articulo_medida_id", datos.articulo_medida_id).execute()
+
+        if resp_existe.data:
+            # Si existe, sumamos la cantidad
+            nueva_cantidad = resp_existe.data[0]["cantidad"] + datos.cantidad
+            supabase.table("carrito_items").update({"cantidad": nueva_cantidad}).eq("id", resp_existe.data[0]["id"]).execute()
+        else:
+            # Si no existe, lo insertamos como nuevo
+            supabase.table("carrito_items").insert({
+                "carrito_id": carrito_id,
+                "articulo_medida_id": datos.articulo_medida_id,
+                "cantidad": datos.cantidad
+            }).execute()
+
+        return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
+    except Exception as e:
+        print(f"Error POST carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
