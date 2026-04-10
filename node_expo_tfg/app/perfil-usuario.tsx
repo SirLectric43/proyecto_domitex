@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Platform, Alert, Modal, Image, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import { AuthContext } from './auth-context';
 
 const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo = false, toggleEdicion }: any) => (
@@ -200,10 +200,12 @@ export default function PerfilPage() {
           </View>
 
           <View style={[styles.columnaDerecha, esMovil && styles.columnaDerechaMovil]}>
-            <Pressable style={styles.botonAccion}>
-              <Text style={styles.textoBotonSecundario}>Historial de compra</Text>
-            </Pressable>
-
+            <Link href="/historial-compra" asChild>
+              <Pressable style={styles.botonAccion}>
+                <Text style={styles.textoBotonSecundario}>Historial de compra</Text>
+              </Pressable>
+            </Link>
+            
             <Pressable style={[styles.botonAccion, styles.espacioBotonCerrar, esMovil && styles.espacioBotonCerrarMovil]} onPress={manejarCerrarSesion}>
               <Text style={styles.textoBotonSecundario}>Cerrar sesión</Text>
             </Pressable>

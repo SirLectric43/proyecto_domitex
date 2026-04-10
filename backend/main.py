@@ -1,12 +1,14 @@
 import os
 from datetime import datetime, timezone
-from typing import Optional, Dict, List  # Añadimos Dict y List aquí
+from typing import Optional, Dict, List
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from itertools import groupby  # Añadimos esta importación para agrupar las categorías
+from itertools import groupby
+import random
+import string
 
 load_dotenv()
 
@@ -232,13 +234,11 @@ def obtener_carrito(authorization: str = Header(None)):
         user_auth = supabase.auth.get_user(token)
         usuario_id = user_auth.user.id
 
-        # 1. Buscar el carrito del usuario
         resp_carrito = supabase.table("carritos").select("id").eq("usuario_id", usuario_id).execute()
         if not resp_carrito.data:
             return []
         carrito_id = resp_carrito.data[0]["id"]
 
-        # 2. Obtener los items haciendo JOIN con las medidas y los artículos principales
         resp_items = supabase.table("carrito_items") \
             .select("id, cantidad, articulos_medidas(id, medida, precio, articulos(id, nombre, imagen_url))") \
             .eq("carrito_id", carrito_id) \
@@ -256,7 +256,6 @@ def actualizar_cantidad_item(item_id: str, datos: ActualizarCantidad, authorizat
         if datos.cantidad > 0:
             supabase.table("carrito_items").update({"cantidad": datos.cantidad}).eq("id", item_id).execute()
         else:
-            # Si la cantidad baja a 0, borramos el artículo del carrito
             supabase.table("carrito_items").delete().eq("id", item_id).execute()
         return {"exito": True}
     except Exception as e:
@@ -274,15 +273,12 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
             raise HTTPException(status_code=400, detail="El carrito no existe. Error de base de datos.")
         carrito_id = resp_carrito.data[0]["id"]
 
-        # Comprobar si ya existe ese artículo con esa medida exacta en la cesta
         resp_existe = supabase.table("carrito_items").select("id, cantidad").eq("carrito_id", carrito_id).eq("articulo_medida_id", datos.articulo_medida_id).execute()
 
         if resp_existe.data:
-            # Si existe, sumamos la cantidad
             nueva_cantidad = resp_existe.data[0]["cantidad"] + datos.cantidad
             supabase.table("carrito_items").update({"cantidad": nueva_cantidad}).eq("id", resp_existe.data[0]["id"]).execute()
         else:
-            # Si no existe, lo insertamos como nuevo
             supabase.table("carrito_items").insert({
                 "carrito_id": carrito_id,
                 "articulo_medida_id": datos.articulo_medida_id,
@@ -292,4 +288,102 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
         return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
     except Exception as e:
         print(f"Error POST carrito: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/pedidos/historial")
+def obtener_historial_pedidos(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        resp_pedidos = supabase.table("pedidos") \
+            .select("id, referencia, fecha_pedido, estado, total") \
+            .eq("usuario_id", usuario_id) \
+            .order("fecha_pedido", desc=True) \
+            .execute()
+            
+        return resp_pedidos.data if resp_pedidos.data else []
+    except Exception as e:
+        print(f"Error GET historial pedidos: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.post("/pedidos/confirmar")
+def confirmar_pedido(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        resp_carrito = supabase.table("carritos").select("id").eq("usuario_id", usuario_id).execute()
+        if not resp_carrito.data:
+            raise HTTPException(status_code=400, detail="Carrito no encontrado")
+        carrito_id = resp_carrito.data[0]["id"]
+
+        resp_items = supabase.table("carrito_items") \
+            .select("id, cantidad, articulo_medida_id, articulos_medidas(precio)") \
+            .eq("carrito_id", carrito_id).execute()
+        
+        items = resp_items.data
+        if not items:
+            raise HTTPException(status_code=400, detail="El carrito está vacío")
+
+        total_pedido = sum(item["cantidad"] * item["articulos_medidas"]["precio"] for item in items)
+        
+        resp_ultimo = supabase.table("pedidos") \
+            .select("referencia") \
+            .order("fecha_pedido", desc=True) \
+            .limit(1).execute()
+
+        if not resp_ultimo.data:
+            referencia = "00001A"
+        else:
+            ultima_ref = resp_ultimo.data[0]["referencia"] 
+            numero_str = ultima_ref[:-1] 
+            letra = ultima_ref[-1]       
+            
+            numero = int(numero_str)
+
+            if numero < 99999:
+                numero += 1
+            else:
+                numero = 1
+                codigo_ascii = ord(letra)
+                nueva_letra = chr(codigo_ascii + 1) 
+                if nueva_letra > 'Z':
+                    raise HTTPException(status_code=400, detail="Límite máximo de referencias alcanzado (99999Z)")
+                letra = nueva_letra
+            referencia = f"{numero:05d}{letra}"
+
+        resp_pedido = supabase.table("pedidos").insert({
+            "usuario_id": usuario_id,
+            "referencia": referencia,
+            "estado": "Pendiente",
+            "total": total_pedido
+        }).execute()
+        
+        pedido_id = resp_pedido.data[0]["id"]
+
+        lineas = []
+        for item in items:
+            lineas.append({
+                "pedido_id": pedido_id,
+                "articulo_medida_id": item["articulo_medida_id"],
+                "cantidad": item["cantidad"],
+                "precio_unitario": item["articulos_medidas"]["precio"]
+            })
+            
+        supabase.table("lineas_pedido").insert(lineas).execute()
+
+        supabase.table("carrito_items").delete().eq("carrito_id", carrito_id).execute()
+
+        return {"exito": True, "referencia": referencia}
+
+    except Exception as e:
+        print(f"Error POST confirmar pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
