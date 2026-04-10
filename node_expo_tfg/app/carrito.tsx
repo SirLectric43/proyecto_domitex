@@ -97,9 +97,43 @@ export default function Carrito() {
     }
   };
 
-  const confirmarPedido = () => {
-    if (Platform.OS === "web") {
-      window.alert("Pedido confirmado con éxito!");
+  const confirmarPedido = async () => {
+    if (items.length === 0) return;
+
+    try {
+      const urlApi = Platform.OS === "web"
+        ? `http://localhost:8000/pedidos/confirmar`
+        : `http://192.168.1.43:8000/pedidos/confirmar`;
+
+      const respuesta = await fetch(urlApi, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${auth?.usuario?.token}`,
+        },
+      });
+
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        
+        setItems([]);
+        if (auth?.setCantidadCesta) {
+          auth.setCantidadCesta(0);
+        }
+        
+        if (Platform.OS === "web") {
+          window.alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
+        } else {
+          alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
+        }
+        
+        router.push("/historial-compra");
+      } else {
+        const error = await respuesta.json();
+        alert(`Error: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error("Error al confirmar pedido:", error);
+      alert("Hubo un problema al procesar el pedido.");
     }
   };
 

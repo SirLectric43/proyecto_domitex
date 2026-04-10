@@ -167,9 +167,11 @@ export default function NavbarPrivado() {
                         <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
                       </Pressable>
                     </Link>
-                    <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
-                      <Text style={styles.textoItemMenu}>Historial de compra</Text>
-                    </Pressable>
+                    <Link href="/historial-compra" asChild>
+                      <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
+                        <Text style={styles.textoItemMenu}>Historial de compra</Text>
+                      </Pressable>
+                    </Link>
                     <Pressable style={[styles.itemMenu, styles.itemMenuUltimo]} onPress={handleCerrarSesion}>
                       <Text style={styles.textoItemMenu}>Cerrar sesión</Text>
                     </Pressable>
@@ -202,10 +204,12 @@ export default function NavbarPrivado() {
             </Pressable>
           </Link>
           
-          <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
-            <Text style={styles.textoItemMenu}>Historial de compra</Text>
-          </Pressable>
-
+          <Link href="/historial-compra" asChild>
+            <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
+              <Text style={styles.textoItemMenu}>Historial de compra</Text>
+            </Pressable>
+          </Link>
+          
           <Pressable style={[styles.itemMenuMovil, styles.itemMenuUltimo]} onPress={handleCerrarSesion}>
             <Text style={styles.textoItemMenu}>Cerrar sesión</Text>
           </Pressable>
