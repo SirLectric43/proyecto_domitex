@@ -387,3 +387,27 @@ def confirmar_pedido(authorization: str = Header(None)):
     except Exception as e:
         print(f"Error POST confirmar pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/pedidos/{pedido_id}")
+def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        resp_pedido = supabase.table("pedidos").select(
+            "id, referencia, fecha_pedido, estado, total, "
+            "lineas_pedido(cantidad, precio_unitario, articulos_medidas(medida, articulos(nombre, imagen_url)))"
+        ).eq("id", pedido_id).eq("usuario_id", usuario_id).single().execute()
+
+        if not resp_pedido.data:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+        return resp_pedido.data
+
+    except Exception as e:
+        print(f"Error GET detalle pedido: {e}")
+        raise HTTPException(status_code=400, detail=str(e))

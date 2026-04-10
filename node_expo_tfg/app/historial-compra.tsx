@@ -120,9 +120,7 @@ export default function HistorialCompra() {
                   <Text style={styles.fechaPedido}>{formatearFecha(pedido.fecha_pedido)}</Text>
                   <Pressable 
                     style={styles.botonDetalles}
-                    onPress={() => {
-                      console.log("Ver detalles del pedido:", pedido.id);
-                    }}
+                    onPress={() => router.push({ pathname: "/ver-pedido", params: { pedidoId: pedido.id } })}
                   >
                     <Text style={styles.textoBotonDetalles}>Detalles de pedido</Text>
                   </Pressable>
