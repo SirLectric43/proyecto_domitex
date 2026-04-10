@@ -1,15 +1,15 @@
 ### 📝 Descripción
-Implementación de la confirmación de pedidos y la pantalla de historial de compras.
+Implementación de la vista de Detalles del Pedido para que el usuario pueda consultar los artículos específicos de una compra pasada.
 
-* **Base de datos:** Creación de las tablas `pedidos` y `lineas_pedido` con políticas de seguridad (RLS) para garantizar que cada usuario solo acceda a su propia información.
-* **Backend (FastAPI):** * Nuevo endpoint `POST /pedidos/confirmar` que transfiere los artículos del carrito a un pedido formal, congelando el precio unitario y vaciando la cesta.
-  * Sistema de generación de referencias de pedido secuenciales automáticas (ej. `00001A` hasta `99999Z`).
-  * Nuevo endpoint `GET /pedidos/historial` para obtener la lista de pedidos de un usuario ordenados por fecha.
-* **Frontend (React Native / Expo):** * Creación de la nueva pantalla `historial-compra.tsx` con diseño responsivo (PC y móvil) para visualizar el estado, fecha y total de cada pedido.
-  * Actualización de la vista del carrito para procesar la compra mediante el nuevo endpoint y limpiar el estado global (`AuthContext`) al finalizar.
+* **Backend (FastAPI):**
+  * Nuevo endpoint `GET /pedidos/{pedido_id}` que obtiene la información completa de un pedido específico, haciendo un JOIN con `lineas_pedido`, `articulos_medidas` y `articulos` para devolver todos los datos necesarios en una sola petición.
+* **Frontend (React Native / Expo):**
+  * Creación de la pantalla `ver-pedido.tsx` con un diseño responsivo (dos columnas en PC, apilado en móvil) similar al carrito, pero de solo lectura (sin controles de cantidad).
+  * La tarjeta de resumen ahora incluye el cálculo de Subtotal, IVA (21%), Total y el **Estado actual del pedido** con colores dinámicos.
+  * Actualización en `historial-compra.tsx` para que el botón "Detalles de pedido" navegue a la nueva vista pasando el `pedidoId` correspondiente por parámetros.
 
 ## 🔗 Issue relacionado
-Closes #13
+Closes #14
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -33,5 +33,5 @@ Closes #13
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* La confirmación del pedido garantiza la inmutabilidad de los datos históricos: se guarda el `precio_unitario` exacto en el momento de la transacción en `lineas_pedido`.
-* El sistema de referencias (ej. `00001A`) es secuencial y evita duplicados en base de datos.
+* La vista de detalles reutiliza la experiencia de usuario (UX) de la cesta de la compra para mantener la consistencia en el diseño, pero adaptando los controles para ser puramente informativos (estáticos).
+* El estado del pedido se muestra visualmente destacado con colores dinámicos para informar al usuario del progreso de su compra.
