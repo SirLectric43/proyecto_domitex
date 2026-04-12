@@ -1,12 +1,15 @@
 ### 📝 Descripción
-Se ha rediseñado y mejorado la navegación exclusiva para dispositivos móviles (`navbar-privado.tsx`), optimizando el espacio y la experiencia de usuario:
+Implementación de la vista de Detalles del Pedido para que el usuario pueda consultar los artículos específicos de una compra pasada.
 
-* **Barra de navegación inferior (Mobile-only):** Se ha implementado un *Bottom Tab Nav* fijado al fondo de la pantalla (`bottom: 0`). Contiene accesos directos al Catálogo (Inicio), Búsqueda y Carrito de compras.
-* **Búsqueda flotante:** Se eliminó la barra de búsqueda dentro del menú desplegable. Ahora, al pulsar la lupa en la barra inferior, se despliega una barra de búsqueda flotante justo debajo del navbar superior.
-* **Reorganización del Navbar superior:** Se ha añadido el icono de notificaciones (Campana) al navbar superior en la vista móvil, acompañando al icono del menú desplegable.
+* **Backend (FastAPI):**
+  * Nuevo endpoint `GET /pedidos/{pedido_id}` que obtiene la información completa de un pedido específico, haciendo un JOIN con `lineas_pedido`, `articulos_medidas` y `articulos` para devolver todos los datos necesarios en una sola petición.
+* **Frontend (React Native / Expo):**
+  * Creación de la pantalla `ver-pedido.tsx` con un diseño responsivo (dos columnas en PC, apilado en móvil) similar al carrito, pero de solo lectura (sin controles de cantidad).
+  * La tarjeta de resumen ahora incluye el cálculo de Subtotal, IVA (21%), Total y el **Estado actual del pedido** con colores dinámicos.
+  * Actualización en `historial-compra.tsx` para que el botón "Detalles de pedido" navegue a la nueva vista pasando el `pedidoId` correspondiente por parámetros.
 
 ## 🔗 Issue relacionado
-Closes #21
+Closes #14
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -30,4 +33,5 @@ Closes #21
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Arquitectura de Layout:** Para evitar conflictos con el área segura (Safe Area) y asegurar que el footer móvil quede al final del todo, se han evitado contenedores globales con `zIndex` restrictivo en favor del uso de fragmentos (`<></>`) y `bottom: 0` estricto, lo que garantiza el correcto funcionamiento en cualquier tamaño de pantalla de iOS o Android.
+* La vista de detalles reutiliza la experiencia de usuario (UX) de la cesta de la compra para mantener la consistencia en el diseño, pero adaptando los controles para ser puramente informativos (estáticos).
+* El estado del pedido se muestra visualmente destacado con colores dinámicos para informar al usuario del progreso de su compra.
