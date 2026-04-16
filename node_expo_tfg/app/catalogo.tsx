@@ -7,8 +7,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const TarjetaArticulo = ({ articulo, anchoTarjeta, esMovil }: any) => (
-  <View style={[styles.tarjetaArticulo, { width: anchoTarjeta }, !esMovil && { marginRight: 0 }]}>
+const TarjetaArticulo = ({ articulo, anchoTarjeta, esMovil, hovered }: any) => (
+  <View style={[styles.tarjetaArticulo, { width: anchoTarjeta }, !esMovil && { marginRight: 0 }, hovered && styles.tarjetaHover]}>
     <Image source={{ uri: articulo.imagen_url }} style={styles.imagenArticulo} resizeMode="contain" />
     <Text style={styles.nombreArticulo} numberOfLines={2}>{articulo.nombre}</Text>
   </View>
@@ -155,7 +155,9 @@ export default function CatalogoPage() {
                   {articulos.map((articulo: any) => (
                     <Link key={articulo.id} href={{ pathname: '/vista-articulo', params: { id: articulo.id } }} asChild>
                       <Pressable>
-                        <TarjetaArticulo articulo={articulo} anchoTarjeta={esMovil ? anchoTarjetaMovil : 220} esMovil={esMovil} />
+                        {({ hovered }) => (
+                          <TarjetaArticulo articulo={articulo} anchoTarjeta={esMovil ? anchoTarjetaMovil : 220} esMovil={esMovil} hovered={hovered} />
+                        )}
                       </Pressable>
                     </Link>
                   ))}
@@ -182,7 +184,9 @@ export default function CatalogoPage() {
                         {articulos.map((articulo: any, i: number) => (
                           <Link key={articulo.id} href={{ pathname: '/vista-articulo', params: { id: articulo.id } }} asChild>
                             <Pressable style={{ marginRight: i === articulos.length - 1 ? 0 : 30 }}>
-                              <TarjetaArticulo articulo={articulo} anchoTarjeta={220} />
+                              {({ hovered }) => (
+                                <TarjetaArticulo articulo={articulo} anchoTarjeta={220} hovered={hovered} />
+                              )}
                             </Pressable>
                           </Link>
                         ))}
@@ -274,7 +278,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#DB3632',
   },
-  tarjetaArticulo: {
+  tarjetaArticulo: Platform.OS === 'web' ? {
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+    borderRadius: 12,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
+    height: 290,
+    justifyContent: 'flex-start',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  } as any : {
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     borderWidth: 1,
@@ -288,6 +307,14 @@ const styles = StyleSheet.create({
     elevation: 3,
     height: 290,
     justifyContent: 'flex-start'
+  },
+  tarjetaHover: {
+    transform: [{ scale: 1.05 }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
   imagenArticulo: {
     width: '100%',

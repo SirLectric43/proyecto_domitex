@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 
 export default function Footer() {
@@ -32,23 +33,23 @@ export default function Footer() {
           <Text style={[styles.textoGeneral, esMovil && { fontSize: 16, textAlign: 'center' }]}>955 97 97 99</Text>
         </View>
 
-        <View style={styles.columnaCentralDerecha}>
-          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, marginTop: 60 }]}>Clientes</Text>
-          <View style={styles.contenedorLinks}>
-            <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Explorar catálogo</Link>
-            <Link href="/cuenta" style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Mi cuenta</Link>
-            <Link href="/pedidos" style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Mis pedidos</Link>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Preguntas Frecuentes (FAQ)</Text>
+        <View style={[styles.columnaCentralDerecha, esMovil && { alignItems: 'center' }]}>
+          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, marginTop: 60, textAlign: 'center' }]}>Clientes</Text>
+          <View style={[styles.contenedorLinks, esMovil && { alignItems: 'center' }]}>
+            <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Explorar catálogo</Link>
+            <Link href="/perfil-usuario" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mi cuenta</Link>
+            <Link href="/pedidos" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mis pedidos</Link>
+            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Preguntas Frecuentes (FAQ)</Text>
           </View>
         </View>
 
-        <View style={styles.columnaCentralDerecha}>
-          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24 }]}>Legal y Soporte</Text>
-          <View style={styles.contenedorLinks}>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Términos y Condiciones{"\n"}de Venta</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Política de Privacidad y{"\n"}Cookies</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Aviso Legal</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16 }]}>Soporte Técnico</Text>
+        <View style={[styles.columnaCentralDerecha, esMovil && { alignItems: 'center' }]}>
+          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, textAlign: 'center' }]}>Legal y Soporte</Text>
+          <View style={[styles.contenedorLinks, esMovil && { alignItems: 'center' }]}>
+            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Términos y Condiciones{"\n"}de Venta</Text>
+            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Política de Privacidad y{"\n"}Cookies</Text>
+            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Aviso Legal</Text>
+            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Soporte Técnico</Text>
           </View>
         </View>
 
@@ -98,14 +99,14 @@ const styles = StyleSheet.create({
   },
   columnaCentralDerecha: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   tituloColumna: {
     color: '#FFFFFF',
     fontFamily: 'Montserrat_700Bold',
     fontSize: 32,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   subtituloColumna: {
     color: '#FFFFFF',
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginTop: 15,
     marginBottom: 5,
+    textAlign: 'left', 
   },
   textoGeneral: {
     color: '#FFFFFF',
@@ -120,16 +122,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 22,
     marginBottom: 2,
+    textAlign: 'left', 
   },
   contenedorLinks: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 25,
   },
   linkFooter: {
     color: '#FFFFFF',
     fontFamily: 'Inter_400Regular',
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   lineaDivisoria: {
     width: '100%',

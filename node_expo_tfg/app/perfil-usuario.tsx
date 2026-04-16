@@ -14,11 +14,20 @@ const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo
         editable={editable}
       />
       <Pressable 
-        style={[styles.botonLapiz, esCorreo && { opacity: 0.5 }]} 
+        style={styles.botonLapiz} 
         onPress={() => !esCorreo && toggleEdicion(editable, setEditable)}
         disabled={esCorreo}
       >
-        <Image source={require('@/assets/images/iconoEditar.png')} style={styles.iconoEditar} />
+        <Image 
+          source={
+            esCorreo
+              ? require('@/assets/images/iconoCandado.png')
+              : editable 
+                ? require('@/assets/images/iconoGuardar.png') 
+                : require('@/assets/images/iconoEditar.png')
+          } 
+          style={styles.iconoEditar} 
+        />
       </Pressable>
     </View>
   </View>
@@ -217,11 +226,10 @@ export default function PerfilPage() {
 
       <Modal visible={modalVisible} transparent={true} animationType="fade">
         <Pressable style={styles.fondoModal} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.contenedorModalCentrado} onPress={(e) => e.stopPropagation()}>
-            
-            <Text style={styles.tituloModal}>CAMBIAR{'\n'}CONTRASEÑA</Text>
+          <Pressable style={styles.contenedorModalCentrado} onPress={(e) => e.stopPropagation()}>            
             
             <View style={styles.tarjetaBlancaModal}>
+              <Text style={styles.tituloModal}>CAMBIAR{'\n'}CONTRASEÑA</Text>
               <View style={styles.grupoInputModal}>
                 <Text style={styles.label}>Contraseña actual</Text>
                 <TextInput style={styles.inputModal} value={contrasenaActual} onChangeText={setContrasenaActual} secureTextEntry />
