@@ -57,13 +57,16 @@ export default function LoginPage() {
         mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
 
         if (auth?.iniciarSesionContext) {
-            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id);
+            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol);
         }
 
         mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
-        router.replace("/catalogo");
-        
-        router.push("/catalogo");
+
+        if (datos.rol === 'admin') {
+            router.replace("/panel-administrador")
+        } else {
+            router.replace("/catalogo");
+        }
 
         } catch (error: any) {
             mostrarAlerta("Acceso denegado", error.message);
