@@ -102,19 +102,22 @@ def iniciar_sesion(credenciales: LoginUsuario):
             "ultimo_acceso": ahora_utc
         }).eq("id", usuario_id).execute()
 
-        db_user = supabase.table("usuarios").select("nombre").eq("id", usuario_id).execute()
+        db_user = supabase.table("usuarios").select("nombre, rol").eq("id", usuario_id).execute()
         
-        if db_user.data and len(db_user.data) > 0 and db_user.data[0].get("nombre"):
-            nombre_usuario = db_user.data[0]["nombre"]
+        if db_user.data and len(db_user.data) > 0:
+            nombre_usuario = db_user.data[0].get("nombre") or respuesta.user.user_metadata.get("nombre", "Usuario")
+            rol_usuario = db_user.data[0].get("rol") or "cliente"
         else:
             nombre_usuario = respuesta.user.user_metadata.get("nombre", "Usuario")
+            rol_usuario = "cliente"
         
         return {
             "exito": True,
             "mensaje": "Sesión iniciada correctamente",
             "token": respuesta.session.access_token,
             "usuario_id": usuario_id,
-            "nombre": nombre_usuario
+            "nombre": nombre_usuario,
+            "rol": rol_usuario
         }
         
     except Exception as e:
