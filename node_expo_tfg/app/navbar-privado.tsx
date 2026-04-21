@@ -78,6 +78,16 @@ export default function NavbarPrivado() {
 
   return (
     <>
+      {(menuAbierto || mostrarDropdown) && (
+        <Pressable 
+          style={styles.overlayCerrar} 
+          onPress={() => {
+            setMenuAbierto(false);
+            setMostrarDropdown(false);
+          }}
+        />
+      )}
+
       <View style={[styles.navbar, Platform.OS === 'web' && !esMovil && styles.navbarWeb]}>
         
         <Link href="/catalogo" asChild>
@@ -591,4 +601,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat_700Bold',
     textAlign: 'center',
   },
+  overlayCerrar: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: Platform.OS === 'web' ? 0 : -1000,
+    bottom: Platform.OS === 'web' ? 0 : -1000,
+    left: Platform.OS === 'web' ? 0 : -1000,
+    right: Platform.OS === 'web' ? 0 : -1000,
+    zIndex: 998,
+    backgroundColor: 'transparent',
+    cursor: 'default',
+  } as any,
 });
