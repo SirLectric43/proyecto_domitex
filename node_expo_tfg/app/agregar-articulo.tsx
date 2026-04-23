@@ -1,0 +1,437 @@
+import { useState, useContext } from 'react';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platform, useWindowDimensions } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import { AuthContext } from './auth-context';
+
+export default function AgregarArticuloPage() {
+  const { width } = useWindowDimensions();
+  const esMovil = width < 768;
+  const router = useRouter();
+  const auth = useContext(AuthContext);
+
+  const [nombre, setNombre] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [imagenUri, setImagenUri] = useState<string | null>(null);
+  const [imagenBase64, setImagenBase64] = useState<string | null>(null);
+  
+  const [medidas, setMedidas] = useState([
+    { id: Date.now().toString(), medida: '', precio: '', stock: '' }
+  ]);
+  const [guardando, setGuardando] = useState(false);
+
+  const mostrarAlerta = (titulo: string, mensaje: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${titulo}: ${mensaje}`);
+    } else {
+      alert(`${titulo}: ${mensaje}`);
+    }
+  };
+
+  const seleccionarImagen = async () => {
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (!resultado.canceled) {
+      setImagenUri(resultado.assets[0].uri);
+      setImagenBase64(resultado.assets[0].base64 || null);
+    }
+  };
+
+  const agregarMedida = () => {
+    setMedidas([...medidas, { id: Date.now().toString(), medida: '', precio: '', stock: '' }]);
+  };
+
+  const actualizarMedida = (id: string, campo: string, valor: string) => {
+    setMedidas(medidas.map(m => m.id === id ? { ...m, [campo]: valor } : m));
+  };
+
+  const eliminarMedida = (id: string) => {
+    if (medidas.length > 1) {
+      setMedidas(medidas.filter(m => m.id !== id));
+    }
+  };
+
+  const manejarGuardarArticulo = async () => {
+    if (!nombre || !categoria || !descripcion) {
+      mostrarAlerta("Error", "Por favor rellena el nombre, categoría y descripción.");
+      return;
+    }
+
+    for (let m of medidas) {
+      if (!m.medida || !m.precio || !m.stock) {
+        mostrarAlerta("Error", "Todas las variantes deben tener medida, precio y stock rellenados.");
+        return;
+      }
+    }
+
+    if (!auth?.usuario?.token) {
+      mostrarAlerta("Error", "No tienes permisos para realizar esta acción.");
+      return;
+    }
+
+    setGuardando(true);
+
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? 'http://localhost:8000/articulos' 
+        : 'http://192.168.1.43:8000/articulos';
+      
+      const medidasFormateadas = medidas.map(m => ({
+        medida: m.medida,
+        precio: parseFloat(m.precio),
+        stock: parseInt(m.stock, 10)
+      }));
+
+      const bodyJSON = {
+        nombre: nombre,
+        descripcion: descripcion,
+        categoria: categoria,
+        imagen_base64: imagenBase64,
+        medidas: medidasFormateadas
+      };
+
+      const respuesta = await fetch(urlApi, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.usuario.token}`
+        },
+        body: JSON.stringify(bodyJSON)
+      });
+
+      const datos = await respuesta.json();
+
+      if (respuesta.ok) {
+        mostrarAlerta("Éxito", "El artículo se ha guardado correctamente en el catálogo.");
+        router.back();
+      } else {
+        mostrarAlerta("Error", datos.detail || "Hubo un error al guardar el artículo.");
+      }
+    } catch (error) {
+      mostrarAlerta("Error", "Problema de conexión con el servidor.");
+      console.error(error);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <View style={styles.contenedorFondo}>
+      <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <View style={styles.contenedorFormulario}>
+          
+          <Text style={styles.tituloPagina}>Añadir nuevo artículo</Text>
+
+          <View style={[styles.contenedorPrincipal, esMovil && styles.contenedorPrincipalMovil]}>
+            
+            <View style={styles.columnaImagen}>
+              <View style={styles.cajaImagen}>
+                <Image 
+                  source={imagenUri ? { uri: imagenUri } : require('@/assets/images/placeholder.png')} 
+                  style={styles.imagenPrevia} 
+                  resizeMode="contain" 
+                />
+              </View>
+              <Pressable style={styles.botonSubirImagen} onPress={seleccionarImagen}>
+                <Text style={styles.textoBotonSecundario}>Subir Fotografía</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.columnaDatos}>
+              <View style={styles.grupoInput}>
+                <Text style={styles.label}>Nombre del artículo</Text>
+                <TextInput 
+                  style={styles.input} 
+                  value={nombre} 
+                  onChangeText={setNombre} 
+                  placeholder="Ej: Juego de sábanas coralina"
+                />
+              </View>
+
+              <View style={styles.grupoInput}>
+                <Text style={styles.label}>Categoría</Text>
+                <TextInput 
+                  style={styles.input} 
+                  value={categoria} 
+                  onChangeText={setCategoria} 
+                  placeholder="Ej: Sábanas"
+                />
+              </View>
+
+              <View style={styles.grupoInput}>
+                <Text style={styles.label}>Descripción</Text>
+                <TextInput 
+                  style={[styles.input, styles.inputArea]} 
+                  value={descripcion} 
+                  onChangeText={setDescripcion} 
+                  multiline={true}
+                  numberOfLines={4}
+                  placeholder="Describe los detalles, materiales, etc."
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.seccionMedidas}>
+            <View style={styles.cabeceraMedidas}>
+              <Text style={styles.subtituloPagina}>Variantes y Precios</Text>
+              <Pressable style={styles.botonAnadirMedida} onPress={agregarMedida}>
+                <Text style={styles.textoBotonSecundario}>+ Añadir medida</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.titulosColumnasMedidas}>
+              <Text style={[styles.tituloColumna, { flex: 2 }]}>Medida</Text>
+              <Text style={[styles.tituloColumna, { flex: 1 }]}>Precio (€)</Text>
+              <Text style={[styles.tituloColumna, { flex: 1 }]}>Stock</Text>
+              <View style={styles.espacioBotonX} />
+            </View>
+
+            {medidas.map((item, index) => (
+              <View key={item.id} style={styles.filaMedida}>
+                <TextInput 
+                  style={[styles.input, { flex: 2 }]} 
+                  value={item.medida} 
+                  onChangeText={(texto) => actualizarMedida(item.id, 'medida', texto)} 
+                  placeholder="Ej: Cama 90cm"
+                />
+                <TextInput 
+                  style={[styles.input, { flex: 1 }]} 
+                  value={item.precio} 
+                  onChangeText={(texto) => actualizarMedida(item.id, 'precio', texto)} 
+                  placeholder="0.00"
+                  keyboardType="numeric"
+                />
+                <TextInput 
+                  style={[styles.input, { flex: 1 }]} 
+                  value={item.stock} 
+                  onChangeText={(texto) => actualizarMedida(item.id, 'stock', texto)} 
+                  placeholder="0"
+                  keyboardType="numeric"
+                />
+                <Pressable 
+                  style={[styles.botonEliminarFila, medidas.length === 1 && { opacity: 0.3 }]} 
+                  onPress={() => eliminarMedida(item.id)}
+                  disabled={medidas.length === 1}
+                >
+                  <Text style={styles.textoBotonEliminar}>X</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.contenedorAcciones}>
+            <Pressable style={styles.botonCancelar} onPress={() => router.back()} disabled={guardando}>
+              <Text style={styles.textoBotonSecundario}>Cancelar</Text>
+            </Pressable>
+            <Pressable 
+              style={[styles.botonGuardar, guardando && { opacity: 0.7 }]} 
+              onPress={manejarGuardarArticulo}
+              disabled={guardando}
+            >
+              <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar Artículo'}</Text>
+            </Pressable>
+          </View>
+
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  contenedorFondo: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+  scrollContenido: {
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    paddingBottom: 80,
+  },
+  contenedorFormulario: {
+    width: '100%',
+    maxWidth: 1000,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  tituloPagina: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 32,
+    color: '#29166F',
+    marginBottom: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 15,
+  },
+  subtituloPagina: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 22,
+    color: '#000000',
+  },
+  contenedorPrincipal: {
+    flexDirection: 'row',
+    gap: 40,
+    marginBottom: 40,
+  },
+  contenedorPrincipalMovil: {
+    flexDirection: 'column',
+  },
+  columnaImagen: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 15,
+  },
+  columnaDatos: {
+    flex: 2,
+    gap: 20,
+  },
+  cajaImagen: {
+    width: '100%',
+    aspectRatio: 1,
+    borderWidth: 2,
+    borderColor: '#EEEEEE',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    overflow: 'hidden',
+  },
+  imagenPrevia: {
+    width: '100%',
+    height: '100%',
+  },
+  grupoInput: {
+    width: '100%',
+  },
+  label: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#000000',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 6,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontFamily: 'Inter_400Regular',
+    backgroundColor: '#FFFFFF',
+    color: '#000000',
+  },
+  inputArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  seccionMedidas: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    paddingTop: 30,
+  },
+  cabeceraMedidas: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  titulosColumnasMedidas: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 10,
+    paddingHorizontal: 5,
+  },
+  tituloColumna: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#666666',
+  },
+  espacioBotonX: {
+    width: 40,
+  },
+  filaMedida: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  botonEliminarFila: {
+    width: 40,
+    height: 48,
+    backgroundColor: '#FFEEED',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FFD3D1',
+  },
+  textoBotonEliminar: {
+    color: '#DB3632',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+  },
+  botonSubirImagen: {
+    backgroundColor: '#EEEEEE',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    width: '100%',
+    alignItems: 'center',
+  },
+  botonAnadirMedida: {
+    backgroundColor: '#EEEEEE',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+  },
+  contenedorAcciones: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 15,
+    marginTop: 40,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    paddingTop: 30,
+  },
+  botonCancelar: {
+    backgroundColor: '#EEEEEE',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 6,
+  },
+  textoBotonSecundario: {
+    color: '#333333',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+  },
+  botonGuardar: {
+    backgroundColor: '#29166F',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 6,
+  },
+  textoBotonGuardar: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+  }
+});

@@ -1,5 +1,5 @@
 import { useEffect, useContext } from 'react';
-import { Slot } from 'expo-router';
+import { Slot, useSegments, useRouter } from 'expo-router';
 import { ScrollView, View, ActivityIndicator } from "react-native";
 import * as SplashScreen from 'expo-splash-screen';
 import NavbarPublico from "@/app/navbar-publico";
@@ -24,6 +24,26 @@ SplashScreen.preventAutoHideAsync();
 
 function EnrutadorPrincipal() {
   const auth = useContext(AuthContext);
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (auth?.cargando) return;
+
+    const rutasPublicas = ['index', '', 'login', 'registro', 'catalogo', 'vista-articulo'];
+    const rutasAdmin = ['panel-admin', 'gestion-catalogo', 'agregar-articulo'];
+    const rutaActual = segments[0] || 'index';
+
+    if (!auth?.usuario) {
+      if (!rutasPublicas.includes(rutaActual)) {
+        router.replace('/login');
+      }
+    } else {
+      if (rutasAdmin.includes(rutaActual) && auth.usuario.rol !== 'admin') {
+        router.replace('/catalogo');
+      }
+    }
+  }, [segments, auth?.usuario, auth?.cargando]);
 
   if (auth?.cargando) {
     return (

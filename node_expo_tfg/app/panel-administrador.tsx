@@ -1,15 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView, useWindowDimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function PanelAdmin() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
+  const router = useRouter();
 
   const opciones = [
     { 
       id: 'catalogo', 
       titulo: 'Gestionar catálogo', 
-      icono: require('@/assets/images/gestionCatalogo.png') 
+      icono: require('@/assets/images/gestionCatalogo.png'),
+      ruta: '/gestion-catalogo'
     },
     { 
       id: 'usuarios', 
@@ -41,7 +44,10 @@ export default function PanelAdmin() {
                   {opcion.titulo}
                 </Text>
                 
-                <Pressable style={[styles.botonAccion, esMovil && styles.botonAccionMovil]}>
+                <Pressable 
+                  style={[styles.botonAccion, esMovil && styles.botonAccionMovil]}
+                  onPress={() => router.push(opcion.ruta as any)}
+                >
                   <Text style={styles.textoBoton}>{opcion.titulo}</Text>
                 </Pressable>
               </View>

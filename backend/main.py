@@ -7,8 +7,6 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from itertools import groupby
-import random
-import string
 
 load_dotenv()
 
@@ -59,6 +57,31 @@ class ActualizarCantidad(BaseModel):
 class AnadirItem(BaseModel):
     articulo_medida_id: str
     cantidad: int
+    
+class MedidaCrear(BaseModel):
+    medida: str
+    precio: float
+    stock: int
+
+class ArticuloCrear(BaseModel):
+    nombre: str
+    descripcion: str
+    categoria: str
+    imagen_base64: Optional[str] = None
+    medidas: List[MedidaCrear]
+    
+class MedidaModificar(BaseModel):
+    id: Optional[str] = None 
+    medida: str
+    precio: float
+    stock: int
+
+class ArticuloModificar(BaseModel):
+    nombre: str
+    descripcion: str
+    categoria: str
+    imagen_base64: Optional[str] = None
+    medidas: List[MedidaModificar]
 
 @app.get("/")
 def read_root():
@@ -413,4 +436,126 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
 
     except Exception as e:
         print(f"Error GET detalle pedido: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/articulos")
+def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        import base64
+        import uuid
+        
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden crear artículos")
+
+        imagen_url = None
+        if articulo.imagen_base64:
+            base64_data = articulo.imagen_base64
+            if "," in base64_data:
+                base64_data = base64_data.split(",")[1]
+            
+            image_bytes = base64.b64decode(base64_data)
+            file_name = f"{uuid.uuid4()}.jpg"
+            
+            supabase.storage.from_("articulos").upload(file_name, image_bytes, {"content-type": "image/jpeg"})
+            imagen_url = supabase.storage.from_("articulos").get_public_url(file_name)
+
+        nuevo_articulo = {
+            "nombre": articulo.nombre,
+            "descripcion": articulo.descripcion,
+            "categoria": articulo.categoria,
+            "imagen_url": imagen_url,
+            "fecha_creacion": datetime.now(timezone.utc).date().isoformat()
+        }
+        
+        resp_art = supabase.table("articulos").insert(nuevo_articulo).execute()
+        articulo_id = resp_art.data[0]["id"]
+
+        lineas_medidas = []
+        for m in articulo.medidas:
+            lineas_medidas.append({
+                "articulo_id": articulo_id,
+                "medida": m.medida,
+                "precio": m.precio,
+                "stock": m.stock,
+                "disponible": True
+            })
+        
+        if lineas_medidas:
+            supabase.table("articulos_medidas").insert(lineas_medidas).execute()
+
+        return {"exito": True, "mensaje": "Artículo creado correctamente"}
+
+    except Exception as e:
+        print(f"Error POST crear articulo: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/articulos/{articulo_id}")
+def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        import base64
+        import uuid
+        
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden editar artículos")
+
+        datos_actualizar = {
+            "nombre": articulo.nombre,
+            "descripcion": articulo.descripcion,
+            "categoria": articulo.categoria
+        }
+
+        if articulo.imagen_base64:
+            base64_data = articulo.imagen_base64
+            if "," in base64_data:
+                base64_data = base64_data.split(",")[1]
+            
+            image_bytes = base64.b64decode(base64_data)
+            file_name = f"{uuid.uuid4()}.jpg"
+            
+            supabase.storage.from_("articulos").upload(file_name, image_bytes, {"content-type": "image/jpeg"})
+            datos_actualizar["imagen_url"] = supabase.storage.from_("articulos").get_public_url(file_name)
+
+        supabase.table("articulos").update(datos_actualizar).eq("id", articulo_id).execute()
+
+        resp_medidas_actuales = supabase.table("articulos_medidas").select("id").eq("articulo_id", articulo_id).execute()
+        ids_actuales = [m["id"] for m in resp_medidas_actuales.data]
+        ids_recibidos = [m.id for m in articulo.medidas if m.id]
+
+        ids_a_borrar = [id for id in ids_actuales if id not in ids_recibidos]
+        if ids_a_borrar:
+            supabase.table("articulos_medidas").delete().in_("id", ids_a_borrar).execute()
+
+        for m in articulo.medidas:
+            datos_medida = {
+                "articulo_id": articulo_id,
+                "medida": m.medida,
+                "precio": m.precio,
+                "stock": m.stock,
+                "disponible": True
+            }
+            if m.id:
+                supabase.table("articulos_medidas").update(datos_medida).eq("id", m.id).execute()
+            else:
+                supabase.table("articulos_medidas").insert(datos_medida).execute()
+
+        return {"exito": True, "mensaje": "Artículo actualizado correctamente"}
+
+    except Exception as e:
+        print(f"Error PUT actualizar articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
