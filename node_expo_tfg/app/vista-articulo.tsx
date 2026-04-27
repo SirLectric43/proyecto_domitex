@@ -30,6 +30,30 @@ export default function VistaArticuloPage() {
     medidas: []
   });
 
+  const [busquedaCategoria, setBusquedaCategoria] = useState('');
+  const [categoriasLista, setCategoriasLista] = useState<any[]>([]);
+  const [mostrarCategorias, setMostrarCategorias] = useState(false);
+  const [creandoCategoria, setCreandoCategoria] = useState(false);
+  const [nuevaCategoriaTexto, setNuevaCategoriaTexto] = useState('');
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/categorias' : 'http://192.168.1.43:8000/categorias';
+        const res = await fetch(urlApi);
+        if (res.ok) {
+          const data = await res.json();
+          setCategoriasLista(data);
+        }
+      } catch (e) {}
+    };
+    fetchCategorias();
+  }, []);
+
+  const categoriasFiltradas = categoriasLista.filter(c => 
+    c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase())
+  );
+
   useEffect(() => {
     const obtenerDetalle = async () => {
       try {
@@ -61,6 +85,8 @@ export default function VistaArticuloPage() {
               stock: String(m.stock)
             })) : []
           });
+          
+          setBusquedaCategoria(datos.categoria_nombre || '');
 
           if (auth?.usuario?.rol === 'admin') {
             setModoEdicion(true);
@@ -73,6 +99,32 @@ export default function VistaArticuloPage() {
     };
     if (id) obtenerDetalle();
   }, [id, auth?.usuario?.rol, auth?.usuario?.token]);
+
+  const guardarNuevaCategoria = async () => {
+    if (!nuevaCategoriaTexto.trim()) return;
+    try {
+      const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/categorias' : 'http://192.168.1.43:8000/categorias';
+      const res = await fetch(urlApi, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth?.usuario?.token}`
+        },
+        body: JSON.stringify({ nombre: nuevaCategoriaTexto })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategoriasLista([...categoriasLista, data]);
+        setFormulario({...formulario, categoria: data.id});
+        setBusquedaCategoria(data.nombre);
+        setCreandoCategoria(false);
+        setNuevaCategoriaTexto('');
+        setMostrarCategorias(false);
+      } else {
+        alert("No se pudo crear la categoría");
+      }
+    } catch (e) {}
+  };
 
   const manejarCantidad = (texto: string) => {
     const numero = texto.replace(/[^0-9]/g, '');
@@ -141,7 +193,7 @@ export default function VistaArticuloPage() {
 
   const manejarGuardar = async () => {
     if (!formulario.nombre || !formulario.categoria || !formulario.descripcion) {
-      alert("Por favor rellena el nombre, categoría y descripción.");
+      alert("Por favor rellena el nombre, selecciona una categoría y añade descripción.");
       return;
     }
     for (let m of formulario.medidas) {
@@ -192,6 +244,7 @@ export default function VistaArticuloPage() {
           nombre: formulario.nombre,
           descripcion: formulario.descripcion,
           categoria: formulario.categoria,
+          categoria_nombre: categoriasLista.find(c => c.id === formulario.categoria)?.nombre || articulo.categoria_nombre,
           imagen_url: formulario.imagenUri || articulo.imagen_url,
           medidas: medidasFormateadas
         });
@@ -230,7 +283,7 @@ export default function VistaArticuloPage() {
 
   return (
     <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scrollContenido}>
+      <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
         <View style={styles.tarjetaPrincipal}>
           
           {esAdmin && (
@@ -274,16 +327,86 @@ export default function VistaArticuloPage() {
                     />
                   </View>
 
-                  <View style={styles.grupoInputEdit}>
+                  <View style={[styles.grupoInputEdit, { zIndex: 10 }]}>
                     <Text style={styles.labelEdit}>Categoría</Text>
                     <TextInput 
-                      style={styles.inputEdit} 
-                      value={formulario.categoria} 
-                      onChangeText={(t) => setFormulario({...formulario, categoria: t})} 
+                      style={[styles.inputEdit, mostrarCategorias && { zIndex: 101, position: 'relative' }]} 
+                      value={busquedaCategoria} 
+                      onChangeText={(text) => {
+                        setBusquedaCategoria(text);
+                        setMostrarCategorias(true);
+                        if (formulario.categoria) setFormulario({...formulario, categoria: ''});
+                      }}
+                      onFocus={() => {
+                        setMostrarCategorias(true);
+                        setCreandoCategoria(false);
+                      }}
+                      placeholder="Buscar o seleccionar categoría..."
                     />
+
+                    {mostrarCategorias && (
+                      <>
+                        <Pressable 
+                          style={styles.overlayCerrar} 
+                          onPress={() => {
+                            setMostrarCategorias(false);
+                            setCreandoCategoria(false);
+                            setBusquedaCategoria(formulario.categoria ? (categoriasLista.find(c => c.id === formulario.categoria)?.nombre || '') : '');
+                          }}
+                        />
+                        <View style={styles.cajaOpcionesCategoria}>
+                          <ScrollView style={{maxHeight: 180}} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                            {categoriasFiltradas.map(cat => (
+                              <Pressable 
+                                key={cat.id} 
+                                style={styles.opcionCategoria} 
+                                onPress={() => { 
+                                  setFormulario({...formulario, categoria: cat.id}); 
+                                  setBusquedaCategoria(cat.nombre);
+                                  setMostrarCategorias(false); 
+                                  setCreandoCategoria(false); 
+                                }}
+                              >
+                                <Text style={{fontFamily: 'Inter_400Regular', fontSize: 16, color: '#333'}}>{cat.nombre}</Text>
+                              </Pressable>
+                            ))}
+                            
+                            {!creandoCategoria ? (
+                              <Pressable 
+                                style={[styles.opcionCategoria, {backgroundColor: '#F9F9F9'}]} 
+                                onPress={() => {
+                                  setCreandoCategoria(true);
+                                  setNuevaCategoriaTexto(busquedaCategoria);
+                                }}
+                              >
+                                <Text style={{fontFamily: 'Inter_600SemiBold', fontSize: 16, color: '#29166F'}}>+ Añadir nueva categoría</Text>
+                              </Pressable>
+                            ) : (
+                              <View style={[styles.opcionCategoria, {backgroundColor: '#F9F9F9'}]}>
+                                <View style={styles.filaNuevaCategoria}>
+                                  <TextInput 
+                                    style={[styles.inputEdit, {flex: 1, height: 45}]} 
+                                    placeholder="Nombre de la categoría" 
+                                    value={nuevaCategoriaTexto} 
+                                    onChangeText={setNuevaCategoriaTexto} 
+                                    autoFocus
+                                  />
+                                  <Pressable style={styles.botonGuardarMini} onPress={guardarNuevaCategoria}>
+                                    <Text style={{color: '#FFF', fontFamily: 'Inter_600SemiBold', fontSize: 14}}>Guardar</Text>
+                                  </Pressable>
+                                </View>
+                                <Pressable onPress={() => setCreandoCategoria(false)} style={{marginTop: 10}}>
+                                  <Text style={{color: '#DB3632', fontFamily: 'Inter_400Regular', fontSize: 14, textAlign: 'right'}}>Cancelar</Text>
+                                </Pressable>
+                              </View>
+                            )}
+                          </ScrollView>
+                        </View>
+                      </>
+                    )}
                   </View>
 
-                  <View style={styles.grupoInputEdit}>
+                  <View style={[styles.grupoInputEdit, { zIndex: 1 }]}>
                     <Text style={styles.labelEdit}>Descripción</Text>
                     <TextInput 
                       style={[styles.inputEdit, styles.inputAreaEdit]} 
@@ -798,5 +921,53 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 6,
+  },
+  overlayCerrar: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: Platform.OS === 'web' ? 0 : -2000,
+    bottom: Platform.OS === 'web' ? 0 : -2000,
+    left: Platform.OS === 'web' ? 0 : -2000,
+    right: Platform.OS === 'web' ? 0 : -2000,
+    zIndex: 100,
+    backgroundColor: 'transparent',
+    cursor: 'default',
+  } as any,
+  cajaOpcionesCategoria: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    position: 'absolute',
+    top: 75,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  opcionCategoria: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  filaNuevaCategoria: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  botonGuardarMini: {
+    backgroundColor: '#29166F',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    justifyContent: 'center',
   },
 });

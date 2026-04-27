@@ -14,7 +14,7 @@ const TarjetaArticulo = ({ articulo, anchoTarjeta, esMovil, hovered }: any) => (
   </View>
 );
 
-export default function CatalogoPage() {
+export default function GestionCatalogo() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768; 
   const auth = useContext(AuthContext);

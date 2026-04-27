@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platform, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ export default function AgregarArticuloPage() {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [busquedaCategoria, setBusquedaCategoria] = useState('');
   const [imagenUri, setImagenUri] = useState<string | null>(null);
   const [imagenBase64, setImagenBase64] = useState<string | null>(null);
   
@@ -20,6 +21,55 @@ export default function AgregarArticuloPage() {
     { id: Date.now().toString(), medida: '', precio: '', stock: '' }
   ]);
   const [guardando, setGuardando] = useState(false);
+
+  const [categoriasLista, setCategoriasLista] = useState<any[]>([]);
+  const [mostrarCategorias, setMostrarCategorias] = useState(false);
+  const [creandoCategoria, setCreandoCategoria] = useState(false);
+  const [nuevaCategoriaTexto, setNuevaCategoriaTexto] = useState('');
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/categorias' : 'http://192.168.1.43:8000/categorias';
+        const res = await fetch(urlApi);
+        if (res.ok) {
+          const data = await res.json();
+          setCategoriasLista(data);
+        }
+      } catch (e) {}
+    };
+    fetchCategorias();
+  }, []);
+
+  const categoriasFiltradas = categoriasLista.filter(c => 
+    c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase())
+  );
+
+  const guardarNuevaCategoria = async () => {
+    if (!nuevaCategoriaTexto.trim()) return;
+    try {
+      const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/categorias' : 'http://192.168.1.43:8000/categorias';
+      const res = await fetch(urlApi, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth?.usuario?.token}`
+        },
+        body: JSON.stringify({ nombre: nuevaCategoriaTexto })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategoriasLista([...categoriasLista, data]);
+        setCategoria(data.id);
+        setBusquedaCategoria(data.nombre);
+        setCreandoCategoria(false);
+        setNuevaCategoriaTexto('');
+        setMostrarCategorias(false);
+      } else {
+        mostrarAlerta("Error", "No se pudo crear la categoría");
+      }
+    } catch (e) {}
+  };
 
   const mostrarAlerta = (titulo: string, mensaje: string) => {
     if (Platform.OS === 'web') {
@@ -60,7 +110,7 @@ export default function AgregarArticuloPage() {
 
   const manejarGuardarArticulo = async () => {
     if (!nombre || !categoria || !descripcion) {
-      mostrarAlerta("Error", "Por favor rellena el nombre, categoría y descripción.");
+      mostrarAlerta("Error", "Por favor rellena el nombre, selecciona una categoría y añade la descripción.");
       return;
     }
 
@@ -124,7 +174,7 @@ export default function AgregarArticuloPage() {
 
   return (
     <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scrollContenido}>
+      <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
         <View style={styles.contenedorFormulario}>
           
           <Text style={styles.tituloPagina}>Añadir nuevo artículo</Text>
@@ -155,17 +205,86 @@ export default function AgregarArticuloPage() {
                 />
               </View>
 
-              <View style={styles.grupoInput}>
+              <View style={[styles.grupoInput, { zIndex: 10 }]}>
                 <Text style={styles.label}>Categoría</Text>
                 <TextInput 
-                  style={styles.input} 
-                  value={categoria} 
-                  onChangeText={setCategoria} 
-                  placeholder="Ej: Sábanas"
+                  style={[styles.input, mostrarCategorias && { zIndex: 101, position: 'relative' }]} 
+                  value={busquedaCategoria} 
+                  onChangeText={(text) => {
+                    setBusquedaCategoria(text);
+                    setMostrarCategorias(true);
+                    if (categoria) setCategoria('');
+                  }}
+                  onFocus={() => {
+                    setMostrarCategorias(true);
+                    setCreandoCategoria(false);
+                  }}
+                  placeholder="Buscar o seleccionar categoría..."
                 />
+
+                {mostrarCategorias && (
+                  <>
+                    <Pressable 
+                      style={styles.overlayCerrar} 
+                      onPress={() => {
+                        setMostrarCategorias(false);
+                        setCreandoCategoria(false);
+                        setBusquedaCategoria(categoria ? (categoriasLista.find(c => c.id === categoria)?.nombre || '') : '');
+                      }}
+                    />
+                    <View style={styles.cajaOpcionesCategoria}>
+                      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                        {categoriasFiltradas.map(cat => (
+                          <Pressable 
+                            key={cat.id} 
+                            style={styles.opcionCategoria} 
+                            onPress={() => { 
+                              setCategoria(cat.id); 
+                              setBusquedaCategoria(cat.nombre);
+                              setMostrarCategorias(false); 
+                              setCreandoCategoria(false); 
+                            }}
+                          >
+                            <Text style={{fontFamily: 'Inter_400Regular', fontSize: 16, color: '#333'}}>{cat.nombre}</Text>
+                          </Pressable>
+                        ))}
+                        
+                        {!creandoCategoria ? (
+                          <Pressable 
+                            style={[styles.opcionCategoria, {backgroundColor: '#F9F9F9'}]} 
+                            onPress={() => {
+                              setCreandoCategoria(true);
+                              setNuevaCategoriaTexto(busquedaCategoria);
+                            }}
+                          >
+                            <Text style={{fontFamily: 'Inter_600SemiBold', fontSize: 16, color: '#29166F'}}>+ Añadir nueva categoría</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={[styles.opcionCategoria, {backgroundColor: '#F9F9F9'}]}>
+                            <View style={styles.filaNuevaCategoria}>
+                              <TextInput 
+                                style={[styles.input, {flex: 1, height: 45}]} 
+                                placeholder="Nombre de la categoría" 
+                                value={nuevaCategoriaTexto} 
+                                onChangeText={setNuevaCategoriaTexto} 
+                                autoFocus
+                              />
+                              <Pressable style={styles.botonGuardarMini} onPress={guardarNuevaCategoria}>
+                                <Text style={{color: '#FFF', fontFamily: 'Inter_600SemiBold', fontSize: 14}}>Guardar</Text>
+                              </Pressable>
+                            </View>
+                            <Pressable onPress={() => setCreandoCategoria(false)} style={{marginTop: 10}}>
+                              <Text style={{color: '#DB3632', fontFamily: 'Inter_400Regular', fontSize: 14, textAlign: 'right'}}>Cancelar</Text>
+                            </Pressable>
+                          </View>
+                        )}
+                      </ScrollView>
+                    </View>
+                  </>
+                )}
               </View>
 
-              <View style={styles.grupoInput}>
+              <View style={[styles.grupoInput, { zIndex: 1 }]}>
                 <Text style={styles.label}>Descripción</Text>
                 <TextInput 
                   style={[styles.input, styles.inputArea]} 
@@ -228,7 +347,7 @@ export default function AgregarArticuloPage() {
           </View>
 
           <View style={styles.contenedorAcciones}>
-            <Pressable style={styles.botonCancelar} onPress={() => router.back()} disabled={guardando}>
+            <Pressable style={styles.botonCancelar} onPress={() => router.push('/gestion-catalogo')} disabled={guardando}>
               <Text style={styles.textoBotonSecundario}>Cancelar</Text>
             </Pressable>
             <Pressable 
@@ -341,6 +460,54 @@ const styles = StyleSheet.create({
   inputArea: {
     height: 120,
     textAlignVertical: 'top',
+  },
+  overlayCerrar: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: Platform.OS === 'web' ? 0 : -2000,
+    bottom: Platform.OS === 'web' ? 0 : -2000,
+    left: Platform.OS === 'web' ? 0 : -2000,
+    right: Platform.OS === 'web' ? 0 : -2000,
+    zIndex: 100,
+    backgroundColor: 'transparent',
+    cursor: 'default',
+  } as any,
+  cajaOpcionesCategoria: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    position: 'absolute',
+    top: 75,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  opcionCategoria: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  filaNuevaCategoria: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  botonGuardarMini: {
+    backgroundColor: '#29166F',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    justifyContent: 'center',
   },
   seccionMedidas: {
     marginTop: 10,

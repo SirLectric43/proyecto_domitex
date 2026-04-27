@@ -27,7 +27,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 class ArticuloResponse(BaseModel):
     id: str
     nombre: str
-    imagen_url: str
+    imagen_url: Optional[str] = None
     categoria: str
 
 class RegistroUsuario(BaseModel):
@@ -83,6 +83,9 @@ class ArticuloModificar(BaseModel):
     imagen_base64: Optional[str] = None
     medidas: List[MedidaModificar]
 
+class CategoriaCrear(BaseModel):
+    nombre: str
+
 @app.get("/")
 def read_root():
     return {"mensaje": "API de Domitex funcionando correctamente 🚀"}
@@ -90,7 +93,8 @@ def read_root():
 @app.post("/usuarios")
 def registrar_usuario(usuario: RegistroUsuario):
     try:
-        respuesta = supabase.auth.sign_up({
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        respuesta = auth_client.auth.sign_up({
             "email": usuario.correo,
             "password": usuario.contrasena,
             "options": {
@@ -113,7 +117,8 @@ def registrar_usuario(usuario: RegistroUsuario):
 @app.post("/login")
 def iniciar_sesion(credenciales: LoginUsuario):
     try:
-        respuesta = supabase.auth.sign_in_with_password({
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        respuesta = auth_client.auth.sign_in_with_password({
             "email": credenciales.correo,
             "password": credenciales.contrasena
         })
@@ -185,15 +190,16 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
     token = authorization.split(" ")[1]
     
     try:
-        user_response = supabase.auth.get_user(token)
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_response = auth_client.auth.get_user(token)
         email = user_response.user.email
         
         try:
-            supabase.auth.sign_in_with_password({"email": email, "password": datos.contrasena_actual})
+            auth_client.auth.sign_in_with_password({"email": email, "password": datos.contrasena_actual})
         except Exception:
             raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta.")
             
-        supabase.auth.update_user({"password": datos.nueva_contrasena})
+        auth_client.auth.update_user({"password": datos.nueva_contrasena})
         
         return {"exito": True, "mensaje": "Contraseña cambiada correctamente"}
         
@@ -202,21 +208,50 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
     except Exception as e:
         raise HTTPException(status_code=400, detail="Hubo un error al cambiar la contraseña.")
 
+@app.get("/categorias")
+def obtener_categorias():
+    try:
+        respuesta = supabase.table("categorias").select("*").order("nombre").execute()
+        return respuesta.data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/categorias")
+def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        resp = supabase.table("categorias").insert({"nombre": categoria.nombre}).execute()
+        return resp.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
 def obtener_catalogo_agrupado(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado.")
     
     try:
-        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria").execute()
+        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").execute()
         
         if not respuesta.data:
             return {}
 
-        datos_ordenados = sorted(respuesta.data, key=lambda x: x.get('categoria') or 'Otros')
+        datos_procesados = []
+        for item in respuesta.data:
+            cat_info = item.get('categorias')
+            cat_nombre = cat_info.get('nombre') if cat_info else 'Otros'
+            datos_procesados.append({
+                "id": item['id'],
+                "nombre": item['nombre'],
+                "imagen_url": item['imagen_url'],
+                "categoria": cat_nombre
+            })
+
+        datos_ordenados = sorted(datos_procesados, key=lambda x: x['categoria'])
         
         catalogo_agrupado = {}
-        for categoria, articulos in groupby(datos_ordenados, key=lambda x: x.get('categoria') or 'Otros'):
+        for categoria, articulos in groupby(datos_ordenados, key=lambda x: x['categoria']):
             catalogo_agrupado[categoria] = list(articulos)
 
         return catalogo_agrupado
@@ -237,14 +272,16 @@ def buscar_articulos(q: str):
 @app.get("/articulos/{articulo_id}")
 def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)):
     try:
-        resp_articulo = supabase.table("articulos").select("*").eq("id", articulo_id).execute()
+        resp_articulo = supabase.table("articulos").select("*, categorias(nombre)").eq("id", articulo_id).execute()
         if not resp_articulo.data:
             raise HTTPException(status_code=404, detail="Artículo no encontrado")
         
         articulo = resp_articulo.data[0]
         
-        resp_medidas = supabase.table("articulos_medidas").select("*").eq("articulo_id", articulo_id).execute()
+        cat_info = articulo.get('categorias')
+        articulo["categoria_nombre"] = cat_info.get('nombre') if cat_info else 'Otros'
         
+        resp_medidas = supabase.table("articulos_medidas").select("*").eq("articulo_id", articulo_id).execute()
         articulo["medidas"] = resp_medidas.data if resp_medidas.data else []
         
         return articulo
@@ -273,7 +310,6 @@ def obtener_carrito(authorization: str = Header(None)):
             
         return resp_items.data if resp_items.data else []
     except Exception as e:
-        print(f"Error GET carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/carrito/items/{item_id}")
@@ -313,7 +349,6 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
 
         return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
     except Exception as e:
-        print(f"Error POST carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.get("/pedidos/historial")
@@ -333,7 +368,6 @@ def obtener_historial_pedidos(authorization: str = Header(None)):
             
         return resp_pedidos.data if resp_pedidos.data else []
     except Exception as e:
-        print(f"Error GET historial pedidos: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.post("/pedidos/confirmar")
@@ -411,7 +445,6 @@ def confirmar_pedido(authorization: str = Header(None)):
         return {"exito": True, "referencia": referencia}
 
     except Exception as e:
-        print(f"Error POST confirmar pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/pedidos/{pedido_id}")
@@ -435,7 +468,6 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
         return resp_pedido.data
 
     except Exception as e:
-        print(f"Error GET detalle pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/articulos")
@@ -494,7 +526,6 @@ def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
         return {"exito": True, "mensaje": "Artículo creado correctamente"}
 
     except Exception as e:
-        print(f"Error POST crear articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/articulos/{articulo_id}")
@@ -557,5 +588,4 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
         return {"exito": True, "mensaje": "Artículo actualizado correctamente"}
 
     except Exception as e:
-        print(f"Error PUT actualizar articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
