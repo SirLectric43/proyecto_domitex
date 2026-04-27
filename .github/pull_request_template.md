@@ -4,13 +4,12 @@ Esta PR soluciona un problema crítico de acceso al catálogo para usuarios no a
 **Cambios principales:**
 1. **Corrección del catálogo público (Backend):** Se ha solucionado una fuga de sesión (*session leak*) en `main.py`. Al iniciar sesión, el cliente global de Supabase se contaminaba con el token del usuario, provocando que las peticiones posteriores chocaran con el RLS de la tabla `categorias` y agruparan todo en "Otros". Se ha aislado el cliente en los endpoints de autenticación y se ha liberado el acceso público al endpoint `/articulos`.
 2. **Corrección del catálogo público (Frontend):** Se modificó `catalogo.tsx` para no bloquear la petición si el usuario no tiene token, enviando la cabecera `Authorization` de forma condicional.
-3. **Mejora UX en el Select de Categorías:** Se implementó un sistema de cierre al hacer clic fuera (Click-Outside) en `agregar-articulo.tsx` y `vista-articulo.tsx` utilizando un *overlay* invisible. Además, si el menú se cierra sin elegir nada, el campo restaura inteligentemente la última categoría seleccionada.
 
 ## 🔗 Issue relacionado
 Closes #42
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [X] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
