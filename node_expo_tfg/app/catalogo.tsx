@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView, Image, useWindowDimensions, ActivityIndicator, FlatList, LayoutAnimation, UIManager } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -18,6 +18,7 @@ export default function CatalogoPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768; 
   const auth = useContext(AuthContext);
+  const router = useRouter();
 
   const [catalogoAgrupado, setCatalogoAgrupado] = useState<any>({});
   const [cargando, setCargando] = useState(true);
@@ -34,21 +35,24 @@ export default function CatalogoPage() {
 
   useEffect(() => {
     const obtenerCatalogo = async () => {
-      if (!auth?.usuario?.token) return;
-      
       try {
         const urlApi = Platform.OS === 'web' 
           ? `http://localhost:8000/articulos` 
           : `http://192.168.1.43:8000/articulos`; 
         
+        const headers: any = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+
+        if (auth?.usuario?.token) {
+          headers['Authorization'] = `Bearer ${auth.usuario.token}`;
+        }
+
         const respuesta = await fetch(urlApi, {
           method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${auth.usuario.token}`,
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          },
+          headers: headers,
           cache: 'no-store'
         });
         const datos = await respuesta.json();
@@ -133,6 +137,14 @@ export default function CatalogoPage() {
     <View style={styles.contenedorFondo}>
       <ScrollView style={styles.contenedorPantalla} contentContainerStyle={styles.scrollContenido}>
         
+        {auth?.usuario?.rol === 'admin' && (
+          <View style={[styles.contenedorBotonAnadir, esMovil && styles.contenedorBotonAnadirMovil]}>
+            <Pressable style={styles.botonAnadir} onPress={() => router.push('/agregar-articulo')}>
+              <Text style={styles.textoBotonAnadir}>Añadir nuevo artículo</Text>
+            </Pressable>
+          </View>
+        )}
+
         {Object.keys(catalogoAgrupado).map((categoria, index) => {
           const articulos = catalogoAgrupado[categoria];
           
@@ -255,6 +267,26 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
     marginTop: 50,
+  },
+  contenedorBotonAnadir: {
+    width: '100%',
+    maxWidth: 1100,
+    alignItems: 'flex-end',
+    marginBottom: 30,
+  },
+  contenedorBotonAnadirMovil: {
+    alignItems: 'center',
+  },
+  botonAnadir: {
+    backgroundColor: '#29166F',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 6,
+  },
+  textoBotonAnadir: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
   },
   contenedorFilaCategoria: {
     width: '100%',
