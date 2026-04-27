@@ -135,6 +135,12 @@ export default function NavbarPrivado() {
             </View>
 
             <View style={styles.contenedorAcciones}>
+              {auth?.usuario?.rol === 'admin' && (
+                <Link href="/panel-administrador" asChild>
+                  <Pressable><Text style={styles.textoCatalogo}>Panel Admin</Text></Pressable>
+                </Link>
+              )}
+              
               <Link href="/catalogo" asChild>
                 <Pressable><Text style={styles.textoCatalogo}>Catálogo</Text></Pressable>
               </Link>
@@ -208,6 +214,14 @@ export default function NavbarPrivado() {
 
       {esMovil && menuAbierto && (
         <View style={styles.desplegableMovil}>
+          {auth?.usuario?.rol === 'admin' && (
+            <Link href="/panel-administrador" asChild>
+              <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
+                <Text style={styles.textoItemMenu}>Panel Admin</Text>
+              </Pressable>
+            </Link>
+          )}
+          
           <Link href="/perfil-usuario" asChild>
             <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
               <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
