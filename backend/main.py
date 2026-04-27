@@ -227,10 +227,7 @@ def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
-def obtener_catalogo_agrupado(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado.")
-    
+def obtener_catalogo_agrupado():
     try:
         respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").execute()
         
@@ -310,6 +307,7 @@ def obtener_carrito(authorization: str = Header(None)):
             
         return resp_items.data if resp_items.data else []
     except Exception as e:
+        print(f"Error GET carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/carrito/items/{item_id}")
@@ -349,6 +347,7 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
 
         return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
     except Exception as e:
+        print(f"Error POST carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.get("/pedidos/historial")
@@ -368,6 +367,7 @@ def obtener_historial_pedidos(authorization: str = Header(None)):
             
         return resp_pedidos.data if resp_pedidos.data else []
     except Exception as e:
+        print(f"Error GET historial pedidos: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.post("/pedidos/confirmar")
@@ -445,6 +445,7 @@ def confirmar_pedido(authorization: str = Header(None)):
         return {"exito": True, "referencia": referencia}
 
     except Exception as e:
+        print(f"Error POST confirmar pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/pedidos/{pedido_id}")
@@ -468,6 +469,7 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
         return resp_pedido.data
 
     except Exception as e:
+        print(f"Error GET detalle pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/articulos")
@@ -526,6 +528,7 @@ def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
         return {"exito": True, "mensaje": "Artículo creado correctamente"}
 
     except Exception as e:
+        print(f"Error POST crear articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/articulos/{articulo_id}")
@@ -588,4 +591,5 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
         return {"exito": True, "mensaje": "Artículo actualizado correctamente"}
 
     except Exception as e:
+        print(f"Error PUT actualizar articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
