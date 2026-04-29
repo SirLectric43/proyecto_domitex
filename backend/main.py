@@ -85,6 +85,21 @@ class ArticuloModificar(BaseModel):
 
 class CategoriaCrear(BaseModel):
     nombre: str
+    
+class AdminCrearUsuario(BaseModel):
+    nombre: str
+    apellidos: str
+    correo: str
+    contrasena: str
+    rol: str
+    telefono: str
+
+class AdminActualizarUsuario(BaseModel):
+    nombre: str
+    apellidos: str
+    telefono: str
+    direccion: Optional[str] = None
+    rol: str
 
 @app.get("/")
 def read_root():
@@ -151,20 +166,83 @@ def iniciar_sesion(credenciales: LoginUsuario):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.get("/usuarios")
+def obtener_todos_usuarios(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+        
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden ver los usuarios")
+            
+        respuesta = supabase.table("usuarios").select("id, nombre, apellidos, rol, ultimo_acceso").execute()
+        return respuesta.data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/usuarios/{usuario_id}")
 def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
     try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        requester_auth = auth_client.auth.get_user(token)
+        requester_id = requester_auth.user.id
+
+        # 1. Obtener datos de la tabla pública
         respuesta = supabase.table("usuarios").select("*").eq("id", usuario_id).execute()
-        datos_perfil = respuesta.data[0] if respuesta.data else {}
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            try:
-                user_auth = supabase.auth.get_user(token)
-                datos_perfil["correo"] = user_auth.user.email
-            except Exception:
-                pass
+        if not respuesta.data:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        datos_perfil = respuesta.data[0]
+
+        # 2. Verificar permisos para ver el correo (Eres tú mismo o eres Admin)
+        # Consultamos el rol del que solicita
+        db_requester = supabase.table("usuarios").select("rol").eq("id", requester_id).execute()
+        es_admin = db_requester.data and db_requester.data[0].get("rol") == "admin"
+
+        if requester_id == usuario_id or es_admin:
+            # Usamos el cliente admin para sacar el correo real del usuario solicitado
+            target_user = auth_client.auth.admin.get_user_by_id(usuario_id)
+            datos_perfil["correo"] = target_user.user.email
                 
         return datos_perfil
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/pedidos/historial")
+def obtener_historial_pedidos(usuario_id: Optional[str] = None, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        requester_id = user_auth.user.id
+
+        target_id = requester_id
+
+        if usuario_id and usuario_id != requester_id:
+            db_user = supabase.table("usuarios").select("rol").eq("id", requester_id).execute()
+            if db_user.data and db_user.data[0].get("rol") == "admin":
+                target_id = usuario_id
+            else:
+                raise HTTPException(status_code=403, detail="No tienes permiso para ver pedidos de otros usuarios")
+
+        resp_pedidos = supabase.table("pedidos") \
+            .select("id, referencia, fecha_pedido, estado, total") \
+            .eq("usuario_id", target_id) \
+            .order("fecha_pedido", desc=True) \
+            .execute()
+            
+        return resp_pedidos.data if resp_pedidos.data else []
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -179,6 +257,30 @@ def actualizar_perfil(usuario_id: str, datos: ActualizarUsuario):
         }).eq("id", usuario_id).execute()
         
         return {"exito": True, "mensaje": "Perfil actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/usuarios/{id_borrar}")
+def eliminar_usuario(id_borrar: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        token = authorization.split(" ")[1]
+        user_auth = supabase.auth.get_user(token)
+        usuario_id = user_auth.user.id
+        
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar usuarios")
+            
+        try:
+            auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            auth_client.auth.admin.delete_user(id_borrar)
+        except Exception:
+            pass
+            
+        supabase.table("usuarios").delete().eq("id", id_borrar).execute()
+        return {"exito": True, "mensaje": "Usuario eliminado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -592,4 +694,95 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
 
     except Exception as e:
         print(f"Error PUT actualizar articulo: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.post("/admin/usuarios")
+def admin_crear_usuario(datos: AdminCrearUsuario, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id_admin = user_auth.user.id
+
+        db_admin = supabase.table("usuarios").select("rol").eq("id", usuario_id_admin).execute()
+        if not db_admin.data or db_admin.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo los administradores pueden crear usuarios")
+
+        resp_auth = auth_client.auth.admin.create_user({
+            "email": datos.correo,
+            "password": datos.contrasena,
+            "email_confirm": True,
+            "user_metadata": {
+                "nombre": datos.nombre,
+                "apellidos": datos.apellidos,
+                "telefono": datos.telefono
+            }
+        })
+        
+        nuevo_id = resp_auth.user.id
+
+        supabase.table("usuarios").update({
+            "rol": datos.rol.lower(),
+            "nombre": datos.nombre,
+            "apellidos": datos.apellidos,
+            "telefono": datos.telefono
+        }).eq("id", nuevo_id).execute()
+
+        return {"exito": True, "mensaje": "Usuario creado correctamente"}
+
+    except Exception as e:
+        print(f"Error admin create user: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.put("/admin/usuarios/{usuario_id}")
+def admin_actualizar_perfil(usuario_id: str, datos: AdminActualizarUsuario, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id_admin = user_auth.user.id
+
+        db_admin = supabase.table("usuarios").select("rol").eq("id", usuario_id_admin).execute()
+        if not db_admin.data or db_admin.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo los administradores pueden editar usuarios")
+
+        supabase.table("usuarios").update({
+            "nombre": datos.nombre,
+            "apellidos": datos.apellidos,
+            "telefono": datos.telefono,
+            "direccion": datos.direccion,
+            "rol": datos.rol.lower()
+        }).eq("id", usuario_id).execute()
+        
+        return {"exito": True, "mensaje": "Usuario actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/admin/usuarios/{usuario_id_borrar}")
+def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id_admin = user_auth.user.id
+
+        db_admin = supabase.table("usuarios").select("rol").eq("id", usuario_id_admin).execute()
+        if not db_admin.data or db_admin.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden borrar usuarios")
+
+        supabase.table("usuarios").delete().eq("id", usuario_id_borrar).execute()
+        
+        auth_client.auth.admin.delete_user(usuario_id_borrar)
+        
+        return {"exito": True, "mensaje": "Usuario eliminado correctamente"}
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

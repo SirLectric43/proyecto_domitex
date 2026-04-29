@@ -12,12 +12,13 @@ export default function PanelAdmin() {
       id: 'catalogo', 
       titulo: 'Gestionar catálogo', 
       icono: require('@/assets/images/gestionCatalogo.png'),
-      ruta: '/gestion-catalogo'
+      ruta: '/catalogo'
     },
     { 
       id: 'usuarios', 
       titulo: 'Gestionar usuarios', 
-      icono: require('@/assets/images/gestionUsuarios.png') 
+      icono: require('@/assets/images/gestionUsuarios.png'), 
+      ruta: '/gestion-usuarios'
     },
     { 
       id: 'pedidos', 
