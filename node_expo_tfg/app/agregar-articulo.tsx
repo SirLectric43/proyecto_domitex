@@ -347,7 +347,7 @@ export default function AgregarArticuloPage() {
           </View>
 
           <View style={styles.contenedorAcciones}>
-            <Pressable style={styles.botonCancelar} onPress={() => router.push('/gestion-catalogo')} disabled={guardando}>
+            <Pressable style={styles.botonCancelar} onPress={() => router.push('/catalogo')} disabled={guardando}>
               <Text style={styles.textoBotonSecundario}>Cancelar</Text>
             </Pressable>
             <Pressable 
