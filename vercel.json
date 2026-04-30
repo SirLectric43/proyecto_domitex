@@ -1,7 +1,8 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/main.py" }
+    { "source": "/api/(.*)", "destination": "/backend/main.py" },
+    { "source": "/(.*)", "destination": "/node_expo_tfg/$1" }
   ],
   "builds": [
     {
