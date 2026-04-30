@@ -9,8 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build": "npx expo export:web",
-    "vercel-build": "npx expo export:web"
+    "build": "npx expo export -p web",
+    "vercel-build": "npx expo export -p web"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
