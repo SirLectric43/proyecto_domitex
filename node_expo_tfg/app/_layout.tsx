@@ -31,7 +31,7 @@ function EnrutadorPrincipal() {
     if (auth?.cargando) return;
 
     const rutasPublicas = ['index', '', 'login', 'registro', 'catalogo', 'vista-articulo'];
-    const rutasAdmin = ['panel-admin', 'gestion-catalogo', 'agregar-articulo', 'gestion-usuarios'];
+    const rutasAdmin = ['panel-administrador', 'catalogo', 'agregar-articulo', 'gestion-usuarios', 'crear-usuario', 'administrar-usuario', 'gestion-pedidos'];    
     const rutaActual = segments[0] || 'index';
 
     if (!auth?.usuario) {

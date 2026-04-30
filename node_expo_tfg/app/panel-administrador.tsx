@@ -22,8 +22,9 @@ export default function PanelAdmin() {
     },
     { 
       id: 'pedidos', 
-      titulo: 'Validación de pedidos', 
-      icono: require('@/assets/images/validarPedidos.png') 
+      titulo: 'Gestionar pedidos', 
+      icono: require('@/assets/images/validarPedidos.png'),
+      ruta: '/gestion-pedidos' 
     }
   ];
 

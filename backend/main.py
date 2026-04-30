@@ -101,6 +101,16 @@ class AdminActualizarUsuario(BaseModel):
     direccion: Optional[str] = None
     rol: str
 
+class AdminActualizarEstadoPedido(BaseModel):
+    estado: str
+
+class LineaPedidoActualizar(BaseModel):
+    id: str
+    preparados: int
+
+class ActualizarLineasPedido(BaseModel):
+    lineas: List[LineaPedidoActualizar]
+
 @app.get("/")
 def read_root():
     return {"mensaje": "API de Domitex funcionando correctamente 🚀"}
@@ -557,13 +567,22 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
     
     try:
         token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        requester_id = user_auth.user.id
 
-        resp_pedido = supabase.table("pedidos").select(
+        db_requester = supabase.table("usuarios").select("rol").eq("id", requester_id).execute()
+        es_admin = db_requester.data and db_requester.data[0].get("rol") == "admin"
+
+        consulta = supabase.table("pedidos").select(
             "id, referencia, fecha_pedido, estado, total, "
-            "lineas_pedido(cantidad, precio_unitario, articulos_medidas(medida, articulos(nombre, imagen_url)))"
-        ).eq("id", pedido_id).eq("usuario_id", usuario_id).single().execute()
+            "lineas_pedido(id, cantidad, cantidad_servida, precio_unitario, articulos_medidas(medida, articulos(nombre, imagen_url)))"
+        ).eq("id", pedido_id)
+
+        if not es_admin:
+            consulta = consulta.eq("usuario_id", requester_id)
+
+        resp_pedido = consulta.single().execute()
 
         if not resp_pedido.data:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
@@ -571,66 +590,6 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
         return resp_pedido.data
 
     except Exception as e:
-        print(f"Error GET detalle pedido: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/articulos")
-def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-
-    try:
-        import base64
-        import uuid
-        
-        token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
-
-        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
-            raise HTTPException(status_code=403, detail="Solo administradores pueden crear artículos")
-
-        imagen_url = None
-        if articulo.imagen_base64:
-            base64_data = articulo.imagen_base64
-            if "," in base64_data:
-                base64_data = base64_data.split(",")[1]
-            
-            image_bytes = base64.b64decode(base64_data)
-            file_name = f"{uuid.uuid4()}.jpg"
-            
-            supabase.storage.from_("articulos").upload(file_name, image_bytes, {"content-type": "image/jpeg"})
-            imagen_url = supabase.storage.from_("articulos").get_public_url(file_name)
-
-        nuevo_articulo = {
-            "nombre": articulo.nombre,
-            "descripcion": articulo.descripcion,
-            "categoria": articulo.categoria,
-            "imagen_url": imagen_url,
-            "fecha_creacion": datetime.now(timezone.utc).date().isoformat()
-        }
-        
-        resp_art = supabase.table("articulos").insert(nuevo_articulo).execute()
-        articulo_id = resp_art.data[0]["id"]
-
-        lineas_medidas = []
-        for m in articulo.medidas:
-            lineas_medidas.append({
-                "articulo_id": articulo_id,
-                "medida": m.medida,
-                "precio": m.precio,
-                "stock": m.stock,
-                "disponible": True
-            })
-        
-        if lineas_medidas:
-            supabase.table("articulos_medidas").insert(lineas_medidas).execute()
-
-        return {"exito": True, "mensaje": "Artículo creado correctamente"}
-
-    except Exception as e:
-        print(f"Error POST crear articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/articulos/{articulo_id}")
@@ -784,5 +743,76 @@ def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
         auth_client.auth.admin.delete_user(usuario_id_borrar)
         
         return {"exito": True, "mensaje": "Usuario eliminado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/admin/pedidos")
+def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Acceso denegado")
+
+        consulta = supabase.table("pedidos").select("*, usuarios(nombre, apellidos)")
+        
+        if estado and estado != "Todos":
+            consulta = consulta.eq("estado", estado)
+        
+        consulta = consulta.order("fecha_pedido", desc=(orden == "desc"))
+        
+        respuesta = consulta.execute()
+        return respuesta.data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/admin/pedidos/{pedido_id}/estado")
+def admin_actualizar_estado_pedido(pedido_id: str, datos: AdminActualizarEstadoPedido, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Acceso denegado")
+
+        supabase.table("pedidos").update({"estado": datos.estado}).eq("id", pedido_id).execute()
+        return {"exito": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/admin/pedidos/{pedido_id}/lineas")
+def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Acceso denegado")
+
+        for linea in datos.lineas:
+            supabase.table("lineas_pedido").update({
+                "cantidad_servida": linea.preparados
+            }).eq("id", linea.id).execute()
+
+        return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
