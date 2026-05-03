@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AuthContext } from './auth-context';
 
 export default function PanelAdmin() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const opciones = [
     { 
@@ -28,12 +30,16 @@ export default function PanelAdmin() {
     }
   ];
 
+  const opcionesFiltradas = auth?.usuario?.rol === 'empleado' 
+    ? opciones.filter(o => o.id === 'pedidos') 
+    : opciones;
+
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
         <View style={styles.contenedorTarjetas}>
           
-          {opciones.map((opcion) => (
+          {opcionesFiltradas.map((opcion) => (
             <View key={opcion.id} style={[styles.tarjeta, esMovil && styles.tarjetaMovil]}>
               <Image 
                 source={opcion.icono} 

@@ -25,7 +25,7 @@ export default function AdministrarUsuarioPage() {
   const [mostrarRoles, setMostrarRoles] = useState(false);
   const [modalBaja, setModalBaja] = useState(false);
 
-  const rolesDisponibles = ["Cliente", "Admin", "Empresa"];
+  const rolesDisponibles = ["Cliente", "Admin", "Empleado"];
   const rolesFiltrados = rolesDisponibles.filter(r => r.toLowerCase().includes(busquedaRol.toLowerCase()));
 
   const formatearFecha = (fechaStr: string) => {

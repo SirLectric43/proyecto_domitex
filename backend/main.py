@@ -572,7 +572,7 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
         requester_id = user_auth.user.id
 
         db_requester = supabase.table("usuarios").select("rol").eq("id", requester_id).execute()
-        es_admin = db_requester.data and db_requester.data[0].get("rol") == "admin"
+        es_admin = db_requester.data and db_requester.data[0].get("rol") in ["admin", "empleado"]
 
         consulta = supabase.table("pedidos").select(
             "id, referencia, fecha_pedido, estado, total, "
@@ -758,7 +758,7 @@ def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", aut
         usuario_id = user_auth.user.id
 
         db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
+        if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
         consulta = supabase.table("pedidos").select("*, usuarios(nombre, apellidos)")
@@ -785,7 +785,7 @@ def admin_actualizar_estado_pedido(pedido_id: str, datos: AdminActualizarEstadoP
         usuario_id = user_auth.user.id
 
         db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
+        if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
         supabase.table("pedidos").update({"estado": datos.estado}).eq("id", pedido_id).execute()
@@ -805,7 +805,7 @@ def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido
         usuario_id = user_auth.user.id
 
         db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
+        if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
         for linea in datos.lineas:
