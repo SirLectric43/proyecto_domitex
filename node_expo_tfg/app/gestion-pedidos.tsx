@@ -175,10 +175,11 @@ export default function GestionPedidosPage() {
                   key={pedido.id}
                   style={[
                     styles.tarjetaPedido,
+                    esMovil && styles.tarjetaPedidoMovil,
                     { zIndex: pedidoAbierto === pedido.id ? 100 : 1 },
                   ]}
                 >
-                  <View style={styles.colIzquierda}>
+                  <View style={[styles.colIzquierda, esMovil && styles.colIzquierdaMovil]}>
                     <Text style={styles.referencia}>
                       Pedido Nº{pedido.referencia}
                     </Text>
@@ -190,7 +191,7 @@ export default function GestionPedidosPage() {
                     </Text>
                   </View>
 
-                  <View style={styles.colDerecha}>
+                  <View style={[styles.colDerecha, esMovil && styles.colDerechaMovil]}>
                     <View
                       style={{
                         zIndex: pedidoAbierto === pedido.id ? 1001 : 1,
@@ -348,7 +349,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
+  tarjetaPedidoMovil: {
+    flexDirection: "column",
+  },
   colIzquierda: { flex: 1, justifyContent: "center", gap: 5 },
+  colIzquierdaMovil: { width: "100%", marginBottom: 15 },
   referencia: { fontFamily: "Montserrat_700Bold", fontSize: 20, color: "#000" },
   fecha: { fontFamily: "Inter_400Regular", fontSize: 16, color: "#666" },
   cliente: {
@@ -358,6 +363,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   colDerecha: { width: 200, gap: 15, alignItems: "flex-end" },
+  colDerechaMovil: { width: "100%", alignItems: "stretch" },
   botonValidar: {
     backgroundColor: "#29166F",
     width: "100%",
