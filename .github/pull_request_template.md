@@ -1,18 +1,24 @@
 ### 📝 Descripción
-Implementación completa del módulo de **Gestión de Usuarios** para el panel de administración. Se ha desarrollado todo el flujo (CRUD) que permite a los administradores tener un control total sobre las cuentas registradas en la plataforma.
+Implementación del flujo completo para la gestión y preparación de pedidos por parte de los administradores y empleados. Se ha desarrollado una vista general para visualizar y filtrar pedidos, y una vista de detalle para gestionar la preparación física de los artículos de cada pedido. 
 
-**Nuevas funcionalidades añadidas:**
-1. **Listado de Usuarios (`gestion-usuarios.tsx`):** Nueva pantalla con una tabla interactiva que muestra a todos los usuarios registrados, indicando su nombre, teléfono y rol. Incluye accesos directos para administrar o eliminar cada cuenta.
-2. **Creación de Usuarios desde Admin (`crear-usuario.tsx`):** Formulario dedicado para que el administrador pueda registrar nuevas cuentas (clientes, admins o empresas) directamente, asignando el rol deseado. Las cuentas se crean ya verificadas a través de la API de administración de Supabase.
-3. **Administración Detallada (`administrar-usuario.tsx`):** Vista avanzada del perfil de un usuario específico. Permite editar sus datos personales y su rol de forma individual, visualizar información clave como la **Fecha de registro** y el **Último acceso** (formateado con fecha y hora), acceder a su historial de compras y dar de baja la cuenta.
-4. **Backend (FastAPI):** Creación de los nuevos endpoints protegidos para administradores:
-   - `GET /usuarios`: Listado completo.
-   - `POST /admin/usuarios`: Creación de cuenta con asignación de rol.
-   - `PUT /admin/usuarios/{id}`: Edición de perfil y rol.
-   - `DELETE /admin/usuarios/{id}`: Eliminación completa de la cuenta tanto de la tabla pública como del sistema de Auth.
+**Características principales incluidas:**
+*   **Pantalla de Gestión de Pedidos (`gestion-pedidos.tsx`):**
+    *   Listado de pedidos en formato tarjeta con información clave (Referencia, Fecha, Cliente).
+    *   Sistema de filtros por estado (Todos, Pendiente, Validado, En preparación, Pausado, Completado, Entregado) y ordenación por fecha.
+    *   Flujo dinámico de botones: Botón destacado para "Validar pedido" cuando está Pendiente, que luego se transforma en un selector desplegable customizado para transicionar entre el resto de estados.
+*   **Pantalla de Detalle de Preparación (`ver-pedido-admin.tsx`):**
+    *   Vista detallada con las líneas del pedido.
+    *   Contadores interactivos (botones `+` / `-` e `input` numérico directo) para marcar la `cantidad_servida` de cada artículo frente a la cantidad solicitada.
+    *   Botones de acción superior persistentes: "Guardar cambios" (para ir guardando el progreso) y "Marcar como completado" (para finalizar el pedido).
+    *   Diseño totalmente responsive, con una disposición en fila para PC y una estructura apilada adaptada para móviles (imagen a la derecha y textos a la izquierda).
+*   **Backend y Base de Datos (`main.py`):**
+    *   Nuevos endpoints para la obtención del listado de pedidos, detalles con las líneas y cantidades servidas.
+    *   Endpoints PUT para actualizar el estado general del pedido y para actualizar simultáneamente las líneas de preparación.
+*   **Autenticación y Roles (`_layout.tsx`):**
+    *   Configuración del enrutamiento para permitir a los usuarios con rol `empleado` acceder exclusivamente a la gestión y validación de pedidos, restringiendo el resto del panel de administración.
 
 ## 🔗 Issue relacionado
-Closes #17
+Closes #19
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -38,7 +44,5 @@ Closes #17
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Selector de Roles:** Se ha diseñado un componente de selección de roles personalizado con buscador integrado y funcionalidad "Click-Outside" (al hacer clic fuera de la caja de opciones, esta se cierra automáticamente).
-* **Gestión de Permisos:** Todos los endpoints nuevos en el backend verifican explícitamente el token y el rol del emisor para garantizar que solo un usuario con rol `admin` pueda interactuar con estas rutas.
-* **Borrado en Cascada:** Para la funcionalidad de "Dar de baja", la base de datos en Supabase está configurada con `ON DELETE CASCADE` en las claves foráneas, de modo que al eliminar al usuario desde el backend, todos sus datos relacionados (carritos, pedidos, etc.) se limpian automáticamente de forma segura.
-* **Navegación Segura:** Las nuevas pantallas (`gestion-usuarios`, `crear-usuario` y `administrar-usuario`) han sido integradas en el `_layout.tsx` principal para protegerlas y restringir su acceso exclusivamente a administradores.
+*   **Base de datos:** Para que el contador de preparación funcione correctamente, en la tabla `lineas_pedido` en Supabase se ha añadido la nueva columna `cantidad_servida` (tipo `int8` o `int4`, con valor por defecto `0`).
+*   **Lógica de guardado:** La petición al backend en la pantalla de "Ver pedido" se realiza en segundo plano para no interrumpir la experiencia de navegación del empleado mientras escanea/prepara los artículos.
