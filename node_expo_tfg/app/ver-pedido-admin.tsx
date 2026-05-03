@@ -22,6 +22,7 @@ export default function VerPedidoAdminPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [pedido, setPedido] = useState<any>(null);
   const [lineas, setLineas] = useState<any[]>([]);
@@ -32,8 +33,8 @@ export default function VerPedidoAdminPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/pedidos/${id}`
-          : `http://192.168.1.43:8000/pedidos/${id}`;
+          ? `/api/pedidos/${id}`
+          : `${BASE_URL}/pedidos/${id}`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
@@ -82,8 +83,8 @@ export default function VerPedidoAdminPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/admin/pedidos/${id}/lineas`
-          : `http://192.168.1.43:8000/admin/pedidos/${id}/lineas`;
+          ? `/api/admin/pedidos/${id}/lineas`
+          : `${BASE_URL}/admin/pedidos/${id}/lineas`;
 
       const payload = {
         lineas: lineas.map((l) => ({ id: l.id, preparados: l.preparados })),
@@ -114,8 +115,8 @@ export default function VerPedidoAdminPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/admin/pedidos/${id}/estado`
-          : `http://192.168.1.43:8000/admin/pedidos/${id}/estado`;
+          ? `/api/admin/pedidos/${id}/estado`
+          : `${BASE_URL}/admin/pedidos/${id}/estado`;
 
       const res = await fetch(urlApi, {
         method: "PUT",

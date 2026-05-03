@@ -8,6 +8,7 @@ export default function RegistroPage() {
   const esMovil = width < 768;
   const router = useRouter();
   const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -37,7 +38,7 @@ export default function RegistroPage() {
     setCargando(true);
 
     try {
-      const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/usuarios' : 'http://192.168.1.43:8000/usuarios';
+      const urlApi = Platform.OS === 'web' ? '/api/usuarios' : `${BASE_URL}/usuarios`;
       
       const respuesta = await fetch(urlApi, {
         method: 'POST',

@@ -38,7 +38,7 @@ export default function Footer() {
           <View style={[styles.contenedorLinks, esMovil && { alignItems: 'center' }]}>
             <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Explorar catálogo</Link>
             <Link href="/perfil-usuario" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mi cuenta</Link>
-            <Link href="/pedidos" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mis pedidos</Link>
+            <Link href="/historial-compra" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mis pedidos</Link>
             <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Preguntas Frecuentes (FAQ)</Text>
           </View>
         </View>
