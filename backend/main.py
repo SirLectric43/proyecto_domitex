@@ -785,7 +785,30 @@ def admin_actualizar_estado_pedido(pedido_id: str, datos: AdminActualizarEstadoP
         if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
+        resp_pedido = supabase.table("pedidos").select("usuario_id, referencia").eq("id", pedido_id).execute()
+        if not resp_pedido.data:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+            
+        cliente_id = resp_pedido.data[0].get("usuario_id")
+        referencia_pedido = resp_pedido.data[0].get("referencia", pedido_id)
+
         supabase.table("pedidos").update({"estado": datos.estado}).eq("id", pedido_id).execute()
+        
+        try:
+            ahora_utc = datetime.now(timezone.utc).isoformat()
+            
+            nueva_notificacion = {
+                "usuario_id": cliente_id,
+                "pedido_id": pedido_id,
+                "titulo": "Actualización de pedido",
+                "mensaje": f"El pedido Nº{referencia_pedido} ha cambiado a estado: {datos.estado}.",
+                "leida": False,
+                "fecha_creacion": ahora_utc
+            }
+            supabase.table("notificaciones").insert(nueva_notificacion).execute()
+        except Exception as e_notif:
+            print(f"Error al crear notificación: {str(e_notif)}")
+
         return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -887,6 +910,65 @@ def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
             raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar artículos")
 
         supabase.table("articulos").delete().eq("id", articulo_id).execute()
+        return {"exito": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/notificaciones")
+def obtener_notificaciones(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        resp_notif = supabase.table("notificaciones") \
+            .select("*") \
+            .eq("usuario_id", usuario_id) \
+            .order("fecha_creacion", desc=True) \
+            .execute()
+            
+        return resp_notif.data if resp_notif.data else []
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/notificaciones/marcar-leidas")
+def marcar_notificaciones_leidas(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        supabase.table("notificaciones") \
+            .update({"leida": True}) \
+            .eq("usuario_id", usuario_id) \
+            .eq("leida", False) \
+            .execute()
+            
+        return {"exito": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/notificaciones/limpiar")
+def limpiar_notificaciones(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        supabase.table("notificaciones").delete().eq("usuario_id", usuario_id).execute()
+            
         return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
