@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, usePathname } from 'expo-router';
 import { AuthContext } from './auth-context';
@@ -11,10 +11,14 @@ export default function NavbarPrivado() {
   
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busquedaAbierta, setBusquedaAbierta] = useState(false);
+  const [notificacionesAbiertas, setNotificacionesAbiertas] = useState(false);
   
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState<any[]>([]);
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
+
+  const [notificaciones, setNotificaciones] = useState<any[]>([]);
+  const cantidadNoLeidas = notificaciones.filter(n => !n.leida).length;
 
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
@@ -51,6 +55,65 @@ export default function NavbarPrivado() {
     return () => clearTimeout(timeoutId);
   }, [busqueda]);
 
+  const cargarNotificaciones = async () => {
+    if (!auth?.usuario?.token) return;
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? `http://localhost:8000/notificaciones` 
+        : `http://192.168.1.43:8000/notificaciones`;
+        
+      const respuesta = await fetch(urlApi, {
+        headers: { 'Authorization': `Bearer ${auth.usuario.token}` }
+      });
+      
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        setNotificaciones(datos);
+      }
+    } catch (error) {
+    }
+  };
+
+  useEffect(() => {
+    cargarNotificaciones();
+  }, [auth?.usuario?.token]);
+
+  const marcarComoLeidas = async () => {
+    if (!auth?.usuario?.token || cantidadNoLeidas === 0) return;
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? `http://localhost:8000/notificaciones/marcar-leidas` 
+        : `http://192.168.1.43:8000/notificaciones/marcar-leidas`;
+        
+      await fetch(urlApi, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${auth.usuario.token}` }
+      });
+      
+      setNotificaciones(notificaciones.map(n => ({ ...n, leida: true })));
+    } catch (error) {
+    }
+  };
+
+  const limpiarNotificaciones = async () => {
+    if (!auth?.usuario?.token) return;
+    try {
+      const urlApi = Platform.OS === 'web' 
+        ? `http://localhost:8000/notificaciones/limpiar` 
+        : `http://192.168.1.43:8000/notificaciones/limpiar`;
+        
+      const respuesta = await fetch(urlApi, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${auth.usuario.token}` }
+      });
+      
+      if (respuesta.ok) {
+        setNotificaciones([]);
+      }
+    } catch (error) {
+    }
+  };
+
   const handleCerrarSesion = async () => {
     setMenuAbierto(false);
     if (auth?.cerrarSesionContext) {
@@ -62,15 +125,26 @@ export default function NavbarPrivado() {
   const toggleMenu = () => {
     setMenuAbierto(!menuAbierto);
     if (busquedaAbierta) setBusquedaAbierta(false);
+    if (notificacionesAbiertas) setNotificacionesAbiertas(false);
   };
 
   const toggleBusqueda = () => {
     setBusquedaAbierta(!busquedaAbierta);
     if (menuAbierto) setMenuAbierto(false);
+    if (notificacionesAbiertas) setNotificacionesAbiertas(false);
     if (busquedaAbierta) {
       setBusqueda('');
       setMostrarDropdown(false);
     }
+  };
+
+  const toggleNotificaciones = () => {
+    setNotificacionesAbiertas(!notificacionesAbiertas);
+    if (!notificacionesAbiertas && cantidadNoLeidas > 0) {
+      marcarComoLeidas();
+    }
+    if (menuAbierto) setMenuAbierto(false);
+    if (busquedaAbierta) setBusquedaAbierta(false);
   };
 
   const irAlArticulo = (id: string) => {
@@ -80,14 +154,27 @@ export default function NavbarPrivado() {
     router.push({ pathname: '/vista-articulo', params: { id } });
   };
 
+  const irAlPedido = (pedidoId: string | null) => {
+    setNotificacionesAbiertas(false);
+    if (pedidoId) {
+      router.push('/historial-compra');
+    }
+  };
+
+  const formatearFecha = (fechaStr: string) => {
+    const d = new Date(fechaStr);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  };
+
   return (
     <>
-      {(menuAbierto || mostrarDropdown) && (
+      {(menuAbierto || mostrarDropdown || notificacionesAbiertas) && (
         <Pressable 
           style={styles.overlayCerrar} 
           onPress={() => {
             setMenuAbierto(false);
             setMostrarDropdown(false);
+            setNotificacionesAbiertas(false);
           }}
         />
       )}
@@ -156,16 +243,55 @@ export default function NavbarPrivado() {
                 <Pressable><Text style={styles.textoCatalogo}>Catálogo</Text></Pressable>
               </Link>
               
-              <Pressable style={styles.iconoAccion}>
-                <Image 
-                  source={require('@/assets/images/iconoCampana.png')} 
-                  style={styles.iconoAccionImagen} 
-                  resizeMode="contain" 
-                />
-              </Pressable>
+              <View style={styles.contenedorRelativo}>
+                <Pressable style={styles.contenedorIconoConBadge} onPress={toggleNotificaciones}>
+                  <Image 
+                    source={require('@/assets/images/iconoCampana.png')} 
+                    style={styles.iconoAccionImagen} 
+                    resizeMode="contain" 
+                  />
+                  {cantidadNoLeidas > 0 ? (
+                    <View style={styles.badgeCarrito}>
+                      <Text style={styles.textoBadge}>
+                        {cantidadNoLeidas > 99 ? '99+' : cantidadNoLeidas}
+                      </Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+
+                {notificacionesAbiertas && (
+                  <View style={styles.menuDesplegableCampana}>
+                    <View style={styles.cabeceraNotificaciones}>
+                      <Text style={styles.tituloNotificaciones}>Notificaciones</Text>
+                      {notificaciones.length > 0 && (
+                        <Pressable onPress={limpiarNotificaciones}>
+                          <Text style={styles.textoLimpiarNotificaciones}>Limpiar</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                    <ScrollView style={styles.scrollNotificaciones}>
+                      {notificaciones.length > 0 ? (
+                        notificaciones.map((notif) => (
+                          <Pressable 
+                            key={notif.id} 
+                            style={[styles.itemNotificacion, !notif.leida && styles.itemNotificacionNueva]}
+                            onPress={() => irAlPedido(notif.pedido_id)}
+                          >
+                            <Text style={styles.textoNotificacionTitulo}>{notif.titulo}</Text>
+                            <Text style={styles.textoNotificacionMensaje}>{notif.mensaje}</Text>
+                            <Text style={styles.textoNotificacionFecha}>{formatearFecha(notif.fecha_creacion)}</Text>
+                          </Pressable>
+                        ))
+                      ) : (
+                        <Text style={styles.textoSinNotificaciones}>No tienes notificaciones.</Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
               
               <Link href="/carrito" asChild>
-                <Pressable style={styles.contenedorIconoConBadge}>
+                <Pressable style={styles.contenedorIconoConBadge} onPress={() => setNotificacionesAbiertas(false)}>
                   <Image 
                     source={require('@/assets/images/iconoCarrito.png')} 
                     style={styles.iconoAccionImagen} 
@@ -181,8 +307,8 @@ export default function NavbarPrivado() {
                 </Pressable>
               </Link>
 
-              <View style={styles.contenedorUsuario}>
-                <Pressable style={styles.botonUsuario} onPress={() => setMenuAbierto(!menuAbierto)}>
+              <View style={styles.contenedorRelativo}>
+                <Pressable style={styles.botonUsuario} onPress={toggleMenu}>
                   <Text style={styles.textoUsuario}>Hola, {auth?.usuario?.nombre || 'Usuario'}</Text>
                   <Ionicons name={menuAbierto ? "chevron-up" : "chevron-down"} size={20} color="#000" />
                 </Pressable>
@@ -209,13 +335,52 @@ export default function NavbarPrivado() {
           </>
         ) : (
           <View style={styles.contenedorAccionesMovil}>
-            <Pressable style={styles.iconoAccionMovil}>
-              <Image 
-                source={require('@/assets/images/iconoCampana.png')} 
-                style={styles.iconoAccionImagenMovil} 
-                resizeMode="contain" 
-              />
-            </Pressable>
+            <View style={styles.contenedorRelativo}>
+              <Pressable style={styles.contenedorIconoConBadgeMovil} onPress={toggleNotificaciones}>
+                <Image 
+                  source={require('@/assets/images/iconoCampana.png')} 
+                  style={styles.iconoAccionImagenMovil} 
+                  resizeMode="contain" 
+                />
+                {cantidadNoLeidas > 0 ? (
+                  <View style={styles.badgeCarrito}>
+                    <Text style={styles.textoBadge}>
+                      {cantidadNoLeidas > 99 ? '99+' : cantidadNoLeidas}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+
+              {notificacionesAbiertas && (
+                <View style={styles.menuDesplegableCampanaMovil}>
+                  <View style={styles.cabeceraNotificaciones}>
+                    <Text style={styles.tituloNotificaciones}>Notificaciones</Text>
+                    {notificaciones.length > 0 && (
+                      <Pressable onPress={limpiarNotificaciones}>
+                        <Text style={styles.textoLimpiarNotificaciones}>Limpiar</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                  <ScrollView style={styles.scrollNotificaciones}>
+                    {notificaciones.length > 0 ? (
+                      notificaciones.map((notif) => (
+                        <Pressable 
+                          key={notif.id} 
+                          style={[styles.itemNotificacion, !notif.leida && styles.itemNotificacionNueva]}
+                          onPress={() => irAlPedido(notif.pedido_id)}
+                        >
+                          <Text style={styles.textoNotificacionTitulo}>{notif.titulo}</Text>
+                          <Text style={styles.textoNotificacionMensaje}>{notif.mensaje}</Text>
+                          <Text style={styles.textoNotificacionFecha}>{formatearFecha(notif.fecha_creacion)}</Text>
+                        </Pressable>
+                      ))
+                    ) : (
+                      <Text style={styles.textoSinNotificaciones}>No tienes notificaciones.</Text>
+                    )}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
             <Pressable onPress={toggleMenu}>
               <Image source={require('@/assets/images/iconoMenu.png')} style={styles.iconoMenu} />
             </Pressable>
@@ -288,7 +453,7 @@ export default function NavbarPrivado() {
       {esMovil && (
         <View style={styles.barraNavegacionInferior}>
           <Link href="/catalogo" asChild>
-            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); }}>
+            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); setNotificacionesAbiertas(false); }}>
               <Image source={require('@/assets/images/iconoInicio.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
             </Pressable>
           </Link>
@@ -298,7 +463,7 @@ export default function NavbarPrivado() {
           </Pressable>
 
           <Link href="/carrito" asChild>
-            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); }}>
+            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); setNotificacionesAbiertas(false); }}>
               <View style={styles.contenedorIconoConBadge}>
                 <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
                 {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
@@ -413,7 +578,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
   },
-  contenedorUsuario: {
+  contenedorRelativo: {
     position: 'relative',
     zIndex: 1000,
   },
@@ -442,6 +607,78 @@ const styles = StyleSheet.create({
     elevation: 5, 
     zIndex: 1000,
   },
+  menuDesplegableCampana: {
+    position: 'absolute',
+    top: 55,
+    right: -10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#29166F',
+    width: 320,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5, 
+    zIndex: 1000,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cabeceraNotificaciones: {
+    backgroundColor: '#29166F',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tituloNotificaciones: {
+    fontFamily: 'Montserrat_700Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  textoLimpiarNotificaciones: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+  },
+  scrollNotificaciones: {
+    maxHeight: 350,
+  },
+  itemNotificacion: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    backgroundColor: '#FFFFFF',
+  },
+  itemNotificacionNueva: {
+    backgroundColor: '#F5F5FA',
+  },
+  textoNotificacionTitulo: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: '#000',
+    marginBottom: 4,
+  },
+  textoNotificacionMensaje: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  textoNotificacionFecha: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#999',
+  },
+  textoSinNotificaciones: {
+    padding: 20,
+    textAlign: 'center',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#666',
+  },
   itemMenu: {
     paddingVertical: 15,
     paddingHorizontal: 15,
@@ -463,12 +700,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 15,
   },
-  iconoAccionMovil: {
+  contenedorIconoConBadgeMovil: {
+    position: 'relative',
     padding: 5,
   },
   iconoAccionImagenMovil: {
     width: 40,
     height: 40,
+  },
+  menuDesplegableCampanaMovil: {
+    position: 'absolute',
+    top: 55,
+    right: -40,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#29166F',
+    width: 280,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5, 
+    zIndex: 1000,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   iconoMenu: {
     width: 40,
