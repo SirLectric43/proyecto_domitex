@@ -50,6 +50,7 @@ export default function CatalogoPage() {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [catalogoAgrupado, setCatalogoAgrupado] = useState<any>({});
   const [cargando, setCargando] = useState(true);
@@ -63,8 +64,8 @@ export default function CatalogoPage() {
       try {
         const urlApi =
           Platform.OS === "web"
-            ? `http://localhost:8000/articulos`
-            : `http://192.168.1.43:8000/articulos`;
+            ? `/api/articulos`
+            : `${BASE_URL}/articulos`;
 
         const headers: any = {
           "Cache-Control": "no-cache, no-store, must-revalidate",

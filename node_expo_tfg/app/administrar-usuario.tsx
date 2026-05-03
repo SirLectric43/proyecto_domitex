@@ -11,6 +11,7 @@ export default function AdministrarUsuarioPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [cargando, setCargando] = useState(true);
   const [datosUsuario, setDatosUsuario] = useState<any>(null);
@@ -47,7 +48,7 @@ export default function AdministrarUsuarioPage() {
   useEffect(() => {
     const cargarPerfil = async () => {
       try {
-        const urlApi = Platform.OS === 'web' ? `http://localhost:8000/usuarios/${id}` : `http://192.168.1.43:8000/usuarios/${id}`;
+        const urlApi = Platform.OS === 'web' ? `/api/usuarios/${id}` : `${BASE_URL}/usuarios/${id}`;
         const res = await fetch(urlApi, {
           headers: { 'Authorization': `Bearer ${auth?.usuario?.token}` }
         });
@@ -75,7 +76,7 @@ export default function AdministrarUsuarioPage() {
   const manejarBotonEdicion = async () => {
     if (modoEdicion) {
       try {
-        const urlApi = Platform.OS === 'web' ? `http://localhost:8000/admin/usuarios/${id}` : `http://192.168.1.43:8000/admin/usuarios/${id}`;
+        const urlApi = Platform.OS === 'web' ? `/api/admin/usuarios/${id}` : `${BASE_URL}/admin/usuarios/${id}`;
         const res = await fetch(urlApi, {
           method: 'PUT',
           headers: {
@@ -104,7 +105,7 @@ export default function AdministrarUsuarioPage() {
 
   const manejarBaja = async () => {
     try {
-      const urlApi = Platform.OS === 'web' ? `http://localhost:8000/admin/usuarios/${id}` : `http://192.168.1.43:8000/admin/usuarios/${id}`;
+      const urlApi = Platform.OS === 'web' ? `/api/admin/usuarios/${id}` : `${BASE_URL}/admin/usuarios/${id}`;
       const res = await fetch(urlApi, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${auth?.usuario?.token}` }

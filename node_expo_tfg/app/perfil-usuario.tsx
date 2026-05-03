@@ -40,6 +40,7 @@ export default function PerfilPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -65,8 +66,8 @@ export default function PerfilPage() {
       
       try {
         const urlApi = Platform.OS === 'web' 
-          ? `http://localhost:8000/usuarios/${auth.usuario.usuario_id}` 
-          : `http://192.168.1.43:8000/usuarios/${auth.usuario.usuario_id}`; 
+          ? `/api/usuarios/${auth.usuario.usuario_id}` 
+          : `${BASE_URL}/usuarios/${auth.usuario.usuario_id}`; 
         
         const respuesta = await fetch(urlApi, {
           method: 'GET',
@@ -105,8 +106,8 @@ export default function PerfilPage() {
   const guardarDatosPerfil = async () => {
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/usuarios/${auth?.usuario?.usuario_id}` 
-        : `http://192.168.1.43:8000/usuarios/${auth?.usuario?.usuario_id}`;
+        ? `/api/usuarios/${auth?.usuario?.usuario_id}` 
+        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}`;
       
       await fetch(urlApi, {
         method: 'PUT',
@@ -145,8 +146,8 @@ export default function PerfilPage() {
     setCargandoPassword(true);
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/usuarios/${auth?.usuario?.usuario_id}/contrasena` 
-        : `http://192.168.1.43:8000/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
+        ? `/api/usuarios/${auth?.usuario?.usuario_id}/contrasena` 
+        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
 
       const respuesta = await fetch(urlApi, {
         method: 'PUT',

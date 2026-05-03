@@ -22,6 +22,7 @@ export default function NavbarPrivado() {
 
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
+  const BASE_URL = 'domitex.vercel.app';
 
   const rutasPrincipales = ['/catalogo', '/panel-administrador', '/gestion-pedidos', '/gestion-usuarios'];
   const mostrarBotonVolver = esMovil && !rutasPrincipales.includes(pathname);
@@ -36,8 +37,8 @@ export default function NavbarPrivado() {
     const timeoutId = setTimeout(async () => {
       try {
         const urlApi = Platform.OS === 'web' 
-          ? `http://localhost:8000/articulos/buscar?q=${encodeURIComponent(busqueda)}` 
-          : `http://192.168.1.43:8000/articulos/buscar?q=${encodeURIComponent(busqueda)}`;
+          ? `/api/articulos/buscar?q=${encodeURIComponent(busqueda)}` 
+          : `${BASE_URL}/articulos/buscar?q=${encodeURIComponent(busqueda)}`;
           
         const respuesta = await fetch(urlApi, {
           headers: auth?.usuario?.token ? { 'Authorization': `Bearer ${auth.usuario.token}` } : {}
@@ -59,8 +60,8 @@ export default function NavbarPrivado() {
     if (!auth?.usuario?.token) return;
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/notificaciones` 
-        : `http://192.168.1.43:8000/notificaciones`;
+        ? `/api/notificaciones` 
+        : `${BASE_URL}/notificaciones`;
         
       const respuesta = await fetch(urlApi, {
         headers: { 'Authorization': `Bearer ${auth.usuario.token}` }
@@ -82,8 +83,8 @@ export default function NavbarPrivado() {
     if (!auth?.usuario?.token || cantidadNoLeidas === 0) return;
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/notificaciones/marcar-leidas` 
-        : `http://192.168.1.43:8000/notificaciones/marcar-leidas`;
+        ? `/api/notificaciones/marcar-leidas` 
+        : `${BASE_URL}/notificaciones/marcar-leidas`;
         
       await fetch(urlApi, {
         method: 'PUT',
@@ -99,8 +100,8 @@ export default function NavbarPrivado() {
     if (!auth?.usuario?.token) return;
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/notificaciones/limpiar` 
-        : `http://192.168.1.43:8000/notificaciones/limpiar`;
+        ? `/api/notificaciones/limpiar` 
+        : `${BASE_URL}/notificaciones/limpiar`;
         
       const respuesta = await fetch(urlApi, {
         method: 'DELETE',

@@ -17,6 +17,7 @@ export default function HistorialCompra() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
+  const BASE_URL = 'domitex.vercel.app';
   
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -27,8 +28,8 @@ export default function HistorialCompra() {
       try {
         const urlApi =
           Platform.OS === "web"
-            ? `http://localhost:8000/pedidos/historial`
-            : `http://192.168.1.43:8000/pedidos/historial`;
+            ? `/api/pedidos/historial`
+            : `${BASE_URL}/pedidos/historial`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },

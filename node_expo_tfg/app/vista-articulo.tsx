@@ -23,6 +23,7 @@ export default function VistaArticuloPage() {
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
   const router = useRouter();
+  const BASE_URL = 'domitex.vercel.app';
 
   const esAdmin = auth?.usuario?.rol === "admin";
 
@@ -55,8 +56,8 @@ export default function VistaArticuloPage() {
       try {
         const urlApi =
           Platform.OS === "web"
-            ? "http://localhost:8000/categorias"
-            : "http://192.168.1.43:8000/categorias";
+            ? "/api/categorias"
+            : `${BASE_URL}/categorias`;
         const res = await fetch(urlApi);
         if (res.ok) {
           const data = await res.json();
@@ -77,8 +78,8 @@ export default function VistaArticuloPage() {
         setImgError(false);
         const urlApi =
           Platform.OS === "web"
-            ? `http://localhost:8000/articulos/${id}`
-            : `http://192.168.1.43:8000/articulos/${id}`;
+            ? `/api/articulos/${id}`
+            : `${BASE_URL}/articulos/${id}`;
 
         const respuesta = await fetch(urlApi, {
           headers: auth?.usuario?.token
@@ -134,8 +135,8 @@ export default function VistaArticuloPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? "http://localhost:8000/categorias"
-          : "http://192.168.1.43:8000/categorias";
+          ? "/api/categorias"
+          : `${BASE_URL}/categorias`;
       const res = await fetch(urlApi, {
         method: "POST",
         headers: {
@@ -176,8 +177,8 @@ export default function VistaArticuloPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/carrito/anadir`
-          : `http://192.168.1.43:8000/carrito/anadir`;
+          ? `/api/carrito/anadir`
+          : `${BASE_URL}/carrito/anadir`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -264,8 +265,8 @@ export default function VistaArticuloPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/articulos/${id}`
-          : `http://192.168.1.43:8000/articulos/${id}`;
+          ? `/api/articulos/${id}`
+          : `${BASE_URL}/articulos/${id}`;
 
       const medidasFormateadas = formulario.medidas.map((m: any) => ({
         id: m.id,
@@ -331,8 +332,8 @@ export default function VistaArticuloPage() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/articulos/${id}`
-          : `http://192.168.1.43:8000/articulos/${id}`;
+          ? `/api/articulos/${id}`
+          : `${BASE_URL}/articulos/${id}`;
 
       const respuesta = await fetch(urlApi, {
         method: "DELETE",

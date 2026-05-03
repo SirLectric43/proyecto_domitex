@@ -15,6 +15,7 @@ export default function LoginPage() {
     const [cargando, setCargando] = useState(false);
     const auth = useContext(AuthContext);
     const alerta = useContext(AlertaContext);
+    const BASE_URL = 'domitex.vercel.app';
 
     const manejarLogin = async () => {
         if (!correo || !contrasena) {
@@ -25,7 +26,7 @@ export default function LoginPage() {
         setCargando(true);
 
         try {
-            const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/login' : 'http://192.168.1.43:8000/login';
+            const urlApi = Platform.OS === 'web' ? '/api/login' : `${BASE_URL}/login`;
             
             const respuesta = await fetch(urlApi, {
                 method: 'POST',
