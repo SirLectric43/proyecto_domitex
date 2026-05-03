@@ -54,15 +54,13 @@ export default function LoginPage() {
             throw new Error(mensajeError);
         }
 
-        mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
-
         if (auth?.iniciarSesionContext) {
             await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol);
         }
 
         mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
 
-        if (datos.rol === 'admin') {
+        if (datos.rol === 'admin' || datos.rol === 'empleado') {
             router.replace("/panel-administrador")
         } else {
             router.replace("/catalogo");

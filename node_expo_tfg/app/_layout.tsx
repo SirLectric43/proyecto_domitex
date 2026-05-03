@@ -31,7 +31,7 @@ function EnrutadorPrincipal() {
     if (auth?.cargando) return;
 
     const rutasPublicas = ['index', '', 'login', 'registro', 'catalogo', 'vista-articulo'];
-    const rutasAdmin = ['panel-admin', 'gestion-catalogo', 'agregar-articulo', 'gestion-usuarios'];
+    const rutasAdmin = ['panel-administrador', 'agregar-articulo', 'gestion-usuarios', 'crear-usuario', 'administrar-usuario', 'gestion-pedidos', 'ver-pedido-admin'];    
     const rutaActual = segments[0] || 'index';
 
     if (!auth?.usuario) {
@@ -39,8 +39,14 @@ function EnrutadorPrincipal() {
         router.replace('/login');
       }
     } else {
-      if (rutasAdmin.includes(rutaActual) && auth.usuario.rol !== 'admin') {
-        router.replace('/catalogo');
+      if (rutasAdmin.includes(rutaActual)) {
+        if (auth.usuario.rol === 'empleado') {
+          if (rutaActual !== 'gestion-pedidos' && rutaActual !== 'ver-pedido-admin' && rutaActual !== 'panel-administrador') {
+            router.replace('/gestion-pedidos');
+          }
+        } else if (auth.usuario.rol !== 'admin') {
+          router.replace('/catalogo');
+        }
       }
     }
   }, [segments, auth?.usuario, auth?.cargando]);
