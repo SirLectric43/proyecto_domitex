@@ -6,6 +6,7 @@ import NavbarPublico from "@/app/navbar-publico";
 import NavbarPrivado from "@/app/navbar-privado"; 
 import Footer from "./footer";
 import { AuthProvider, AuthContext } from './auth-context';
+import { AlertaProvider } from './alerta-context';
 
 import { 
   useFonts, 
@@ -100,7 +101,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <EnrutadorPrincipal />
+      <AlertaProvider>
+        <EnrutadorPrincipal />
+      </AlertaProvider>
     </AuthProvider>
   );
 }

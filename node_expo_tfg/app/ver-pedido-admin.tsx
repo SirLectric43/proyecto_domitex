@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { AuthContext } from "./auth-context";
+import { AlertaContext } from "./alerta-context";
 
 export default function VerPedidoAdminPage() {
   const { id } = useLocalSearchParams();
@@ -20,6 +21,7 @@ export default function VerPedidoAdminPage() {
   const esMovil = width < 768;
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
 
   const [pedido, setPedido] = useState<any>(null);
   const [lineas, setLineas] = useState<any[]>([]);
@@ -97,16 +99,12 @@ export default function VerPedidoAdminPage() {
       });
 
       if (res.ok) {
-        if (Platform.OS === "web") {
-          window.alert("Cantidades guardadas con éxito.");
-        } else {
-          alert("Cantidades guardadas con éxito.");
-        }
+        alerta?.mostrarAlerta("Éxito", "Cantidades guardadas con éxito.");
       } else {
-        alert("Error al guardar los cambios.");
+        alerta?.mostrarAlerta("Error", "Error al guardar los cambios.");
       }
     } catch (e) {
-      alert("Error al conectar con el servidor: " + e);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
     } finally {
       setGuardando(false);
     }
@@ -132,7 +130,7 @@ export default function VerPedidoAdminPage() {
         router.back();
       }
     } catch (e) {
-      alert("Error al conectar con el servidor: " + e);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
     }
   };
 

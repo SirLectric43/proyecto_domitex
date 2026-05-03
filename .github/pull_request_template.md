@@ -1,38 +1,26 @@
 ### 📝 Descripción
-Implementación del flujo completo para la gestión y preparación de pedidos por parte de los administradores y empleados. Se ha desarrollado una vista general para visualizar y filtrar pedidos, y una vista de detalle para gestionar la preparación física de los artículos de cada pedido. 
+Se ha implementado un sistema de alertas personalizadas globales a través de un nuevo contexto (`AlertaContext`). Esto sustituye las alertas nativas del navegador y del sistema (`alert()` y `window.alert()`) en toda la aplicación, proporcionando un `Modal` reutilizable que respeta la identidad visual de Domitex (colores corporativos, tipografías y diseño de tarjetas).
 
-**Características principales incluidas:**
-*   **Pantalla de Gestión de Pedidos (`gestion-pedidos.tsx`):**
-    *   Listado de pedidos en formato tarjeta con información clave (Referencia, Fecha, Cliente).
-    *   Sistema de filtros por estado (Todos, Pendiente, Validado, En preparación, Pausado, Completado, Entregado) y ordenación por fecha.
-    *   Flujo dinámico de botones: Botón destacado para "Validar pedido" cuando está Pendiente, que luego se transforma en un selector desplegable customizado para transicionar entre el resto de estados.
-*   **Pantalla de Detalle de Preparación (`ver-pedido-admin.tsx`):**
-    *   Vista detallada con las líneas del pedido.
-    *   Contadores interactivos (botones `+` / `-` e `input` numérico directo) para marcar la `cantidad_servida` de cada artículo frente a la cantidad solicitada.
-    *   Botones de acción superior persistentes: "Guardar cambios" (para ir guardando el progreso) y "Marcar como completado" (para finalizar el pedido).
-    *   Diseño totalmente responsive, con una disposición en fila para PC y una estructura apilada adaptada para móviles (imagen a la derecha y textos a la izquierda).
-*   **Backend y Base de Datos (`main.py`):**
-    *   Nuevos endpoints para la obtención del listado de pedidos, detalles con las líneas y cantidades servidas.
-    *   Endpoints PUT para actualizar el estado general del pedido y para actualizar simultáneamente las líneas de preparación.
-*   **Autenticación y Roles (`_layout.tsx`):**
-    *   Configuración del enrutamiento para permitir a los usuarios con rol `empleado` acceder exclusivamente a la gestión y validación de pedidos, restringiendo el resto del panel de administración.
+**Principales cambios realizados:**
+- Creación de `alerta-context.tsx` con el Provider y el diseño del Modal.
+- Actualización de `_layout.tsx` para envolver el enrutador de la app con `<AlertaProvider>`.
+- Refactorización general en las pantallas del sistema (`login`, `registro`, `carrito`, `gestion-pedidos`, `administrar-usuario`, `crear-usuario`, `agregar-articulo`, `vista-articulo`, `ver-pedido-admin`, `gestion-usuarios`) para consumir el contexto y usar `alerta?.mostrarAlerta()`.
 
 ## 🔗 Issue relacionado
-Closes #19
+Closes #44
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | ![alt text](capturaPC1.png) |
-| --- | ![alt text](capturaMovil1.png) |
-| --- | ![alt text](capturaPC2.png) |
-| --- | ![alt text](capturaMovil2.png) |
+| ![alt text](pcAntes.png) | ![alt text](pcDespues.png) |
+| ![alt text](movilAntes.png) | ![alt text](pcDespues.png) |
+
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -44,5 +32,5 @@ Closes #19
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-*   **Base de datos:** Para que el contador de preparación funcione correctamente, en la tabla `lineas_pedido` en Supabase se ha añadido la nueva columna `cantidad_servida` (tipo `int8` o `int4`, con valor por defecto `0`).
-*   **Lógica de guardado:** La petición al backend en la pantalla de "Ver pedido" se realiza en segundo plano para no interrumpir la experiencia de navegación del empleado mientras escanea/prepara los artículos.
+- Se ha centralizado la lógica de notificaciones al usuario. Cualquier nueva pantalla que se desarrolle en el futuro y requiera notificar algo, simplemente debe importar y consumir el `AlertaContext` en lugar de crear un Modal desde cero o usar el alert nativo.
+- El componente se ha diseñado de forma responsiva, ajustándose tanto a la vista de escritorio como a la versión móvil, manteniendo un `zIndex` y elevación altos para superponerse siempre al resto de la interfaz.

@@ -13,12 +13,14 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
+import { AlertaContext } from "./alerta-context";
 
 export default function Carrito() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
+  const alerta = useContext(AlertaContext);
   const [items, setItems] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -120,20 +122,15 @@ export default function Carrito() {
           auth.setCantidadCesta(0);
         }
         
-        if (Platform.OS === "web") {
-          window.alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
-        } else {
-          alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
-        }
-        
+        alerta?.mostrarAlerta("Éxito", `¡Pedido ${datos.referencia} confirmado con éxito!`);
         router.push("/historial-compra");
       } else {
         const error = await respuesta.json();
-        alert(`Error: ${error.detail}`);
+        alerta?.mostrarAlerta("Error", error.detail);
       }
     } catch (error) {
       console.error("Error al confirmar pedido:", error);
-      alert("Hubo un problema al procesar el pedido.");
+      alerta?.mostrarAlerta("Error", "Hubo un problema al procesar el pedido.");
     }
   };
 

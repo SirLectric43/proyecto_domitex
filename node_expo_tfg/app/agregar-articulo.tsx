@@ -3,12 +3,14 @@ import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platfo
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { AlertaContext } from './alerta-context';
 
 export default function AgregarArticuloPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
 
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -66,17 +68,9 @@ export default function AgregarArticuloPage() {
         setNuevaCategoriaTexto('');
         setMostrarCategorias(false);
       } else {
-        mostrarAlerta("Error", "No se pudo crear la categoría");
+        alerta?.mostrarAlerta("Error", "No se pudo crear la categoría");
       }
     } catch (e) {}
-  };
-
-  const mostrarAlerta = (titulo: string, mensaje: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${titulo}: ${mensaje}`);
-    } else {
-      alert(`${titulo}: ${mensaje}`);
-    }
   };
 
   const seleccionarImagen = async () => {
@@ -110,19 +104,19 @@ export default function AgregarArticuloPage() {
 
   const manejarGuardarArticulo = async () => {
     if (!nombre || !categoria || !descripcion) {
-      mostrarAlerta("Error", "Por favor rellena el nombre, selecciona una categoría y añade la descripción.");
+      alerta?.mostrarAlerta("Error", "Por favor rellena el nombre, selecciona una categoría y añade la descripción.");
       return;
     }
 
     for (let m of medidas) {
       if (!m.medida || !m.precio || !m.stock) {
-        mostrarAlerta("Error", "Todas las variantes deben tener medida, precio y stock rellenados.");
+        alerta?.mostrarAlerta("Error", "Todas las variantes deben tener medida, precio y stock rellenados.");
         return;
       }
     }
 
     if (!auth?.usuario?.token) {
-      mostrarAlerta("Error", "No tienes permisos para realizar esta acción.");
+      alerta?.mostrarAlerta("Error", "No tienes permisos para realizar esta acción.");
       return;
     }
 
@@ -159,14 +153,13 @@ export default function AgregarArticuloPage() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        mostrarAlerta("Éxito", "El artículo se ha guardado correctamente en el catálogo.");
+        alerta?.mostrarAlerta("Éxito", "El artículo se ha guardado correctamente en el catálogo.");
         router.back();
       } else {
-        mostrarAlerta("Error", datos.detail || "Hubo un error al guardar el artículo.");
+        alerta?.mostrarAlerta("Error", datos.detail || "Hubo un error al guardar el artículo.");
       }
     } catch (error) {
-      mostrarAlerta("Error", "Problema de conexión con el servidor.");
-      console.error(error);
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
     } finally {
       setGuardando(false);
     }
