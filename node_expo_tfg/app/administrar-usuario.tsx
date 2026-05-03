@@ -118,24 +118,27 @@ export default function AdministrarUsuarioPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
-        <View style={styles.tarjetaBlanca}>
+        <View style={[styles.tarjetaBlanca, esMovil && styles.tarjetaBlancaMovil]}>
           
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-            <Text style={[styles.tituloPagina, { marginBottom: 0 }]}>Administrar Usuario</Text>
-            <Pressable 
-              style={({ hovered }) => [
-                { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 8, backgroundColor: hovered ? '#F0F0F0' : 'transparent' }
-              ]}
-              onPress={manejarBotonEdicion}
-            >
-              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 22, color: '#29166F' }}>
-                {modoEdicion ? 'Guardar cambios' : 'Editar'}
-              </Text>
-              <Image 
-                source={modoEdicion ? require('@/assets/images/iconoGuardar.png') : require('@/assets/images/iconoEditar.png')} 
-                style={{ width: 45, height: 45, resizeMode: 'contain' }} 
-              />
-            </Pressable>
+          <View style={[styles.cabecera, esMovil && styles.cabeceraMovil]}>
+            <Text style={[styles.tituloPagina, esMovil && styles.tituloPaginaMovil]}>Administrar Usuario</Text>
+            
+            {!esMovil && (
+              <Pressable 
+                style={({ hovered }) => [
+                  { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 8, backgroundColor: hovered ? '#F0F0F0' : 'transparent' }
+                ]}
+                onPress={manejarBotonEdicion}
+              >
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 22, color: '#29166F' }}>
+                  {modoEdicion ? 'Guardar cambios' : 'Editar'}
+                </Text>
+                <Image 
+                  source={modoEdicion ? require('@/assets/images/iconoGuardar.png') : require('@/assets/images/iconoEditar.png')} 
+                  style={{ width: 45, height: 45, resizeMode: 'contain' }} 
+                />
+              </Pressable>
+            )}
           </View>
 
           <View style={[styles.layoutGrid, esMovil && styles.layoutGridMovil]}>
@@ -144,7 +147,7 @@ export default function AdministrarUsuarioPage() {
               <View style={styles.grupoInput}>
                 <Text style={styles.label}>Nombre</Text>
                 <TextInput 
-                  style={[styles.input, !modoEdicion && styles.inputBloqueado]} 
+                  style={[styles.input, !modoEdicion && styles.inputBloqueado, esMovil && styles.inputMovil]} 
                   value={nombre} 
                   onChangeText={setNombre} 
                   editable={modoEdicion}
@@ -154,7 +157,7 @@ export default function AdministrarUsuarioPage() {
               <View style={styles.grupoInput}>
                 <Text style={styles.label}>Apellidos</Text>
                 <TextInput 
-                  style={[styles.input, !modoEdicion && styles.inputBloqueado]} 
+                  style={[styles.input, !modoEdicion && styles.inputBloqueado, esMovil && styles.inputMovil]} 
                   value={apellidos} 
                   onChangeText={setApellidos} 
                   editable={modoEdicion}
@@ -163,14 +166,14 @@ export default function AdministrarUsuarioPage() {
 
               <View style={styles.grupoInput}>
                 <Text style={styles.label}>Correo electrónico</Text>
-                <View style={styles.filaInput}>
+                <View style={[styles.filaInput, esMovil && styles.filaInputMovil]}>
                   <TextInput 
-                    style={[styles.input, styles.inputBloqueado]} 
+                    style={[styles.input, styles.inputBloqueado, esMovil && styles.inputMovil]} 
                     value={correo} 
                     editable={false}
                   />
                   <View style={styles.botonLapiz}>
-                    <Image source={require('@/assets/images/iconoCandado.png')} style={styles.iconoEditar} />
+                    <Image source={require('@/assets/images/iconoCandado.png')} style={[styles.iconoEditar, esMovil && styles.iconoEditarMovil]} />
                   </View>
                 </View>
               </View>
@@ -178,7 +181,7 @@ export default function AdministrarUsuarioPage() {
               <View style={styles.grupoInput}>
                 <Text style={styles.label}>Teléfono</Text>
                 <TextInput 
-                  style={[styles.input, !modoEdicion && styles.inputBloqueado]} 
+                  style={[styles.input, !modoEdicion && styles.inputBloqueado, esMovil && styles.inputMovil]} 
                   value={telefono} 
                   onChangeText={setTelefono} 
                   editable={modoEdicion}
@@ -188,7 +191,7 @@ export default function AdministrarUsuarioPage() {
               <View style={styles.grupoInput}>
                 <Text style={styles.label}>Dirección</Text>
                 <TextInput 
-                  style={[styles.input, !modoEdicion && styles.inputBloqueado]} 
+                  style={[styles.input, !modoEdicion && styles.inputBloqueado, esMovil && styles.inputMovil]} 
                   value={direccion} 
                   onChangeText={setDireccion} 
                   editable={modoEdicion}
@@ -198,7 +201,7 @@ export default function AdministrarUsuarioPage() {
               <View style={[styles.grupoInput, { zIndex: 10 }]}>
                 <Text style={styles.label}>Rol de usuario</Text>
                 <TextInput 
-                  style={[styles.input, !modoEdicion && styles.inputBloqueado, mostrarRoles && { zIndex: 101, position: 'relative' }]} 
+                  style={[styles.input, !modoEdicion && styles.inputBloqueado, esMovil && styles.inputMovil, mostrarRoles && { zIndex: 101, position: 'relative' }]} 
                   value={busquedaRol} 
                   onChangeText={(text) => { setBusquedaRol(text); setMostrarRoles(true); }}
                   onFocus={() => modoEdicion && setMostrarRoles(true)}
@@ -233,19 +236,43 @@ export default function AdministrarUsuarioPage() {
                 <Text style={styles.valorInfo}>{formatearFechaHora(datosUsuario?.ultimo_acceso)}</Text>
               </View>
 
-              <View style={styles.contenedorBotones}>
-                <Pressable style={styles.botonOpcion} onPress={() => router.push({ pathname: '/historial-compra', params: { usuarioId: id } })}>
-                  <Text style={styles.textoBotonOpcion}>Historial de compra</Text>
-                </Pressable>
+              {!esMovil && (
+                <View style={styles.contenedorBotones}>
+                  <Pressable style={styles.botonOpcion} onPress={() => router.push({ pathname: '/historial-compra', params: { usuarioId: id } })}>
+                    <Text style={styles.textoBotonOpcion}>Historial de compra</Text>
+                  </Pressable>
 
-                <Pressable style={[styles.botonOpcion, styles.botonRojo]} onPress={() => setModalBaja(true)}>
-                  <Text style={[styles.textoBotonOpcion, styles.textoRojo]}>Dar de baja al usuario</Text>
-                </Pressable>
-              </View>
+                  <Pressable style={[styles.botonOpcion, styles.botonRojo]} onPress={() => setModalBaja(true)}>
+                    <Text style={[styles.textoBotonOpcion, styles.textoRojo]}>Dar de baja al usuario</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
 
           </View>
         </View>
+
+        {esMovil && (
+          <View style={styles.contenedorAccionesMovil}>
+            <Pressable 
+              style={[styles.botonOpcion, { backgroundColor: '#29166F' }]} 
+              onPress={manejarBotonEdicion}
+            >
+              <Text style={[styles.textoBotonOpcion, { color: '#FFF' }]}>
+                {modoEdicion ? 'Guardar cambios' : 'Editar usuario'}
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.botonOpcion} onPress={() => router.push({ pathname: '/historial-compra', params: { usuarioId: id } })}>
+              <Text style={styles.textoBotonOpcion}>Historial de compra</Text>
+            </Pressable>
+
+            <Pressable style={[styles.botonOpcion, styles.botonRojo]} onPress={() => setModalBaja(true)}>
+              <Text style={[styles.textoBotonOpcion, styles.textoRojo]}>Dar de baja al usuario</Text>
+            </Pressable>
+          </View>
+        )}
+
       </ScrollView>
 
       <Modal visible={modalBaja} transparent animationType="fade">
@@ -292,11 +319,27 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
+  tarjetaBlancaMovil: {
+    padding: 20,
+  },
+  cabecera: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  cabeceraMovil: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
   tituloPagina: {
     fontFamily: 'Montserrat_700Bold',
     fontSize: 40,
     color: '#29166F',
-    marginBottom: 40,
+  },
+  tituloPaginaMovil: {
+    fontSize: 28,
   },
   layoutGrid: {
     flexDirection: 'row',
@@ -327,6 +370,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 15,
   },
+  filaInputMovil: {
+    gap: 10,
+  },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -338,6 +384,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     backgroundColor: '#FFFFFF',
     color: '#000',
+  },
+  inputMovil: {
+    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
   inputBloqueado: {
     backgroundColor: '#F5F5F5',
@@ -351,6 +402,10 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     resizeMode: 'contain',
+  },
+  iconoEditarMovil: {
+    width: 30,
+    height: 30,
   },
   cajaInfo: {
     marginBottom: 30,
@@ -370,24 +425,30 @@ const styles = StyleSheet.create({
     marginTop: 20,
     gap: 15,
   },
+  contenedorAccionesMovil: {
+    flexDirection: 'column',
+    width: '100%',
+    marginTop: 20,
+    gap: 15,
+  },
   botonOpcion: {
-    borderWidth: 2,
-    borderColor: '#29166F',
+    backgroundColor: '#EEEEEE',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 8,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   textoBotonOpcion: {
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 18,
-    color: '#29166F',
+    color: '#333333',
   },
   botonRojo: {
-    borderColor: '#DB3632',
+    backgroundColor: '#DB3632',
   },
   textoRojo: {
-    color: '#DB3632',
+    color: '#FFFFFF',
   },
   overlayCerrar: {
     position: Platform.OS === 'web' ? 'fixed' : 'absolute',
@@ -436,9 +497,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   botonModal: {
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   textoBotonModal: {
     fontFamily: 'Inter_700Bold',

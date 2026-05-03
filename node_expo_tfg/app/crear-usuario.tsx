@@ -91,35 +91,35 @@ export default function CrearUsuarioPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
-        <View style={styles.contenedorFormulario}>
+        <View style={[styles.contenedorFormulario, esMovil && styles.contenedorFormularioMovil]}>
           
-          <Text style={styles.tituloPagina}>Crear nuevo usuario</Text>
+          <Text style={[styles.tituloPagina, esMovil && styles.tituloPaginaMovil]}>Crear nuevo usuario</Text>
 
-          <View style={styles.filaInputs}>
+          <View style={[styles.filaInputs, esMovil && styles.filaInputsMovil]}>
             <View style={[styles.grupoInput, { flex: 1 }]}>
               <Text style={styles.label}>Nombre</Text>
-              <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
+              <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={nombre} onChangeText={setNombre} />
             </View>
             <View style={[styles.grupoInput, { flex: 1 }]}>
               <Text style={styles.label}>Apellidos</Text>
-              <TextInput style={styles.input} value={apellidos} onChangeText={setApellidos} />
+              <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={apellidos} onChangeText={setApellidos} />
             </View>
           </View>
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Correo electrónico</Text>
-            <TextInput style={styles.input} value={correo} onChangeText={setCorreo} keyboardType="email-address" autoCapitalize="none" />
+            <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={correo} onChangeText={setCorreo} keyboardType="email-address" autoCapitalize="none" />
           </View>
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Teléfono</Text>
-            <TextInput style={styles.input} value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
+            <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
           </View>
 
           <View style={[styles.grupoInput, { zIndex: 10 }]}>
             <Text style={styles.label}>Rol de usuario</Text>
             <TextInput 
-              style={[styles.input, mostrarRoles && { zIndex: 101, position: 'relative' }]} 
+              style={[styles.input, esMovil && styles.inputMovil, mostrarRoles && { zIndex: 101, position: 'relative' }]} 
               value={busquedaRol} 
               onChangeText={(text) => {
                 setBusquedaRol(text);
@@ -166,22 +166,22 @@ export default function CrearUsuarioPage() {
             )}
           </View>
 
-          <View style={styles.filaInputs}>
+          <View style={[styles.filaInputs, esMovil && styles.filaInputsMovil]}>
             <View style={[styles.grupoInput, { flex: 1 }]}>
               <Text style={styles.label}>Contraseña</Text>
-              <TextInput style={styles.input} value={contrasena} onChangeText={setContrasena} secureTextEntry />
+              <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={contrasena} onChangeText={setContrasena} secureTextEntry />
             </View>
             <View style={[styles.grupoInput, { flex: 1 }]}>
               <Text style={styles.label}>Repetir Contraseña</Text>
-              <TextInput style={styles.input} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry />
+              <TextInput style={[styles.input, esMovil && styles.inputMovil]} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry />
             </View>
           </View>
 
-          <View style={styles.contenedorAcciones}>
-            <Pressable style={styles.botonCancelar} onPress={() => router.back()} disabled={cargando}>
+          <View style={[styles.contenedorAcciones, esMovil && styles.contenedorAccionesMovil]}>
+            <Pressable style={[styles.botonCancelar, esMovil && styles.botonMovil]} onPress={() => router.push("/gestion-usuarios")} disabled={cargando}>
               <Text style={styles.textoBotonSecundario}>Cancelar</Text>
             </Pressable>
-            <Pressable style={[styles.botonGuardar, cargando && { opacity: 0.7 }]} onPress={manejarCrearUsuario} disabled={cargando}>
+            <Pressable style={[styles.botonGuardar, cargando && { opacity: 0.7 }, esMovil && styles.botonMovil]} onPress={manejarCrearUsuario} disabled={cargando}>
               {cargando ? <ActivityIndicator color="#FFF" /> : <Text style={styles.textoBotonGuardar}>Crear Usuario</Text>}
             </Pressable>
           </View>
@@ -217,6 +217,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EAEAEA",
   },
+  contenedorFormularioMovil: {
+    padding: 20,
+  },
   tituloPagina: {
     fontFamily: "Montserrat_700Bold",
     fontSize: 32,
@@ -226,10 +229,17 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEEEEE",
     paddingBottom: 15,
   },
+  tituloPaginaMovil: {
+    fontSize: 26,
+  },
   filaInputs: {
     flexDirection: "row",
     gap: 20,
     width: "100%",
+  },
+  filaInputsMovil: {
+    flexDirection: "column",
+    gap: 0,
   },
   grupoInput: {
     width: "100%",
@@ -251,6 +261,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     backgroundColor: "#FFFFFF",
     color: "#000000",
+    minWidth: 0,
+  },
+  inputMovil: {
+    paddingVertical: 10,
+    fontSize: 14,
   },
   overlayCerrar: {
     position: Platform.OS === 'web' ? 'fixed' : 'absolute',
@@ -296,11 +311,17 @@ const styles = StyleSheet.create({
     borderTopColor: "#EEEEEE",
     paddingTop: 30,
   },
+  contenedorAccionesMovil: {
+    flexDirection: "column-reverse",
+    width: "100%",
+  },
   botonCancelar: {
-    backgroundColor: "#EEEEEE",
+    backgroundColor: '#EEEEEE',
     paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 6,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textoBotonSecundario: {
     color: "#333333",
@@ -308,11 +329,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   botonGuardar: {
-    backgroundColor: "#29166F",
+    backgroundColor: '#29166F',
     paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 6,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     minWidth: 150,
+  },
+  botonMovil: {
+    width: "100%",
     alignItems: "center",
   },
   textoBotonGuardar: {

@@ -258,7 +258,7 @@ export default function VerPedidoAdminPage() {
       </ScrollView>
       <View style={[styles.contenedorBotones, esMovil && styles.contenedorBotonesMovil]}>
         <Pressable
-          style={[styles.botonCompletar, guardando && { opacity: 0.7 }, esMovil && styles.botonFull]}
+          style={[styles.botonCompletar, guardando && { opacity: 0.7 }, !esMovil && { flex: 1 }, esMovil && styles.botonFull]}
           onPress={guardarCambios}
           disabled={guardando}
         >
@@ -266,7 +266,7 @@ export default function VerPedidoAdminPage() {
             {guardando ? "Guardando..." : "Guardar cambios"}
           </Text>
         </Pressable>
-        <Pressable style={[styles.botonCompletar, esMovil && styles.botonFull]} onPress={marcarCompletado}>
+        <Pressable style={[styles.botonCompletar, !esMovil && { flex: 1 }, esMovil && styles.botonFull]} onPress={marcarCompletado}>
           <Text style={styles.textoBotonCompletar}>
             Marcar como completado
           </Text>
@@ -305,6 +305,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     gap: 15,
+    width: "100%",
+    maxWidth: 1000,
+    alignSelf: "center",
   },
   tituloPedido: {
     fontFamily: "Montserrat_700Bold",
@@ -318,18 +321,17 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   botonCompletar: {
-    backgroundColor: "#29166F",
-    paddingVertical: 16,
-    paddingHorizontal: 35,
+    backgroundColor: '#29166F',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textoBotonCompletar: {
-    color: "#FFF",
-    fontFamily: "Inter_700Bold",
-    fontSize: 18,
-    textAlign: "center",
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
   },
   divisor: { height: 1, backgroundColor: "#EEE", marginBottom: 30 },
   tabla: { width: "100%" },

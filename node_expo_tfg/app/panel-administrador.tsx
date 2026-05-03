@@ -56,7 +56,7 @@ export default function PanelAdmin() {
                   style={[styles.botonAccion, esMovil && styles.botonAccionMovil]}
                   onPress={() => router.push(opcion.ruta as any)}
                 >
-                  <Text style={styles.textoBoton}>{opcion.titulo}</Text>
+                  <Text style={[styles.textoBoton, esMovil && styles.textoBotonMovil]}>{opcion.titulo}</Text>
                 </Pressable>
               </View>
 
@@ -103,7 +103,8 @@ const styles = StyleSheet.create({
   tarjetaMovil: {
     flexDirection: 'row',
     padding: 15,
-    minHeight: 130,
+    minHeight: 100,
+    alignItems: 'center',
   },
   icono: {
     width: 150,
@@ -113,8 +114,8 @@ const styles = StyleSheet.create({
   iconoMovil: {
     marginRight: 15,
     marginBottom: 0,
-    width: 120,
-    height: 120,
+    width: 70,
+    height: 70,
   },
   contenedorDerecho: {
     flex: 1,
@@ -123,9 +124,10 @@ const styles = StyleSheet.create({
     height: 150, 
   },
   contenedorDerechoMovil: {
-    alignItems: 'flex-end',
-    height: 90,
-    justifyContent: 'space-between',
+    flex: 1,
+    alignItems: 'flex-start',
+    height: 'auto',
+    justifyContent: 'center',
     gap: 10,
   },
   tituloTarjeta: {
@@ -135,26 +137,29 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   tituloTarjetaMovil: {
-    fontSize: 26,
-    textAlign: 'right',
+    fontSize: 18,
+    textAlign: 'left',
   },
   botonAccion: {
     backgroundColor: '#29166F',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 6,
-    minWidth: 250,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   botonAccionMovil: {
-    width: 'auto',
-    minWidth: 130,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    width: '100%',
+    minWidth: 0,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
   },
   textoBoton: {
     color: '#FFFFFF',
-    fontFamily: 'Montserrat_700Bold',
+    fontFamily: 'Inter_700Bold',
     fontSize: 20,
+  },
+  textoBotonMovil: {
+    fontSize: 14,
   }
 });

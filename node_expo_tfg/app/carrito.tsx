@@ -42,7 +42,6 @@ export default function Carrito() {
           setItems(datos);
         }
       } catch (error) {
-        console.error("Error al cargar carrito:", error);
       } finally {
         setCargando(false);
       }
@@ -88,7 +87,6 @@ export default function Carrito() {
       }
 
     } catch (error) {
-      console.error("Error al actualizar cantidad:", error);
     }
   };
 
@@ -129,7 +127,6 @@ export default function Carrito() {
         alerta?.mostrarAlerta("Error", error.detail);
       }
     } catch (error) {
-      console.error("Error al confirmar pedido:", error);
       alerta?.mostrarAlerta("Error", "Hubo un problema al procesar el pedido.");
     }
   };
@@ -321,15 +318,17 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     botonVolver: {
-        backgroundColor: "#29166F",
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 8,
+      backgroundColor: '#29166F',
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     textoBotonVolver: {
-        color: "#FFF",
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 16,
+      color: '#FFFFFF',
+      fontFamily: 'Inter_700Bold',
+      fontSize: 16,
     },
     contenedorListaYResumen: {
         flexDirection: "row",
@@ -433,11 +432,13 @@ const styles = StyleSheet.create({
         borderColor: "#29166F",
         borderRadius: 6,
         width: 50,
-        height: 35,
+        height: 40,
         textAlign: "center",
         fontFamily: "Montserrat_700Bold",
         fontSize: 16,
         color: "#DB3632",
+        paddingVertical: 0,
+        paddingHorizontal: 0,
     },
     botonEliminarX: {
         position: 'absolute',
@@ -511,15 +512,17 @@ const styles = StyleSheet.create({
         color: "#DB3632",
     },
     botonConfirmar: {
-        backgroundColor: "#29166F",
-        paddingVertical: 15,
-        borderRadius: 8,
-        alignItems: "center",
-        width: "100%",
+      backgroundColor: '#29166F',
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: 'center',
+      width: "100%",
     },
     textoBotonConfirmar: {
-        color: "#FFFFFF",
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 18,
+      color: '#FFFFFF',
+      fontFamily: 'Inter_700Bold',
+      fontSize: 18,
     },
 });

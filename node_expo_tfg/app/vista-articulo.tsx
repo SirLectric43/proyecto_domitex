@@ -11,7 +11,7 @@ import {
   TextInput,
   useWindowDimensions,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
@@ -22,6 +22,7 @@ export default function VistaArticuloPage() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
+  const router = useRouter();
 
   const esAdmin = auth?.usuario?.rol === "admin";
 
@@ -88,9 +89,15 @@ export default function VistaArticuloPage() {
 
         if (respuesta.ok) {
           setArticulo(datos);
-          if (datos.medidas && datos.medidas.length > 0) {
-            setMedidaSeleccionada(datos.medidas[0]);
+
+          const medidasValidas = esAdmin
+            ? datos.medidas
+            : datos.medidas.filter((m: any) => m.disponible);
+
+          if (medidasValidas && medidasValidas.length > 0) {
+            setMedidaSeleccionada(medidasValidas[0]);
           }
+
           setFormulario({
             nombre: datos.nombre,
             descripcion: datos.descripcion,
@@ -103,6 +110,7 @@ export default function VistaArticuloPage() {
                   medida: m.medida,
                   precio: String(m.precio),
                   stock: String(m.stock),
+                  disponible: m.disponible,
                 }))
               : [],
           });
@@ -264,6 +272,7 @@ export default function VistaArticuloPage() {
         medida: m.medida,
         precio: parseFloat(m.precio),
         stock: parseInt(m.stock, 10),
+        disponible: m.disponible,
       }));
 
       const bodyJSON = {
@@ -318,14 +327,29 @@ export default function VistaArticuloPage() {
     }
   };
 
-  const obtenerFuenteImagen = () => {
-    if (modoEdicion && formulario.imagenUri) {
-      return { uri: formulario.imagenUri };
+  const manejarEliminar = async () => {
+    try {
+      const urlApi =
+        Platform.OS === "web"
+          ? `http://localhost:8000/articulos/${id}`
+          : `http://192.168.1.43:8000/articulos/${id}`;
+
+      const respuesta = await fetch(urlApi, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${auth?.usuario?.token}`,
+        },
+      });
+
+      if (respuesta.ok) {
+        alerta?.mostrarAlerta("Éxito", "El artículo ha sido eliminado.");
+        router.replace("/catalogo");
+      } else {
+        alerta?.mostrarAlerta("Error", "No se pudo eliminar el artículo.");
+      }
+    } catch (error) {
+      alerta?.mostrarAlerta("Error", "Problema de conexión.");
     }
-    if (articulo?.imagen_url) {
-      return { uri: articulo.imagen_url };
-    }
-    return require("@/assets/images/placeholder.png");
   };
 
   if (cargando) {
@@ -343,6 +367,10 @@ export default function VistaArticuloPage() {
       </Text>
     );
 
+  const medidasVisibles = esAdmin
+    ? articulo.medidas
+    : articulo.medidas?.filter((m: any) => m.disponible);
+
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView
@@ -350,14 +378,28 @@ export default function VistaArticuloPage() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.tarjetaPrincipal}>
-          {esAdmin && (
+          {!esMovil && esAdmin && (
             <View
               style={{
                 width: "100%",
-                alignItems: "flex-end",
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 15,
                 marginBottom: 15,
               }}
             >
+              <Pressable
+                style={[
+                  styles.botonGuardarCambios,
+                  guardando && { opacity: 0.7 },
+                  { backgroundColor: "#DB3632" },
+                ]}
+                onPress={manejarEliminar}
+              >
+                <Text style={styles.textoBotonGuardarCambios}>
+                  Eliminar artículo
+                </Text>
+              </Pressable>
               <Pressable
                 style={[
                   styles.botonGuardarCambios,
@@ -592,7 +634,13 @@ export default function VistaArticuloPage() {
                         ...formulario,
                         medidas: [
                           ...formulario.medidas,
-                          { id: null, medida: "", precio: "", stock: "" },
+                          {
+                            id: null,
+                            medida: "",
+                            precio: "",
+                            stock: "",
+                            disponible: true,
+                          },
                         ],
                       })
                     }
@@ -603,7 +651,12 @@ export default function VistaArticuloPage() {
                   </Pressable>
                 </View>
 
-                <View style={styles.titulosColumnasMedidasEdit}>
+                <View
+                  style={[
+                    styles.titulosColumnasMedidasEdit,
+                    esMovil && styles.ocultarEnMovil,
+                  ]}
+                >
                   <Text style={[styles.tituloColumnaEdit, { flex: 2 }]}>
                     Medida
                   </Text>
@@ -617,18 +670,31 @@ export default function VistaArticuloPage() {
                 </View>
 
                 {formulario.medidas.map((item: any, index: number) => (
-                  <View key={index} style={styles.filaMedidaEdit}>
+                  <View
+                    key={index}
+                    style={[
+                      styles.filaMedidaEdit,
+                      esMovil && styles.filaMedidaMovilEdit,
+                    ]}
+                  >
                     <TextInput
-                      style={[styles.inputEdit, { flex: 2 }]}
+                      style={[
+                        styles.inputEdit,
+                        esMovil ? styles.inputMovilAncho : { flex: 2 },
+                      ]}
                       value={item.medida}
                       onChangeText={(t) => {
                         const nm = [...formulario.medidas];
                         nm[index].medida = t;
                         setFormulario({ ...formulario, medidas: nm });
                       }}
+                      placeholder="Medida"
                     />
                     <TextInput
-                      style={[styles.inputEdit, { flex: 1 }]}
+                      style={[
+                        styles.inputEdit,
+                        esMovil ? styles.inputMovilMitad : { flex: 1 },
+                      ]}
                       value={item.precio}
                       onChangeText={(t) => {
                         const nm = [...formulario.medidas];
@@ -636,9 +702,13 @@ export default function VistaArticuloPage() {
                         setFormulario({ ...formulario, medidas: nm });
                       }}
                       keyboardType="numeric"
+                      placeholder="Precio"
                     />
                     <TextInput
-                      style={[styles.inputEdit, { flex: 1 }]}
+                      style={[
+                        styles.inputEdit,
+                        esMovil ? styles.inputMovilMitad : { flex: 1 },
+                      ]}
                       value={item.stock}
                       onChangeText={(t) => {
                         const nm = [...formulario.medidas];
@@ -646,23 +716,52 @@ export default function VistaArticuloPage() {
                         setFormulario({ ...formulario, medidas: nm });
                       }}
                       keyboardType="numeric"
+                      placeholder="Stock"
                     />
-                    <Pressable
-                      style={[
-                        styles.botonEliminarFilaEdit,
-                        formulario.medidas.length === 1 && { opacity: 0.3 },
-                      ]}
-                      onPress={() => {
-                        if (formulario.medidas.length > 1) {
+
+                    <View style={styles.filaAccionesVariante}>
+                      <Pressable
+                        style={[
+                          styles.botonDisponible,
+                          item.disponible
+                            ? styles.botonDisponibleActivo
+                            : styles.botonDisponibleInactivo,
+                        ]}
+                        onPress={() => {
                           const nm = [...formulario.medidas];
-                          nm.splice(index, 1);
+                          nm[index].disponible = !nm[index].disponible;
                           setFormulario({ ...formulario, medidas: nm });
-                        }
-                      }}
-                      disabled={formulario.medidas.length === 1}
-                    >
-                      <Text style={styles.textoBotonEliminarEdit}>X</Text>
-                    </Pressable>
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.textoDisponible,
+                            item.disponible
+                              ? styles.textoDisponibleActivo
+                              : styles.textoDisponibleInactivo,
+                          ]}
+                        >
+                          {item.disponible ? "Disponible" : "Agotado"}
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={[
+                          styles.botonEliminarFilaEdit,
+                          formulario.medidas.length === 1 && { opacity: 0.3 },
+                        ]}
+                        onPress={() => {
+                          if (formulario.medidas.length > 1) {
+                            const nm = [...formulario.medidas];
+                            nm.splice(index, 1);
+                            setFormulario({ ...formulario, medidas: nm });
+                          }
+                        }}
+                        disabled={formulario.medidas.length === 1}
+                      >
+                        <Text style={styles.textoBotonEliminarEdit}>X</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -756,27 +855,37 @@ export default function VistaArticuloPage() {
                   <View style={styles.cajaMedidas}>
                     <Text style={styles.etiqueta}>Medidas:</Text>
                     <View style={styles.contenedorBotonesMedida}>
-                      {articulo.medidas?.map((med: any) => (
-                        <Pressable
-                          key={med.id}
-                          style={[
-                            styles.botonMedida,
-                            medidaSeleccionada?.id === med.id &&
-                              styles.botonMedidaActivo,
-                          ]}
-                          onPress={() => setMedidaSeleccionada(med)}
-                        >
-                          <Text
+                      {medidasVisibles?.length > 0 ? (
+                        medidasVisibles.map((med: any) => (
+                          <Pressable
+                            key={med.id}
                             style={[
-                              styles.textoMedida,
+                              styles.botonMedida,
                               medidaSeleccionada?.id === med.id &&
-                                styles.textoMedidaActivo,
+                                styles.botonMedidaActivo,
+                              !med.disponible && styles.botonMedidaAgotado,
                             ]}
+                            onPress={() =>
+                              med.disponible && setMedidaSeleccionada(med)
+                            }
                           >
-                            {med.medida}
-                          </Text>
-                        </Pressable>
-                      ))}
+                            <Text
+                              style={[
+                                styles.textoMedida,
+                                medidaSeleccionada?.id === med.id &&
+                                  styles.textoMedidaActivo,
+                                !med.disponible && styles.textoMedidaAgotado,
+                              ]}
+                            >
+                              {med.medida} {!med.disponible && "(Agotado)"}
+                            </Text>
+                          </Pressable>
+                        ))
+                      ) : (
+                        <Text style={styles.descripcion}>
+                          No hay medidas disponibles.
+                        </Text>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -795,6 +904,34 @@ export default function VistaArticuloPage() {
             </>
           )}
         </View>
+
+        {esMovil && esAdmin && (
+          <View style={styles.contenedorAccionesMovilAdmin}>
+            <Pressable
+              style={[
+                styles.botonGuardarMovilAdmin,
+                guardando && { opacity: 0.7 },
+              ]}
+              onPress={manejarGuardar}
+              disabled={guardando}
+            >
+              <Text style={styles.textoBotonGuardarCambios}>
+                {guardando ? "Guardando..." : "Guardar cambios"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.botonEliminarMovilAdmin,
+                guardando && { opacity: 0.7 },
+              ]}
+              onPress={manejarEliminar}
+            >
+              <Text style={styles.textoBotonGuardarCambios}>
+                Eliminar artículo
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -823,10 +960,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   botonGuardarCambios: {
-    backgroundColor: "#29166F",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
+    backgroundColor: '#29166F',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 150,
   },
   textoBotonGuardarCambios: {
     color: "#FFFFFF",
@@ -838,6 +978,27 @@ const styles = StyleSheet.create({
   columnaIzquierda: { width: 350, alignItems: "center" },
   columnaIzquierdaMovil: { width: "100%" },
   imagen: { width: "100%", height: 350, marginBottom: 30 },
+  imagenEditable: {
+    borderWidth: 2,
+    borderColor: "#EEEEEE",
+    borderStyle: Platform.OS === "web" ? "dashed" : "solid",
+    borderRadius: 8,
+  },
+  botonSecundario: {
+    backgroundColor: "#EEEEEE",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    width: "100%",
+    alignItems: "center",
+    marginTop: -15,
+    marginBottom: 20,
+  },
+  textoBotonSecundario: {
+    color: "#333333",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+  },
   botonCarrito: {
     backgroundColor: "#29166F",
     width: "100%",
@@ -892,6 +1053,8 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 20,
     color: "#DB3632",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   precio: {
     fontFamily: "Montserrat_700Bold",
@@ -915,12 +1078,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
   botonMedidaActivo: { backgroundColor: "#29166F" },
+  botonMedidaAgotado: { borderColor: "#CCC", backgroundColor: "#F5F5F5" },
   textoMedida: {
     fontFamily: "Montserrat_700Bold",
     fontSize: 20,
     color: "#29166F",
   },
   textoMedidaActivo: { color: "#FFF" },
+  textoMedidaAgotado: { color: "#999" },
   textoUnitario: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
@@ -989,9 +1154,11 @@ const styles = StyleSheet.create({
   },
   cabeceraMedidasEdit: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    gap: 15,
   },
   titulosColumnasMedidasEdit: {
     flexDirection: "row",
@@ -1011,6 +1178,36 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     alignItems: "center",
   },
+  filaMedidaMovilEdit: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: "#F9F9F9",
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EEEEEE",
+  },
+  inputMovilAncho: { width: "100%" },
+  inputMovilMitad: { width: "47%" },
+  ocultarEnMovil: { display: "none" },
+  filaAccionesVariante: { flexDirection: "row", alignItems: "center", gap: 10 },
+  botonDisponible: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 48,
+  },
+  botonDisponibleActivo: { backgroundColor: "#E8F5E9", borderColor: "#4CAF50" },
+  botonDisponibleInactivo: {
+    backgroundColor: "#FFEEED",
+    borderColor: "#DB3632",
+  },
+  textoDisponible: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  textoDisponibleActivo: { color: "#4CAF50" },
+  textoDisponibleInactivo: { color: "#DB3632" },
   botonEliminarFilaEdit: {
     width: 40,
     height: 48,
@@ -1079,5 +1276,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 6,
     justifyContent: "center",
+  },
+  contenedorAccionesMovilAdmin: {
+    flexDirection: "column",
+    width: "100%",
+    marginTop: 20,
+    gap: 15,
+  },
+  botonGuardarMovilAdmin: {
+    backgroundColor: "#29166F",
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: "center",
+    width: "100%",
+  },
+  botonEliminarMovilAdmin: {
+    backgroundColor: "#DB3632",
+    paddingVertical: 14,
+    borderRadius: 6,
+    alignItems: "center",
+    width: "100%",
   },
 });

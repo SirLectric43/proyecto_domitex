@@ -268,15 +268,16 @@ const styles = StyleSheet.create({
     color: '#000000',
     flex: 1,
   },
-  botonRegistrarse: {
+  botonRegistrarse: { 
     backgroundColor: '#29166F',
-    borderRadius: 6,
-    paddingVertical: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
   },
-  textoBotonRegistrarse: {
+  textoBotonRegistrarse: { 
     color: '#FFFFFF',
     fontFamily: 'Inter_700Bold',
     fontSize: 20,

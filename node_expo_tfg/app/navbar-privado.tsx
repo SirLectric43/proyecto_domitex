@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, usePathname } from 'expo-router';
 import { AuthContext } from './auth-context';
 
 export default function NavbarPrivado() {
   const auth = useContext(AuthContext);
   const router = useRouter();
+  const pathname = usePathname();
   
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busquedaAbierta, setBusquedaAbierta] = useState(false);
@@ -17,6 +18,9 @@ export default function NavbarPrivado() {
 
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
+
+  const rutasPrincipales = ['/catalogo', '/panel-administrador', '/gestion-pedidos', '/gestion-usuarios'];
+  const mostrarBotonVolver = esMovil && !rutasPrincipales.includes(pathname);
 
   useEffect(() => {
     if (busqueda.trim().length < 2) {
@@ -90,15 +94,22 @@ export default function NavbarPrivado() {
 
       <View style={[styles.navbar, Platform.OS === 'web' && !esMovil && styles.navbarWeb]}>
         
-        <Link href="/catalogo" asChild>
-          <Pressable style={!esMovil && styles.contenedorLogo}>
-            <Image 
-              source={require('@/assets/images/navbarDomitex.png')} 
-              style={esMovil ? styles.logoMovil : styles.logoPc}
-              resizeMode="contain"
-            />
-          </Pressable>
-        </Link>
+        <View style={styles.contenedorIzquierda}>
+          {mostrarBotonVolver && (
+            <Pressable onPress={() => router.back()} style={styles.botonVolverMovil}>
+              <Ionicons name="arrow-back" size={28} color="#29166F" />
+            </Pressable>
+          )}
+          <Link href="/catalogo" asChild>
+            <Pressable style={!esMovil && styles.contenedorLogo}>
+              <Image 
+                source={require('@/assets/images/navbarDomitex.png')} 
+                style={[esMovil ? styles.logoMovil : styles.logoPc, mostrarBotonVolver && styles.logoMovilReducido]}
+                resizeMode="contain"
+              />
+            </Pressable>
+          </Link>
+        </View>
 
         {!esMovil ? (
           <>
@@ -327,6 +338,14 @@ const styles = StyleSheet.create({
   navbarWeb: {
     paddingHorizontal: 50, 
   },
+  contenedorIzquierda: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  botonVolverMovil: {
+    marginRight: 10,
+    padding: 5,
+  },
   contenedorLogo: {
     justifyContent: 'center',
     flexShrink: 0,
@@ -339,6 +358,9 @@ const styles = StyleSheet.create({
   logoMovil: {
     width: 200,
     height: 50,
+  },
+  logoMovilReducido: {
+    width: 160, 
   },
   contenedorBusqueda: {
     flex: 1,

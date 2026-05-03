@@ -20,7 +20,7 @@ export default function AgregarArticuloPage() {
   const [imagenBase64, setImagenBase64] = useState<string | null>(null);
   
   const [medidas, setMedidas] = useState([
-    { id: Date.now().toString(), medida: '', precio: '', stock: '' }
+    { id: Date.now().toString(), medida: '', precio: '', stock: '', disponible: true }
   ]);
   const [guardando, setGuardando] = useState(false);
 
@@ -89,10 +89,10 @@ export default function AgregarArticuloPage() {
   };
 
   const agregarMedida = () => {
-    setMedidas([...medidas, { id: Date.now().toString(), medida: '', precio: '', stock: '' }]);
+    setMedidas([...medidas, { id: Date.now().toString(), medida: '', precio: '', stock: '', disponible: true }]);
   };
 
-  const actualizarMedida = (id: string, campo: string, valor: string) => {
+  const actualizarMedida = (id: string, campo: string, valor: any) => {
     setMedidas(medidas.map(m => m.id === id ? { ...m, [campo]: valor } : m));
   };
 
@@ -130,7 +130,8 @@ export default function AgregarArticuloPage() {
       const medidasFormateadas = medidas.map(m => ({
         medida: m.medida,
         precio: parseFloat(m.precio),
-        stock: parseInt(m.stock, 10)
+        stock: parseInt(m.stock, 10),
+        disponible: m.disponible
       }));
 
       const bodyJSON = {
@@ -299,7 +300,7 @@ export default function AgregarArticuloPage() {
               </Pressable>
             </View>
 
-            <View style={styles.titulosColumnasMedidas}>
+            <View style={[styles.titulosColumnasMedidas, esMovil && styles.ocultarEnMovil]}>
               <Text style={[styles.tituloColumna, { flex: 2 }]}>Medida</Text>
               <Text style={[styles.tituloColumna, { flex: 1 }]}>Precio (€)</Text>
               <Text style={[styles.tituloColumna, { flex: 1 }]}>Stock</Text>
@@ -307,52 +308,81 @@ export default function AgregarArticuloPage() {
             </View>
 
             {medidas.map((item, index) => (
-              <View key={item.id} style={styles.filaMedida}>
+              <View key={item.id} style={[styles.filaMedida, esMovil && styles.filaMedidaMovil]}>
                 <TextInput 
-                  style={[styles.input, { flex: 2 }]} 
+                  style={[styles.input, esMovil ? styles.inputMovilAncho : { flex: 2 }]} 
                   value={item.medida} 
                   onChangeText={(texto) => actualizarMedida(item.id, 'medida', texto)} 
                   placeholder="Ej: Cama 90cm"
                 />
                 <TextInput 
-                  style={[styles.input, { flex: 1 }]} 
+                  style={[styles.input, esMovil ? styles.inputMovilMitad : { flex: 1 }]} 
                   value={item.precio} 
                   onChangeText={(texto) => actualizarMedida(item.id, 'precio', texto)} 
                   placeholder="0.00"
                   keyboardType="numeric"
                 />
                 <TextInput 
-                  style={[styles.input, { flex: 1 }]} 
+                  style={[styles.input, esMovil ? styles.inputMovilMitad : { flex: 1 }]} 
                   value={item.stock} 
                   onChangeText={(texto) => actualizarMedida(item.id, 'stock', texto)} 
                   placeholder="0"
                   keyboardType="numeric"
                 />
-                <Pressable 
-                  style={[styles.botonEliminarFila, medidas.length === 1 && { opacity: 0.3 }]} 
-                  onPress={() => eliminarMedida(item.id)}
-                  disabled={medidas.length === 1}
-                >
-                  <Text style={styles.textoBotonEliminar}>X</Text>
-                </Pressable>
+                
+                <View style={styles.filaAccionesVariante}>
+                  <Pressable 
+                    style={[styles.botonDisponible, item.disponible ? styles.botonDisponibleActivo : styles.botonDisponibleInactivo]}
+                    onPress={() => actualizarMedida(item.id, 'disponible', !item.disponible)}
+                  >
+                    <Text style={[styles.textoDisponible, item.disponible ? styles.textoDisponibleActivo : styles.textoDisponibleInactivo]}>
+                      {item.disponible ? 'Disponible' : 'Agotado'}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable 
+                    style={[styles.botonEliminarFila, medidas.length === 1 && { opacity: 0.3 }]} 
+                    onPress={() => eliminarMedida(item.id)}
+                    disabled={medidas.length === 1}
+                  >
+                    <Text style={styles.textoBotonEliminar}>X</Text>
+                  </Pressable>
+                </View>
+
               </View>
             ))}
           </View>
 
-          <View style={styles.contenedorAcciones}>
-            <Pressable style={styles.botonCancelar} onPress={() => router.push('/catalogo')} disabled={guardando}>
+          {!esMovil && (
+            <View style={styles.contenedorAcciones}>
+              <Pressable style={styles.botonCancelar} onPress={() => router.push('/catalogo')} disabled={guardando}>
+                <Text style={styles.textoBotonSecundario}>Cancelar</Text>
+              </Pressable>
+              <Pressable 
+                style={[styles.botonGuardar, guardando && { opacity: 0.7 }]} 
+                onPress={manejarGuardarArticulo}
+                disabled={guardando}
+              >
+                <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar Artículo'}</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {esMovil && (
+          <View style={styles.contenedorAccionesMovil}>
+            <Pressable style={styles.botonCancelarMovil} onPress={() => router.push('/catalogo')} disabled={guardando}>
               <Text style={styles.textoBotonSecundario}>Cancelar</Text>
             </Pressable>
             <Pressable 
-              style={[styles.botonGuardar, guardando && { opacity: 0.7 }]} 
+              style={[styles.botonGuardarMovil, guardando && { opacity: 0.7 }]} 
               onPress={manejarGuardarArticulo}
               disabled={guardando}
             >
               <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar Artículo'}</Text>
             </Pressable>
           </View>
-
-        </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -449,6 +479,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     backgroundColor: '#FFFFFF',
     color: '#000000',
+    minWidth: 0,
   },
   inputArea: {
     height: 120,
@@ -510,15 +541,18 @@ const styles = StyleSheet.create({
   },
   cabeceraMedidas: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    gap: 15,
   },
   titulosColumnasMedidas: {
     flexDirection: 'row',
     gap: 15,
     marginBottom: 10,
     paddingHorizontal: 5,
+    width: '100%',
   },
   tituloColumna: {
     fontFamily: 'Inter_600SemiBold',
@@ -526,13 +560,65 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   espacioBotonX: {
-    width: 40,
+    width: 160,
   },
   filaMedida: {
     flexDirection: 'row',
     gap: 15,
     marginBottom: 15,
     alignItems: 'center',
+    width: '100%',
+  },
+  filaMedidaMovil: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: '#F9F9F9',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  inputMovilAncho: {
+    width: '100%',
+  },
+  inputMovilMitad: {
+    width: '47%',
+  },
+  ocultarEnMovil: {
+    display: 'none',
+  },
+  filaAccionesVariante: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: 160,
+  },
+  botonDisponible: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+  },
+  botonDisponibleActivo: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#4CAF50',
+  },
+  botonDisponibleInactivo: {
+    backgroundColor: '#FFEEED',
+    borderColor: '#DB3632',
+  },
+  textoDisponible: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  textoDisponibleActivo: {
+    color: '#4CAF50',
+  },
+  textoDisponibleInactivo: {
+    color: '#DB3632',
   },
   botonEliminarFila: {
     width: 40,
@@ -572,11 +658,28 @@ const styles = StyleSheet.create({
     borderTopColor: '#EEEEEE',
     paddingTop: 30,
   },
+  contenedorAccionesMovil: {
+    flexDirection: 'column',
+    width: '100%',
+    marginTop: 20,
+    gap: 15,
+  },
   botonCancelar: {
     backgroundColor: '#EEEEEE',
     paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 6,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonCancelarMovil: {
+    backgroundColor: '#EEEEEE',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   textoBotonSecundario: {
     color: '#333333',
@@ -586,8 +689,20 @@ const styles = StyleSheet.create({
   botonGuardar: {
     backgroundColor: '#29166F',
     paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 6,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 150,
+  },
+  botonGuardarMovil: {
+    backgroundColor: '#29166F',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   textoBotonGuardar: {
     color: '#FFFFFF',
