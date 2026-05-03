@@ -272,10 +272,11 @@ const styles = StyleSheet.create({
         color: '#29166F',
         textDecorationLine: 'underline',
     },
-    botonLogin: {
+    botonLogin: { 
         backgroundColor: '#29166F',
-        borderRadius: 6,
-        paddingVertical: 15,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',

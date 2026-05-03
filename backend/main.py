@@ -62,6 +62,14 @@ class MedidaCrear(BaseModel):
     medida: str
     precio: float
     stock: int
+    disponible: Optional[bool] = True
+
+class MedidaModificar(BaseModel):
+    id: Optional[str] = None 
+    medida: str
+    precio: float
+    stock: int
+    disponible: Optional[bool] = True
 
 class ArticuloCrear(BaseModel):
     nombre: str
@@ -69,12 +77,6 @@ class ArticuloCrear(BaseModel):
     categoria: str
     imagen_base64: Optional[str] = None
     medidas: List[MedidaCrear]
-    
-class MedidaModificar(BaseModel):
-    id: Optional[str] = None 
-    medida: str
-    precio: float
-    stock: int
 
 class ArticuloModificar(BaseModel):
     nombre: str
@@ -205,20 +207,16 @@ def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
         requester_auth = auth_client.auth.get_user(token)
         requester_id = requester_auth.user.id
 
-        # 1. Obtener datos de la tabla pública
         respuesta = supabase.table("usuarios").select("*").eq("id", usuario_id).execute()
         if not respuesta.data:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
         datos_perfil = respuesta.data[0]
 
-        # 2. Verificar permisos para ver el correo (Eres tú mismo o eres Admin)
-        # Consultamos el rol del que solicita
         db_requester = supabase.table("usuarios").select("rol").eq("id", requester_id).execute()
         es_admin = db_requester.data and db_requester.data[0].get("rol") == "admin"
 
         if requester_id == usuario_id or es_admin:
-            # Usamos el cliente admin para sacar el correo real del usuario solicitado
             target_user = auth_client.auth.admin.get_user_by_id(usuario_id)
             datos_perfil["correo"] = target_user.user.email
                 
@@ -642,7 +640,7 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
                 "medida": m.medida,
                 "precio": m.precio,
                 "stock": m.stock,
-                "disponible": True
+                "disponible": m.disponible
             }
             if m.id:
                 supabase.table("articulos_medidas").update(datos_medida).eq("id", m.id).execute()
@@ -652,7 +650,6 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
         return {"exito": True, "mensaje": "Artículo actualizado correctamente"}
 
     except Exception as e:
-        print(f"Error PUT actualizar articulo: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.post("/admin/usuarios")
@@ -866,11 +863,30 @@ def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
                     "medida": m.medida,
                     "precio": m.precio,
                     "stock": m.stock,
-                    "disponible": True
+                    "disponible": m.disponible
                 })
             supabase.table("articulos_medidas").insert(medidas_insert).execute()
 
         return {"exito": True, "id": nuevo_articulo_id}
 
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.delete("/articulos/{articulo_id}")
+def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        token = authorization.split(" ")[1]
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        user_auth = auth_client.auth.get_user(token)
+        usuario_id = user_auth.user.id
+
+        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
+        if not db_user.data or db_user.data[0].get("rol") != "admin":
+            raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar artículos")
+
+        supabase.table("articulos").delete().eq("id", articulo_id).execute()
+        return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
