@@ -1,7 +1,8 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { AlertaContext } from './alerta-context';
 
 export default function LoginPage() {
     const { width } = useWindowDimensions();
@@ -13,18 +14,11 @@ export default function LoginPage() {
     const [recordarme, setRecordarme] = useState(false);
     const [cargando, setCargando] = useState(false);
     const auth = useContext(AuthContext);
-
-    const mostrarAlerta = (titulo: string, mensaje: string) => {
-        if (Platform.OS === 'web') {
-            window.alert(`${titulo}: ${mensaje}`);
-        } else {
-            Alert.alert(titulo, mensaje);
-        }
-    };
+    const alerta = useContext(AlertaContext);
 
     const manejarLogin = async () => {
         if (!correo || !contrasena) {
-            mostrarAlerta("Error", "Por favor, introduce tu correo y contraseña.");
+            alerta?.mostrarAlerta("Error", "Por favor, introduce tu correo y contraseña.");
             return;
         }
 
@@ -58,7 +52,7 @@ export default function LoginPage() {
             await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol);
         }
 
-        mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
+        alerta?.mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
 
         if (datos.rol === 'admin' || datos.rol === 'empleado') {
             router.replace("/panel-administrador")
@@ -67,7 +61,7 @@ export default function LoginPage() {
         }
 
         } catch (error: any) {
-            mostrarAlerta("Acceso denegado", error.message);
+            alerta?.mostrarAlerta("Acceso denegado", error.message);
         } finally {
             setCargando(false);
         }
@@ -124,7 +118,7 @@ return (
             <Text style={styles.textoCheckbox}>Recordarme</Text>
         </Pressable>
 
-        <Pressable onPress={() => mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
+        <Pressable onPress={() => alerta?.mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
             <Text style={styles.linkRecuperar}>¿Has olvidado tu contraseña?</Text>
         </Pressable>
         </View>

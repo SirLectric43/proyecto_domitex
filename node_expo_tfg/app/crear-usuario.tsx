@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { AuthContext } from "./auth-context";
+import { AlertaContext } from "./alerta-context";
 
 export default function CrearUsuarioPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
 
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -37,22 +39,14 @@ export default function CrearUsuarioPage() {
     r.toLowerCase().includes(busquedaRol.toLowerCase())
   );
 
-  const mostrarAlerta = (titulo: string, mensaje: string) => {
-    if (Platform.OS === "web") {
-      window.alert(`${titulo}: ${mensaje}`);
-    } else {
-      alert(`${titulo}: ${mensaje}`);
-    }
-  };
-
   const manejarCrearUsuario = async () => {
     if (!nombre || !apellidos || !correo || !telefono || !contrasena || !rol) {
-      mostrarAlerta("Error", "Por favor, rellena todos los campos.");
+      alerta?.mostrarAlerta("Error", "Por favor, rellena todos los campos.");
       return;
     }
 
     if (contrasena !== repetirContrasena) {
-      mostrarAlerta("Error", "Las contraseñas no coinciden.");
+      alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
       return;
     }
 
@@ -82,13 +76,13 @@ export default function CrearUsuarioPage() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        mostrarAlerta("Éxito", "Usuario creado correctamente.");
+        alerta?.mostrarAlerta("Éxito", "Usuario creado correctamente.");
         router.back();
       } else {
-        mostrarAlerta("Error", datos.detail || "No se pudo crear el usuario.");
+        alerta?.mostrarAlerta("Error", datos.detail || "No se pudo crear el usuario.");
       }
     } catch (error) {
-      mostrarAlerta("Error", "Problema de conexión con el servidor.");
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
     } finally {
       setCargando(false);
     }

@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, useWindowDimensions, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { AlertaContext } from './alerta-context';
 
 export default function AdministrarUsuarioPage() {
   const { id } = useLocalSearchParams();
@@ -9,6 +10,7 @@ export default function AdministrarUsuarioPage() {
   const esMovil = width < 768;
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
 
   const [cargando, setCargando] = useState(true);
   const [datosUsuario, setDatosUsuario] = useState<any>(null);
@@ -62,7 +64,7 @@ export default function AdministrarUsuarioPage() {
           setBusquedaRol(r);
         }
       } catch (e) {
-        alert(e);
+        alerta?.mostrarAlerta("Error", String(e));
       } finally {
         setCargando(false);
       }
@@ -85,10 +87,10 @@ export default function AdministrarUsuarioPage() {
         if (res.ok) {
           setModoEdicion(false);
         } else {
-          alert("Error al actualizar");
+          alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");
         }
       } catch (e) {
-        alert("Error de conexión: " + e);
+        alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
       }
     } else {
       setModoEdicion(true);
@@ -107,7 +109,7 @@ export default function AdministrarUsuarioPage() {
         router.push('/gestion-usuarios');
       }
     } catch (e) {
-      alert("Error de conexión: " + e);
+      alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
     }
   };
 

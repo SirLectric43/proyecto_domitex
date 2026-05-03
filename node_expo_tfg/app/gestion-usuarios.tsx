@@ -2,9 +2,11 @@ import { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { AuthContext } from './auth-context';
 import { router } from 'expo-router';
+import { AlertaContext } from './alerta-context';
 
 export default function GestionUsuariosPage() {
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
   
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -29,7 +31,7 @@ export default function GestionUsuariosPage() {
         setUsuarios(datos);
       }
     } catch (error) {
-      window.alert("Error:" + error);
+      alerta?.mostrarAlerta("Error", String(error));
     } finally {
       setCargando(false);
     }
@@ -62,14 +64,10 @@ export default function GestionUsuariosPage() {
         setUsuarioABorrar(null);
       } else {
         const errorData = await respuesta.json();
-        if (Platform.OS === 'web') {
-          window.alert(`Error: ${errorData.detail || 'No se pudo eliminar'}`);
-        } else {
-          alert(`Error: ${errorData.detail || 'No se pudo eliminar'}`);
-        }
+        alerta?.mostrarAlerta("Error", errorData.detail || 'No se pudo eliminar');
       }
     } catch (error) {
-      window.alert("Error:" + error);
+      alerta?.mostrarAlerta("Error", String(error));
     }
   };
 

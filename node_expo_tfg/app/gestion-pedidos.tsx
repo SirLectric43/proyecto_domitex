@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { AuthContext } from "./auth-context";
+import { AlertaContext } from "./alerta-context";
 
 export default function GestionPedidosPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -94,7 +96,7 @@ export default function GestionPedidosPage() {
       }
     } catch (e) {
       cargarPedidos();
-      alert("Error de conexión: " + e);
+      alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
     }
   };
 

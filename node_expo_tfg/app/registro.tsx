@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, Alert } from 'react-native';
+import { useState, useContext } from 'react';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import { AlertaContext } from './alerta-context';
 
 export default function RegistroPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
+  const alerta = useContext(AlertaContext);
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -16,27 +18,19 @@ export default function RegistroPage() {
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  const mostrarAlerta = (titulo: string, mensaje: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${titulo}: ${mensaje}`);
-    } else {
-      Alert.alert(titulo, mensaje);
-    }
-  };
-
   const manejarRegistro = async () => {
     if (!nombre || !apellidos || !correo || !telefono || !contrasena || !repetirContrasena) {
-      mostrarAlerta("Error", "Por favor, rellena todos los campos.");
+      alerta?.mostrarAlerta("Error", "Por favor, rellena todos los campos.");
       return;
     }
 
     if (contrasena !== repetirContrasena) {
-      mostrarAlerta("Error", "Las contraseñas no coinciden.");
+      alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
       return;
     }
 
     if (!aceptaTerminos) {
-      mostrarAlerta("Error", "Debes aceptar los Términos y Condiciones.");
+      alerta?.mostrarAlerta("Error", "Debes aceptar los Términos y Condiciones.");
       return;
     }
 
@@ -64,14 +58,13 @@ export default function RegistroPage() {
       if (!respuesta.ok) {
         throw new Error(datos.detail || "Error al registrar la cuenta");
       } else {
-        mostrarAlerta("Cuenta creada correctamente", "Por favor revise su correo electrónico para activar su cuenta.")
+        alerta?.mostrarAlerta("Cuenta creada correctamente", "Por favor revise su correo electrónico para activar su cuenta.")
       }
 
-      mostrarAlerta("Éxito", datos.mensaje);
       router.push("/login");
 
     } catch (error: any) {
-      mostrarAlerta("Error", error.message);
+      alerta?.mostrarAlerta("Error", error.message);
     } finally {
       setCargando(false);
     }
