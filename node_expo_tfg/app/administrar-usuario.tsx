@@ -85,6 +85,11 @@ export default function AdministrarUsuarioPage() {
           body: JSON.stringify({ nombre, apellidos, telefono, direccion, rol: rol.toLowerCase() })
         });
         if (res.ok) {
+          if (id === auth?.usuario?.usuario_id) {
+            if (auth?.iniciarSesionContext && auth.usuario?.token && auth.usuario?.rol) {
+              await auth.iniciarSesionContext(nombre, auth.usuario.token, auth.usuario.usuario_id, auth.usuario.rol);
+            }
+          }
           setModoEdicion(false);
         } else {
           alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");

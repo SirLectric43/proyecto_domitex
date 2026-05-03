@@ -1,33 +1,28 @@
 ### 📝 Descripción
-Esta PR implementa un sistema completo de notificaciones *in-app* para mantener a los clientes informados en todo momento sobre las actualizaciones en el estado de sus pedidos. 
+Esta PR incluye varias correcciones de bugs relacionadas con la gestión del estado global del usuario y una refactorización crítica en la lógica de control de stock y precios desde el backend.
 
 **Resumen de los cambios implementados:**
 
-*   **Backend (FastAPI & Supabase):**
-    *   Modificación del endpoint `PUT /admin/pedidos/{pedido_id}/estado` para que, además de cambiar el estado, inserte automáticamente un registro en la nueva tabla `notificaciones` de Supabase asociado al cliente correspondiente.
-    *   Creación de la ruta `GET /notificaciones` para obtener el historial de avisos del usuario.
-    *   Creación de la ruta `PUT /notificaciones/marcar-leidas` para actualizar el estado de los avisos no leídos una vez que el usuario abre el desplegable.
-    *   Creación de la ruta `DELETE /notificaciones/limpiar` para permitir al usuario borrar permanentemente su bandeja de notificaciones.
-*   **Frontend (React Native / NavbarPrivado):**
-    *   Implementación de un globo rojo (badge) que muestra dinámicamente la cantidad de notificaciones sin leer.
-    *   Se ha construido un menú desplegable (dropdown) que lista los avisos con su título, mensaje (incluyendo la referencia del pedido) y fecha formateada. Al hacer clic en un aviso, redirige al usuario a su `/historial-compra`.
-    *   Se ha añadido un botón "Limpiar" para vaciar el historial de notificaciones y mantener la base de datos y la interfaz limpias.
+*   **Actualización dinámica del Navbar para Administradores:** Se solucionó el error en `administrar-usuario.tsx` donde el nombre del administrador no se actualizaba en el `NavbarPrivado` al editar su propio perfil. Se ha añadido una validación para refrescar el contexto global (`iniciarSesionContext`) si el ID del usuario editado coincide con el del administrador activo.
+*   **Refactorización del Flujo de Compra (Control de Stock real):** 
+    *   Se ha modificado el endpoint `/pedidos/confirmar` para que el stock de los productos se reste **exclusivamente al confirmar el pedido**, solucionando el problema de inventario bloqueado por carritos abandonados.
+    *   Se ha añadido una validación de seguridad que comprueba si hay stock disponible para cada artículo del carrito *antes* de generar el pedido. Si falta stock, devuelve un error específico con el nombre del producto agotado.
+*   **Validaciones de Precios y Disponibilidad Automática:**
+    *   En los endpoints de creación (`POST /articulos`) y actualización (`PUT /articulos/{articulo_id}`), se ha incluido una restricción que impide guardar artículos con precios negativos (lanzando un error HTTP 400).
+    *   Tanto al comprar un artículo como al editarlo desde el panel de administrador, si la cantidad de stock se establece en `0` o en un número negativo, la columna `disponible` pasará automáticamente a `False`.
 
 ## 🔗 Issue relacionado
-Closes #39
+Closes #56
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
-- [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
+- [ ] ✨ Nueva funcionalidad (feature)
+- [X] 🐛 Corrección de error (bugfix)
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](campA.png) | ![alt text](campD.png) |
-| --- | ![alt text](campPC.png) |
-| --- | ![alt text](campMovil.png) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -39,4 +34,4 @@ Closes #39
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-*   **Base de Datos:** Se ha creado la tabla `notificaciones` en Supabase con las columnas: `id`, `usuario_id`, `pedido_id`, `titulo`, `mensaje`, `leida` (boolean, default false), y `fecha_creacion`.
+El frontend no necesita cambios adicionales para mostrar los errores de stock agotado al confirmar la compra, ya que la nueva excepción HTTP 400 en FastAPI envía un mensaje limpio ("Sin stock suficiente para...") que es capturado directamente por las alertas ya configuradas en el Carrito.

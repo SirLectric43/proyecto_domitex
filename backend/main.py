@@ -496,12 +496,24 @@ def confirmar_pedido(authorization: str = Header(None)):
         carrito_id = resp_carrito.data[0]["id"]
 
         resp_items = supabase.table("carrito_items") \
-            .select("id, cantidad, articulo_medida_id, articulos_medidas(precio)") \
+            .select("id, cantidad, articulo_medida_id, articulos_medidas(precio, stock, medida, articulos(nombre))") \
             .eq("carrito_id", carrito_id).execute()
         
         items = resp_items.data
         if not items:
             raise HTTPException(status_code=400, detail="El carrito está vacío")
+
+        for item in items:
+            stock_actual = item["articulos_medidas"]["stock"]
+            cantidad_pedida = item["cantidad"]
+            
+            if cantidad_pedida > stock_actual:
+                nombre_art = item["articulos_medidas"]["articulos"]["nombre"]
+                medida_art = item["articulos_medidas"]["medida"]
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Sin stock suficiente para: {nombre_art} ({medida_art}). Quedan {stock_actual} uds."
+                )
 
         total_pedido = sum(item["cantidad"] * item["articulos_medidas"]["precio"] for item in items)
         
@@ -548,14 +560,23 @@ def confirmar_pedido(authorization: str = Header(None)):
                 "precio_unitario": item["articulos_medidas"]["precio"]
             })
             
+            nuevo_stock = item["articulos_medidas"]["stock"] - item["cantidad"]
+            datos_medida = {"stock": nuevo_stock}
+            
+            if nuevo_stock <= 0:
+                datos_medida["disponible"] = False
+                
+            supabase.table("articulos_medidas").update(datos_medida).eq("id", item["articulo_medida_id"]).execute()
+            
         supabase.table("lineas_pedido").insert(lineas).execute()
 
         supabase.table("carrito_items").delete().eq("carrito_id", carrito_id).execute()
 
         return {"exito": True, "referencia": referencia}
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        print(f"Error POST confirmar pedido: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/pedidos/{pedido_id}")
@@ -635,12 +656,17 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
             supabase.table("articulos_medidas").delete().in_("id", ids_a_borrar).execute()
 
         for m in articulo.medidas:
+            if m.precio < 0:
+                raise HTTPException(status_code=400, detail="El precio no puede ser negativo")
+            
+            disponible_final = False if m.stock <= 0 else m.disponible
+
             datos_medida = {
                 "articulo_id": articulo_id,
                 "medida": m.medida,
                 "precio": m.precio,
                 "stock": m.stock,
-                "disponible": m.disponible
+                "disponible": disponible_final
             }
             if m.id:
                 supabase.table("articulos_medidas").update(datos_medida).eq("id", m.id).execute()
@@ -649,6 +675,8 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
 
         return {"exito": True, "mensaje": "Artículo actualizado correctamente"}
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -881,17 +909,24 @@ def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
         if articulo.medidas:
             medidas_insert = []
             for m in articulo.medidas:
+                if m.precio < 0:
+                    raise HTTPException(status_code=400, detail="El precio no puede ser negativo")
+                
+                disponible_final = False if m.stock <= 0 else m.disponible
+                
                 medidas_insert.append({
                     "articulo_id": nuevo_articulo_id,
                     "medida": m.medida,
                     "precio": m.precio,
                     "stock": m.stock,
-                    "disponible": m.disponible
+                    "disponible": disponible_final
                 })
             supabase.table("articulos_medidas").insert(medidas_insert).execute()
 
         return {"exito": True, "id": nuevo_articulo_id}
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
