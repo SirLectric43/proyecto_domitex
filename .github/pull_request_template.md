@@ -1,48 +1,33 @@
 ### 📝 Descripción
-Esta PR se centra en la **estandarización visual** y la **optimización de la experiencia de usuario (UX)** en dispositivos móviles y escritorio. Se han corregido errores de diseño responsivo y se ha implementado un sistema de estilos global para los botones de toda la aplicación.
+Esta PR implementa un sistema completo de notificaciones *in-app* para mantener a los clientes informados en todo momento sobre las actualizaciones en el estado de sus pedidos. 
 
-**Cambios principales:**
-*   **Estandarización de "Botones Universales":** Se han unificado los estilos de todos los botones del proyecto bajo tres categorías:
-    *   **Primario:** Azul corporativo (`#29166F`), texto blanco, fuente negrita.
-    *   **Secundario:** Gris claro (`#EEEEEE`), texto oscuro, fuente semi-negrita.
-    *   **Peligro:** Rojo (`#DB3632`), texto blanco, fuente negrita.
-    Esto asegura una coherencia total en radios de borde (8px), tipografías y rellenos (padding) en toda la interfaz.
-*   **Optimización Responsiva en Formularios:**
-    *   Se corrigió el desbordamiento de elementos en PC dentro de `agregar-articulo.tsx` y `vista-articulo.tsx`, asegurando que los botones de acción se mantengan dentro de los límites de la tarjeta.
-    *   En `crear-usuario.tsx` y `administrar-usuario.tsx`, se ajustaron los formularios para que las filas se apilen verticalmente en móviles, evitando que textos largos (como el correo electrónico) se corten.
-*   **Mejoras en la Navegación Móvil:** Se integró un botón de "Volver" (flecha ←) en el `NavbarPrivado` que aparece automáticamente en pantallas secundarias para facilitar la navegación en dispositivos móviles.
-*   **Correcciones Técnicas y de Layout:**
-    *   **TypeScript:** Se solucionó el error en `perfil-usuario.tsx` referente al número de argumentos en la llamada a `iniciarSesionContext`
-    *   **Escritorio:** En `ver-pedido-admin.tsx`, se corrigió el fallo donde los botones de acción sobresalían de la pantalla en resoluciones de PC.
-    *   **Funcionalidad:** Se preparó la interfaz para la nueva columna `disponible` en la tabla de artículos de Supabase.
-*   **Ajustes Estéticos en Perfil:** Se reubicó el botón de "Cambiar contraseña" para que figure entre las opciones de historial y cierre de sesión, mejorando la jerarquía visual.
+**Resumen de los cambios implementados:**
+
+*   **Backend (FastAPI & Supabase):**
+    *   Modificación del endpoint `PUT /admin/pedidos/{pedido_id}/estado` para que, además de cambiar el estado, inserte automáticamente un registro en la nueva tabla `notificaciones` de Supabase asociado al cliente correspondiente.
+    *   Creación de la ruta `GET /notificaciones` para obtener el historial de avisos del usuario.
+    *   Creación de la ruta `PUT /notificaciones/marcar-leidas` para actualizar el estado de los avisos no leídos una vez que el usuario abre el desplegable.
+    *   Creación de la ruta `DELETE /notificaciones/limpiar` para permitir al usuario borrar permanentemente su bandeja de notificaciones.
+*   **Frontend (React Native / NavbarPrivado):**
+    *   Implementación de un globo rojo (badge) que muestra dinámicamente la cantidad de notificaciones sin leer.
+    *   Se ha construido un menú desplegable (dropdown) que lista los avisos con su título, mensaje (incluyendo la referencia del pedido) y fecha formateada. Al hacer clic en un aviso, redirige al usuario a su `/historial-compra`.
+    *   Se ha añadido un botón "Limpiar" para vaciar el historial de notificaciones y mantener la base de datos y la interfaz limpias.
 
 ## 🔗 Issue relacionado
-Closes #45
+Closes #39
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](ad_userA.png) | ![alt text](ad_userD.png) |
-| ![alt text](ag_artA.png) | ![alt text](ag_artD.png) |
-| ![alt text](cartA.png) | ![alt text](cartD.png) |
-| ![alt text](catalogA.png) | ![alt text](catalogD.png) |
-| ![alt text](c_userA.png) | ![alt text](c_userD.png) |
-| ![alt text](g_pedA.png) | ![alt text](g_pedD.png) |
-| ![alt text](g_userA.png) | ![alt text](g_userD.png) |
-| ![alt text](loginA.png) | ![alt text](loginD.png) |
-| ![alt text](navbarA.png) | ![alt text](navbarD.png) |
-| ![alt text](p_adminA.png) | ![alt text](p_adminD.png) |
-| ![alt text](p_userA.png) | ![alt text](p_userD.png) |
-| ![alt text](registA.png) | ![alt text](registD.png) |
-| ![alt text](vp_adminA.png) | ![alt text](vp_adminD.png) |
-| ![alt text](v_artA.png) | ![alt text](v_artD.png) |
+| ![alt text](campA.png) | ![alt text](campD.png) |
+| --- | ![alt text](campPC.png) |
+| --- | ![alt text](campMovil.png) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -54,3 +39,4 @@ Closes #45
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
+*   **Base de Datos:** Se ha creado la tabla `notificaciones` en Supabase con las columnas: `id`, `usuario_id`, `pedido_id`, `titulo`, `mensaje`, `leida` (boolean, default false), y `fecha_creacion`.
