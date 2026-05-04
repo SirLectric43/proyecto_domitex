@@ -1,13 +1,13 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "node_expo_tfg/package.json",
-      "use": "@vercel/static-build"
-    },
-    {
-      "src": "backend/main.py",
+    { 
+      "src": "backend/main.py", 
       "use": "@vercel/python"
+    },
+    { 
+      "src": "node_expo_tfg/package.json", 
+      "use": "@vercel/static-build" 
     }
   ],
   "rewrites": [
@@ -19,6 +19,5 @@
       "source": "/(.*)", 
       "destination": "/node_expo_tfg/$1" 
     }
-  ],
-  "cleanUrls": true
+  ]
 }
