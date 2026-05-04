@@ -12,7 +12,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (auth?.usuario) {
-      router.replace('/catalogo');
+      if (auth.usuario.rol === 'admin') {
+        router.replace('/panel-administrador');
+      } else {
+        router.replace('/catalogo');
+      }
     }
   }, [auth?.usuario]);
 

@@ -20,11 +20,13 @@ export default function NavbarPublico() {
     return (
         <View style={{ zIndex: 999 }}>
             <View style={styles.contenedor}>
-                <Image 
-                  source={require('@/assets/images/navbarDomitex.png')} 
-                  style={esMovil ? styles.logoMovil : styles.logoPc}
-                  resizeMode="contain"
-                />
+                <Link href="/" asChild>
+                  <Image 
+                    source={require('@/assets/images/navbarDomitex.png')} 
+                    style={esMovil ? styles.logoMovil : styles.logoPc}
+                    resizeMode="contain"
+                  />
+                </Link>
                 
                 {!esMovil ? (
                     <>

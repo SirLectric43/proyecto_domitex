@@ -13,14 +13,17 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
+import { AlertaContext } from "./alerta-context";
 
 export default function Carrito() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
+  const alerta = useContext(AlertaContext);
   const [items, setItems] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
+  const BASE_URL = 'domitex.vercel.app';
 
   useEffect(() => {
     const obtenerCarrito = async () => {
@@ -28,8 +31,8 @@ export default function Carrito() {
       try {
         const urlApi =
           Platform.OS === "web"
-            ? `http://localhost:8000/carrito`
-            : `http://192.168.1.43:8000/carrito`;
+            ? `/api/carrito`
+            : `${BASE_URL}/carrito`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
@@ -40,7 +43,6 @@ export default function Carrito() {
           setItems(datos);
         }
       } catch (error) {
-        console.error("Error al cargar carrito:", error);
       } finally {
         setCargando(false);
       }
@@ -69,8 +71,8 @@ export default function Carrito() {
     try {
       const urlApi =
         Platform.OS === "web"
-          ? `http://localhost:8000/carrito/items/${itemId}`
-          : `http://192.168.1.43:8000/carrito/items/${itemId}`;
+          ? `/api/carrito/items/${itemId}`
+          : `${BASE_URL}/carrito/items/${itemId}`;
 
       const respuesta = await fetch(urlApi, {
         method: "PUT",
@@ -86,7 +88,6 @@ export default function Carrito() {
       }
 
     } catch (error) {
-      console.error("Error al actualizar cantidad:", error);
     }
   };
 
@@ -102,8 +103,8 @@ export default function Carrito() {
 
     try {
       const urlApi = Platform.OS === "web"
-        ? `http://localhost:8000/pedidos/confirmar`
-        : `http://192.168.1.43:8000/pedidos/confirmar`;
+        ? `/api/pedidos/confirmar`
+        : `${BASE_URL}/pedidos/confirmar`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -120,20 +121,14 @@ export default function Carrito() {
           auth.setCantidadCesta(0);
         }
         
-        if (Platform.OS === "web") {
-          window.alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
-        } else {
-          alert(`¡Pedido ${datos.referencia} confirmado con éxito!`);
-        }
-        
+        alerta?.mostrarAlerta("Éxito", `¡Pedido ${datos.referencia} confirmado con éxito!`);
         router.push("/historial-compra");
       } else {
         const error = await respuesta.json();
-        alert(`Error: ${error.detail}`);
+        alerta?.mostrarAlerta("Error", error.detail);
       }
     } catch (error) {
-      console.error("Error al confirmar pedido:", error);
-      alert("Hubo un problema al procesar el pedido.");
+      alerta?.mostrarAlerta("Error", "Hubo un problema al procesar el pedido.");
     }
   };
 
@@ -324,15 +319,17 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     botonVolver: {
-        backgroundColor: "#29166F",
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 8,
+      backgroundColor: '#29166F',
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     textoBotonVolver: {
-        color: "#FFF",
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 16,
+      color: '#FFFFFF',
+      fontFamily: 'Inter_700Bold',
+      fontSize: 16,
     },
     contenedorListaYResumen: {
         flexDirection: "row",
@@ -436,11 +433,13 @@ const styles = StyleSheet.create({
         borderColor: "#29166F",
         borderRadius: 6,
         width: 50,
-        height: 35,
+        height: 40,
         textAlign: "center",
         fontFamily: "Montserrat_700Bold",
         fontSize: 16,
         color: "#DB3632",
+        paddingVertical: 0,
+        paddingHorizontal: 0,
     },
     botonEliminarX: {
         position: 'absolute',
@@ -514,15 +513,17 @@ const styles = StyleSheet.create({
         color: "#DB3632",
     },
     botonConfirmar: {
-        backgroundColor: "#29166F",
-        paddingVertical: 15,
-        borderRadius: 8,
-        alignItems: "center",
-        width: "100%",
+      backgroundColor: '#29166F',
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: 'center',
+      width: "100%",
     },
     textoBotonConfirmar: {
-        color: "#FFFFFF",
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 18,
+      color: '#FFFFFF',
+      fontFamily: 'Inter_700Bold',
+      fontSize: 18,
     },
 });
