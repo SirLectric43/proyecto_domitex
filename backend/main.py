@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 from typing import Optional, Dict, List
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -12,6 +12,8 @@ from itertools import groupby
 load_dotenv()
 
 app = FastAPI(title="API Domitex")
+
+api_router = APIRouter(prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -114,11 +116,11 @@ class LineaPedidoActualizar(BaseModel):
 class ActualizarLineasPedido(BaseModel):
     lineas: List[LineaPedidoActualizar]
 
-@app.get("/")
+@api_router.get("/")
 def read_root():
     return {"mensaje": "API de Domitex funcionando correctamente 🚀"}
 
-@app.post("/usuarios")
+@api_router.post("/usuarios")
 def registrar_usuario(usuario: RegistroUsuario):
     try:
         auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -142,7 +144,7 @@ def registrar_usuario(usuario: RegistroUsuario):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/login")
+@api_router.post("/login")
 def iniciar_sesion(credenciales: LoginUsuario):
     try:
         auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -179,7 +181,7 @@ def iniciar_sesion(credenciales: LoginUsuario):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/usuarios")
+@api_router.get("/usuarios")
 def obtener_todos_usuarios(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -197,7 +199,7 @@ def obtener_todos_usuarios(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/usuarios/{usuario_id}")
+@api_router.get("/usuarios/{usuario_id}")
 def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -225,7 +227,7 @@ def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/pedidos/historial")
+@api_router.get("/pedidos/historial")
 def obtener_historial_pedidos(usuario_id: Optional[str] = None, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -255,7 +257,7 @@ def obtener_historial_pedidos(usuario_id: Optional[str] = None, authorization: s
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/usuarios/{usuario_id}")
+@api_router.put("/usuarios/{usuario_id}")
 def actualizar_perfil(usuario_id: str, datos: ActualizarUsuario):
     try:
         supabase.table("usuarios").update({
@@ -269,7 +271,7 @@ def actualizar_perfil(usuario_id: str, datos: ActualizarUsuario):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.delete("/usuarios/{id_borrar}")
+@api_router.delete("/usuarios/{id_borrar}")
 def eliminar_usuario(id_borrar: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -293,7 +295,7 @@ def eliminar_usuario(id_borrar: str, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/usuarios/{usuario_id}/contrasena")
+@api_router.put("/usuarios/{usuario_id}/contrasena")
 def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No estás autorizado para realizar esta acción.")
@@ -320,7 +322,7 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
         raise HTTPException(status_code=400, detail="Hubo un error al cambiar la contraseña.")
 
 
-@app.get("/categorias")
+@api_router.get("/categorias")
 def obtener_categorias():
     try:
         respuesta = supabase.table("categorias").select("*").order("nombre").execute()
@@ -328,7 +330,7 @@ def obtener_categorias():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/categorias")
+@api_router.post("/categorias")
 def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -338,7 +340,7 @@ def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
+@api_router.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
 def obtener_catalogo_agrupado():
     try:
         respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").execute()
@@ -368,7 +370,7 @@ def obtener_catalogo_agrupado():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.get("/articulos/buscar")
+@api_router.get("/articulos/buscar")
 def buscar_articulos(q: str):
     try:
         if not q or len(q.strip()) < 2:
@@ -378,7 +380,7 @@ def buscar_articulos(q: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.get("/articulos/{articulo_id}")
+@api_router.get("/articulos/{articulo_id}")
 def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)):
     try:
         resp_articulo = supabase.table("articulos").select("*, categorias(nombre)").eq("id", articulo_id).execute()
@@ -397,7 +399,7 @@ def obtener_detalle_articulo(articulo_id: str, authorization: str = Header(None)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.get("/carrito")
+@api_router.get("/carrito")
 def obtener_carrito(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -422,7 +424,7 @@ def obtener_carrito(authorization: str = Header(None)):
         print(f"Error GET carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/carrito/items/{item_id}")
+@api_router.put("/carrito/items/{item_id}")
 def actualizar_cantidad_item(item_id: str, datos: ActualizarCantidad, authorization: str = Header(None)):
     try:
         if datos.cantidad > 0:
@@ -433,7 +435,7 @@ def actualizar_cantidad_item(item_id: str, datos: ActualizarCantidad, authorizat
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/carrito/anadir")
+@api_router.post("/carrito/anadir")
 def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
     try:
         token = authorization.split(" ")[1]
@@ -462,7 +464,7 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
         print(f"Error POST carrito: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.get("/pedidos/historial")
+@api_router.get("/pedidos/historial")
 def obtener_historial_pedidos(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -482,7 +484,7 @@ def obtener_historial_pedidos(authorization: str = Header(None)):
         print(f"Error GET historial pedidos: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.post("/pedidos/confirmar")
+@api_router.post("/pedidos/confirmar")
 def confirmar_pedido(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -581,7 +583,7 @@ def confirmar_pedido(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/pedidos/{pedido_id}")
+@api_router.get("/pedidos/{pedido_id}")
 def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -613,7 +615,7 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/articulos/{articulo_id}")
+@api_router.put("/articulos/{articulo_id}")
 def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -682,7 +684,7 @@ def actualizar_articulo(articulo_id: str, articulo: ArticuloModificar, authoriza
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.post("/admin/usuarios")
+@api_router.post("/admin/usuarios")
 def admin_crear_usuario(datos: AdminCrearUsuario, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -723,7 +725,7 @@ def admin_crear_usuario(datos: AdminCrearUsuario, authorization: str = Header(No
         print(f"Error admin create user: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.put("/admin/usuarios/{usuario_id}")
+@api_router.put("/admin/usuarios/{usuario_id}")
 def admin_actualizar_perfil(usuario_id: str, datos: AdminActualizarUsuario, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -750,7 +752,7 @@ def admin_actualizar_perfil(usuario_id: str, datos: AdminActualizarUsuario, auth
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.delete("/admin/usuarios/{usuario_id_borrar}")
+@api_router.delete("/admin/usuarios/{usuario_id_borrar}")
 def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -773,7 +775,7 @@ def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/admin/pedidos")
+@api_router.get("/admin/pedidos")
 def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -800,7 +802,7 @@ def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", aut
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/admin/pedidos/{pedido_id}/estado")
+@api_router.put("/admin/pedidos/{pedido_id}/estado")
 def admin_actualizar_estado_pedido(pedido_id: str, datos: AdminActualizarEstadoPedido, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -843,7 +845,7 @@ def admin_actualizar_estado_pedido(pedido_id: str, datos: AdminActualizarEstadoP
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/admin/pedidos/{pedido_id}/lineas")
+@api_router.put("/admin/pedidos/{pedido_id}/lineas")
 def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -867,7 +869,7 @@ def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/articulos")
+@api_router.post("/articulos")
 def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -932,7 +934,7 @@ def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.delete("/articulos/{articulo_id}")
+@api_router.delete("/articulos/{articulo_id}")
 def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -951,7 +953,7 @@ def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/notificaciones")
+@api_router.get("/notificaciones")
 def obtener_notificaciones(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -972,7 +974,7 @@ def obtener_notificaciones(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/notificaciones/marcar-leidas")
+@api_router.put("/notificaciones/marcar-leidas")
 def marcar_notificaciones_leidas(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -993,7 +995,7 @@ def marcar_notificaciones_leidas(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.delete("/notificaciones/limpiar")
+@api_router.delete("/notificaciones/limpiar")
 def limpiar_notificaciones(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
@@ -1009,3 +1011,5 @@ def limpiar_notificaciones(authorization: str = Header(None)):
         return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+app.include_router(api_router)
