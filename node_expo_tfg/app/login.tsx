@@ -1,7 +1,8 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { AlertaContext } from './alerta-context';
 
 export default function LoginPage() {
     const { width } = useWindowDimensions();
@@ -13,25 +14,19 @@ export default function LoginPage() {
     const [recordarme, setRecordarme] = useState(false);
     const [cargando, setCargando] = useState(false);
     const auth = useContext(AuthContext);
-
-    const mostrarAlerta = (titulo: string, mensaje: string) => {
-        if (Platform.OS === 'web') {
-            window.alert(`${titulo}: ${mensaje}`);
-        } else {
-            Alert.alert(titulo, mensaje);
-        }
-    };
+    const alerta = useContext(AlertaContext);
+    const BASE_URL = 'domitex.vercel.app';
 
     const manejarLogin = async () => {
         if (!correo || !contrasena) {
-            mostrarAlerta("Error", "Por favor, introduce tu correo y contraseña.");
+            alerta?.mostrarAlerta("Error", "Por favor, introduce tu correo y contraseña.");
             return;
         }
 
         setCargando(true);
 
         try {
-            const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/login' : 'http://192.168.1.43:8000/login';
+            const urlApi = Platform.OS === 'web' ? '/api/login' : `${BASE_URL}/login`;
             
             const respuesta = await fetch(urlApi, {
                 method: 'POST',
@@ -54,19 +49,20 @@ export default function LoginPage() {
             throw new Error(mensajeError);
         }
 
-        mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
-
         if (auth?.iniciarSesionContext) {
-            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id);
+            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol);
         }
 
-        mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
-        router.replace("/catalogo");
-        
-        router.push("/catalogo");
+        alerta?.mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
+
+        if (datos.rol === 'admin' || datos.rol === 'empleado') {
+            router.replace("/panel-administrador")
+        } else {
+            router.replace("/catalogo");
+        }
 
         } catch (error: any) {
-            mostrarAlerta("Acceso denegado", error.message);
+            alerta?.mostrarAlerta("Acceso denegado", error.message);
         } finally {
             setCargando(false);
         }
@@ -123,7 +119,7 @@ return (
             <Text style={styles.textoCheckbox}>Recordarme</Text>
         </Pressable>
 
-        <Pressable onPress={() => mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
+        <Pressable onPress={() => alerta?.mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
             <Text style={styles.linkRecuperar}>¿Has olvidado tu contraseña?</Text>
         </Pressable>
         </View>
@@ -277,10 +273,11 @@ const styles = StyleSheet.create({
         color: '#29166F',
         textDecorationLine: 'underline',
     },
-    botonLogin: {
+    botonLogin: { 
         backgroundColor: '#29166F',
-        borderRadius: 6,
-        paddingVertical: 15,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',

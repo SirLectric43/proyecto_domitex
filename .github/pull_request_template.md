@@ -1,27 +1,18 @@
 ### 📝 Descripción
-Implementación de la vista de Detalles del Pedido para que el usuario pueda consultar los artículos específicos de una compra pasada.
-
-* **Backend (FastAPI):**
-  * Nuevo endpoint `GET /pedidos/{pedido_id}` que obtiene la información completa de un pedido específico, haciendo un JOIN con `lineas_pedido`, `articulos_medidas` y `articulos` para devolver todos los datos necesarios en una sola petición.
-* **Frontend (React Native / Expo):**
-  * Creación de la pantalla `ver-pedido.tsx` con un diseño responsivo (dos columnas en PC, apilado en móvil) similar al carrito, pero de solo lectura (sin controles de cantidad).
-  * La tarjeta de resumen ahora incluye el cálculo de Subtotal, IVA (21%), Total y el **Estado actual del pedido** con colores dinámicos.
-  * Actualización en `historial-compra.tsx` para que el botón "Detalles de pedido" navegue a la nueva vista pasando el `pedidoId` correspondiente por parámetros.
+Este PR finaliza la configuración del monorepo para su despliegue automático en Vercel, permitiendo que tanto el frontend (Expo/React Native) como el backend (FastAPI/Python) coexistan bajo el mismo dominio (`domitex.vercel.app`). Se han unificado las rutas de consumo de la API para asegurar la compatibilidad entre la versión Web y la futura APK de Android.
 
 ## 🔗 Issue relacionado
-Closes #14
+Closes #
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
-- [ ] 🔧 Configuración del proyecto / Dependencias
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
+- [X] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | --- |
-| --- | ![alt text](capturaMovil.jpeg) |
 | *(Captura antigua o N/A)* | *(Captura nueva)* |
 
 ## ✅ Checklist de calidad antes de fusionar
@@ -33,5 +24,4 @@ Closes #14
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* La vista de detalles reutiliza la experiencia de usuario (UX) de la cesta de la compra para mantener la consistencia en el diseño, pero adaptando los controles para ser puramente informativos (estáticos).
-* El estado del pedido se muestra visualmente destacado con colores dinámicos para informar al usuario del progreso de su compra.
+Se ha cambiado la **Production Branch** en el panel de Vercel a la rama `develop` para facilitar las pruebas constantes antes del merge final a `main`. Tras la aprobación de este PR, el proyecto está listo para generar la APK estable mediante `eas build`.

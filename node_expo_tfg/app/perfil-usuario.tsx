@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Platform, Alert, Modal, Image, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { AlertaContext } from './alerta-context';
 
 const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo = false, toggleEdicion }: any) => (
   <View style={styles.grupoInput}>
@@ -14,11 +15,20 @@ const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo
         editable={editable}
       />
       <Pressable 
-        style={[styles.botonLapiz, esCorreo && { opacity: 0.5 }]} 
+        style={styles.botonLapiz} 
         onPress={() => !esCorreo && toggleEdicion(editable, setEditable)}
         disabled={esCorreo}
       >
-        <Image source={require('@/assets/images/iconoEditar.png')} style={styles.iconoEditar} />
+        <Image 
+          source={
+            esCorreo
+              ? require('@/assets/images/iconoCandado.png')
+              : editable 
+                ? require('@/assets/images/iconoGuardar.png') 
+                : require('@/assets/images/iconoEditar.png')
+          } 
+          style={styles.iconoEditar} 
+        />
       </Pressable>
     </View>
   </View>
@@ -29,6 +39,8 @@ export default function PerfilPage() {
   const esMovil = width < 768; 
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -48,22 +60,14 @@ export default function PerfilPage() {
   const [repetirContrasena, setRepetirContrasena] = useState('');
   const [cargandoPassword, setCargandoPassword] = useState(false);
 
-  const mostrarAlerta = (titulo: string, mensaje: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${titulo}: ${mensaje}`);
-    } else {
-      Alert.alert(titulo, mensaje);
-    }
-  };
-
   useEffect(() => {
     const obtenerDatos = async () => {
       if (!auth?.usuario?.usuario_id || !auth?.usuario?.token) return;
       
       try {
         const urlApi = Platform.OS === 'web' 
-          ? `http://localhost:8000/usuarios/${auth.usuario.usuario_id}` 
-          : `http://192.168.1.43:8000/usuarios/${auth.usuario.usuario_id}`; 
+          ? `/api/usuarios/${auth.usuario.usuario_id}` 
+          : `${BASE_URL}/usuarios/${auth.usuario.usuario_id}`; 
         
         const respuesta = await fetch(urlApi, {
           method: 'GET',
@@ -102,8 +106,8 @@ export default function PerfilPage() {
   const guardarDatosPerfil = async () => {
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/usuarios/${auth?.usuario?.usuario_id}` 
-        : `http://192.168.1.43:8000/usuarios/${auth?.usuario?.usuario_id}`;
+        ? `/api/usuarios/${auth?.usuario?.usuario_id}` 
+        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}`;
       
       await fetch(urlApi, {
         method: 'PUT',
@@ -114,11 +118,11 @@ export default function PerfilPage() {
         body: JSON.stringify({ nombre, apellidos, telefono, direccion })
       });
 
-      if (auth?.iniciarSesionContext && auth.usuario?.token && auth.usuario?.usuario_id) {
-        await auth.iniciarSesionContext(nombre, auth.usuario.token, auth.usuario.usuario_id);
+      if (auth?.iniciarSesionContext && auth.usuario?.token && auth.usuario?.usuario_id && auth.usuario?.rol) {
+        await auth.iniciarSesionContext(nombre, auth.usuario.token, auth.usuario.usuario_id, auth.usuario.rol);
       }
     } catch {
-      mostrarAlerta("Error al guardar", "Comprueba tu conexión.");
+      alerta?.mostrarAlerta("Error al guardar", "Comprueba tu conexión.");
     }
   };
 
@@ -131,19 +135,19 @@ export default function PerfilPage() {
 
   const manejarCambiarContrasena = async () => {
     if (!contrasenaActual || !nuevaContrasena || !repetirContrasena) {
-      mostrarAlerta("Error", "Rellena todos los campos.");
+      alerta?.mostrarAlerta("Error", "Rellena todos los campos.");
       return;
     }
     if (nuevaContrasena !== repetirContrasena) {
-      mostrarAlerta("Error", "Las nuevas contraseñas no coinciden.");
+      alerta?.mostrarAlerta("Error", "Las nuevas contraseñas no coinciden.");
       return;
     }
 
     setCargandoPassword(true);
     try {
       const urlApi = Platform.OS === 'web' 
-        ? `http://localhost:8000/usuarios/${auth?.usuario?.usuario_id}/contrasena` 
-        : `http://192.168.1.43:8000/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
+        ? `/api/usuarios/${auth?.usuario?.usuario_id}/contrasena` 
+        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
 
       const respuesta = await fetch(urlApi, {
         method: 'PUT',
@@ -159,13 +163,13 @@ export default function PerfilPage() {
 
       if (!respuesta.ok) throw new Error("Contraseña actual incorrecta.");
 
-      mostrarAlerta("Éxito", "Contraseña cambiada con éxito.");
+      alerta?.mostrarAlerta("Éxito", "Contraseña cambiada con éxito.");
       setModalVisible(false);
       setContrasenaActual('');
       setNuevaContrasena('');
       setRepetirContrasena('');
     } catch (error: any) {
-      mostrarAlerta("Error", error.message);
+      alerta?.mostrarAlerta("Error", error.message);
     } finally {
       setCargandoPassword(false);
     }
@@ -174,14 +178,14 @@ export default function PerfilPage() {
   const manejarCerrarSesion = async () => {
     if (auth?.cerrarSesionContext) {
       await auth.cerrarSesionContext();
-      mostrarAlerta("Sesión cerrada", "Has cerrado sesión correctamente.");
+      alerta?.mostrarAlerta("Sesión cerrada", "Has cerrado sesión correctamente.");
       router.replace('/'); 
     }
   };
 
   return (
     <View style={styles.contenedorPantalla}>
-      <View style={styles.scrollContenido}>
+      <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
         
         <View style={[styles.contenedorColumnas, esMovil && styles.contenedorColumnasMovil]}>
           
@@ -193,10 +197,6 @@ export default function PerfilPage() {
             <InputConLapiz label="Dirección" valor={direccion} setValor={setDireccion} editable={editDireccion} setEditable={setEditDireccion} toggleEdicion={toggleEdicion} />
 
             <Text style={styles.textoFecha}>Fecha de registro: {fechaRegistro}</Text>
-
-            <Pressable style={[styles.botonCambiarContra, esMovil && styles.botonFullWidth]} onPress={() => setModalVisible(true)}>
-              <Text style={styles.textoBotonSecundario}>Cambiar contraseña</Text>
-            </Pressable>
           </View>
 
           <View style={[styles.columnaDerecha, esMovil && styles.columnaDerechaMovil]}>
@@ -205,23 +205,26 @@ export default function PerfilPage() {
                 <Text style={styles.textoBotonSecundario}>Historial de compra</Text>
               </Pressable>
             </Link>
+
+            <Pressable style={[styles.botonAccion, styles.espacioBotonIntermedio]} onPress={() => setModalVisible(true)}>
+              <Text style={styles.textoBotonSecundario}>Cambiar contraseña</Text>
+            </Pressable>
             
-            <Pressable style={[styles.botonAccion, styles.espacioBotonCerrar, esMovil && styles.espacioBotonCerrarMovil]} onPress={manejarCerrarSesion}>
+            <Pressable style={[styles.botonAccion, styles.espacioBotonCerrar]} onPress={manejarCerrarSesion}>
               <Text style={styles.textoBotonSecundario}>Cerrar sesión</Text>
             </Pressable>
           </View>
 
         </View>
 
-      </View>
+      </ScrollView>
 
       <Modal visible={modalVisible} transparent={true} animationType="fade">
         <Pressable style={styles.fondoModal} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.contenedorModalCentrado} onPress={(e) => e.stopPropagation()}>
-            
-            <Text style={styles.tituloModal}>CAMBIAR{'\n'}CONTRASEÑA</Text>
+          <Pressable style={styles.contenedorModalCentrado} onPress={(e) => e.stopPropagation()}>            
             
             <View style={styles.tarjetaBlancaModal}>
+              <Text style={styles.tituloModal}>CAMBIAR{'\n'}CONTRASEÑA</Text>
               <View style={styles.grupoInputModal}>
                 <Text style={styles.label}>Contraseña actual</Text>
                 <TextInput style={styles.inputModal} value={contrasenaActual} onChangeText={setContrasenaActual} secureTextEntry />
@@ -251,14 +254,14 @@ export default function PerfilPage() {
 
 const styles = StyleSheet.create({
   contenedorPantalla: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: '#FFFFFF',
   },
   scrollContenido: {
     paddingVertical: 50,
     paddingHorizontal: 30,
-    paddingBottom: 200,
     alignItems: 'center',
+    flexGrow: 1,
   },
   contenedorColumnas: {
     flexDirection: 'row',
@@ -276,7 +279,6 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   columnaIzquierdaMovil: {
-    flex: 0,
     maxWidth: '100%',
     marginRight: 0,
   },
@@ -293,24 +295,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  input: Platform.OS === 'web' ? {
+  input: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#29166F', 
-    borderRadius: 4,
+    borderRadius: 8,
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    backgroundColor: '#FFFFFF',
-    outlineStyle: 'none',
-  } as any : {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#29166F', 
-    borderRadius: 4,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 14,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     backgroundColor: '#FFFFFF',
@@ -324,7 +315,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
   },
   iconoEditar: {
     width: 40,
@@ -339,40 +329,29 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  botonCambiarContra: {
-    backgroundColor: '#29166F',
-    borderRadius: 6,
-    paddingVertical: 12,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 300,
-    alignSelf: 'center', 
-  },
-  botonFullWidth: {
-    maxWidth: '100%',
-  },
   columnaDerecha: {
     flex: 1,
     maxWidth: 400,
     marginTop: 25, 
   },
   columnaDerechaMovil: {
-    flex: 0,
     maxWidth: '100%',
     marginTop: 15,
   },
   botonAccion: {
     backgroundColor: '#29166F',
-    borderRadius: 6,
-    paddingVertical: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
   },
-  espacioBotonCerrar: {
-    marginTop: 30, 
+  espacioBotonIntermedio: {
+    marginTop: 20,
   },
-  espacioBotonCerrarMovil: {
-    marginTop: 15,
+  espacioBotonCerrar: {
+    marginTop: 20, 
   },
   textoBotonSecundario: {
     color: '#FFFFFF',
@@ -403,39 +382,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 30,
     width: '100%',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
     elevation: 8,
   },
   grupoInputModal: {
     marginBottom: 20,
   },
-  inputModal: Platform.OS === 'web' ? {
+  inputModal: {
     borderWidth: 1,
     borderColor: '#29166F',
-    borderRadius: 4,
+    borderRadius: 8,
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    backgroundColor: '#FFFFFF',
-    outlineStyle: 'none',
-  } as any : {
-    borderWidth: 1,
-    borderColor: '#29166F',
-    borderRadius: 4,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 14,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     backgroundColor: '#FFFFFF',
   },
   botonAceptarModal: {
     backgroundColor: '#29166F',
-    borderRadius: 6,
-    paddingVertical: 12,
+    borderRadius: 8,
+    paddingVertical: 14,
     alignItems: 'center',
     width: '100%',
     marginTop: 10,

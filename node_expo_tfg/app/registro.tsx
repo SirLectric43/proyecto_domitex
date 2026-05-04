@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, Alert } from 'react-native';
+import { useState, useContext } from 'react';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import { AlertaContext } from './alerta-context';
 
 export default function RegistroPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
+  const alerta = useContext(AlertaContext);
+  const BASE_URL = 'domitex.vercel.app';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -16,34 +19,26 @@ export default function RegistroPage() {
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  const mostrarAlerta = (titulo: string, mensaje: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${titulo}: ${mensaje}`);
-    } else {
-      Alert.alert(titulo, mensaje);
-    }
-  };
-
   const manejarRegistro = async () => {
     if (!nombre || !apellidos || !correo || !telefono || !contrasena || !repetirContrasena) {
-      mostrarAlerta("Error", "Por favor, rellena todos los campos.");
+      alerta?.mostrarAlerta("Error", "Por favor, rellena todos los campos.");
       return;
     }
 
     if (contrasena !== repetirContrasena) {
-      mostrarAlerta("Error", "Las contraseñas no coinciden.");
+      alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
       return;
     }
 
     if (!aceptaTerminos) {
-      mostrarAlerta("Error", "Debes aceptar los Términos y Condiciones.");
+      alerta?.mostrarAlerta("Error", "Debes aceptar los Términos y Condiciones.");
       return;
     }
 
     setCargando(true);
 
     try {
-      const urlApi = Platform.OS === 'web' ? 'http://localhost:8000/usuarios' : 'http://192.168.1.43:8000/usuarios';
+      const urlApi = Platform.OS === 'web' ? '/api/usuarios' : `${BASE_URL}/usuarios`;
       
       const respuesta = await fetch(urlApi, {
         method: 'POST',
@@ -64,14 +59,13 @@ export default function RegistroPage() {
       if (!respuesta.ok) {
         throw new Error(datos.detail || "Error al registrar la cuenta");
       } else {
-        mostrarAlerta("Cuenta creada correctamente", "Por favor revise su correo electrónico para activar su cuenta.")
+        alerta?.mostrarAlerta("Cuenta creada correctamente", "Por favor revise su correo electrónico para activar su cuenta.")
       }
 
-      mostrarAlerta("Éxito", datos.mensaje);
       router.push("/login");
 
     } catch (error: any) {
-      mostrarAlerta("Error", error.message);
+      alerta?.mostrarAlerta("Error", error.message);
     } finally {
       setCargando(false);
     }
@@ -275,15 +269,16 @@ const styles = StyleSheet.create({
     color: '#000000',
     flex: 1,
   },
-  botonRegistrarse: {
+  botonRegistrarse: { 
     backgroundColor: '#29166F',
-    borderRadius: 6,
-    paddingVertical: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
   },
-  textoBotonRegistrarse: {
+  textoBotonRegistrarse: { 
     color: '#FFFFFF',
     fontFamily: 'Inter_700Bold',
     fontSize: 20,
