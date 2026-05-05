@@ -19,7 +19,7 @@ export default function VerPedido() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
   
   const [pedido, setPedido] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -31,7 +31,7 @@ export default function VerPedido() {
         const urlApi =
           Platform.OS === "web"
             ? `/api/pedidos/${pedidoId}`
-            : `${BASE_URL}/pedidos/${pedidoId}`;
+            : `${BASE_URL}/api/pedidos/${pedidoId}`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
