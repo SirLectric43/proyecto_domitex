@@ -7,7 +7,7 @@ import { AlertaContext } from './alerta-context';
 export default function GestionUsuariosPage() {
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
   
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -18,7 +18,7 @@ export default function GestionUsuariosPage() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/usuarios` 
-        : `${BASE_URL}/usuarios`; 
+        : `${BASE_URL}/api/usuarios`; 
       
       const respuesta = await fetch(urlApi, {
         method: 'GET',
@@ -50,7 +50,7 @@ export default function GestionUsuariosPage() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/usuarios/${usuarioABorrar}` 
-        : `${BASE_URL}/usuarios/${usuarioABorrar}`; 
+        : `${BASE_URL}/api/usuarios/${usuarioABorrar}`; 
       
       const respuesta = await fetch(urlApi, {
         method: 'DELETE',

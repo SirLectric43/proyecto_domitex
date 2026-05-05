@@ -23,7 +23,7 @@ export default function VistaArticuloPage() {
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
   const router = useRouter();
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
 
   const esAdmin = auth?.usuario?.rol === "admin";
 
@@ -57,7 +57,7 @@ export default function VistaArticuloPage() {
         const urlApi =
           Platform.OS === "web"
             ? "/api/categorias"
-            : `${BASE_URL}/categorias`;
+            : `${BASE_URL}/api/categorias`;
         const res = await fetch(urlApi);
         if (res.ok) {
           const data = await res.json();
@@ -79,7 +79,7 @@ export default function VistaArticuloPage() {
         const urlApi =
           Platform.OS === "web"
             ? `/api/articulos/${id}`
-            : `${BASE_URL}/articulos/${id}`;
+            : `${BASE_URL}/api/articulos/${id}`;
 
         const respuesta = await fetch(urlApi, {
           headers: auth?.usuario?.token
@@ -136,7 +136,7 @@ export default function VistaArticuloPage() {
       const urlApi =
         Platform.OS === "web"
           ? "/api/categorias"
-          : `${BASE_URL}/categorias`;
+          : `${BASE_URL}/api/categorias`;
       const res = await fetch(urlApi, {
         method: "POST",
         headers: {
@@ -178,7 +178,7 @@ export default function VistaArticuloPage() {
       const urlApi =
         Platform.OS === "web"
           ? `/api/carrito/anadir`
-          : `${BASE_URL}/carrito/anadir`;
+          : `${BASE_URL}/api/carrito/anadir`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -266,7 +266,7 @@ export default function VistaArticuloPage() {
       const urlApi =
         Platform.OS === "web"
           ? `/api/articulos/${id}`
-          : `${BASE_URL}/articulos/${id}`;
+          : `${BASE_URL}/api/articulos/${id}`;
 
       const medidasFormateadas = formulario.medidas.map((m: any) => ({
         id: m.id,
@@ -333,7 +333,7 @@ export default function VistaArticuloPage() {
       const urlApi =
         Platform.OS === "web"
           ? `/api/articulos/${id}`
-          : `${BASE_URL}/articulos/${id}`;
+          : `${BASE_URL}/api/articulos/${id}`;
 
       const respuesta = await fetch(urlApi, {
         method: "DELETE",

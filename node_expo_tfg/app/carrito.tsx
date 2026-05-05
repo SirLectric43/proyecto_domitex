@@ -23,7 +23,7 @@ export default function Carrito() {
   const alerta = useContext(AlertaContext);
   const [items, setItems] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
 
   useEffect(() => {
     const obtenerCarrito = async () => {
@@ -32,7 +32,7 @@ export default function Carrito() {
         const urlApi =
           Platform.OS === "web"
             ? `/api/carrito`
-            : `${BASE_URL}/carrito`;
+            : `${BASE_URL}/api/carrito`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
@@ -72,7 +72,7 @@ export default function Carrito() {
       const urlApi =
         Platform.OS === "web"
           ? `/api/carrito/items/${itemId}`
-          : `${BASE_URL}/carrito/items/${itemId}`;
+          : `${BASE_URL}/api/carrito/items/${itemId}`;
 
       const respuesta = await fetch(urlApi, {
         method: "PUT",
@@ -104,7 +104,7 @@ export default function Carrito() {
     try {
       const urlApi = Platform.OS === "web"
         ? `/api/pedidos/confirmar`
-        : `${BASE_URL}/pedidos/confirmar`;
+        : `${BASE_URL}/api/pedidos/confirmar`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",

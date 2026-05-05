@@ -40,7 +40,7 @@ export default function PerfilPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -67,7 +67,7 @@ export default function PerfilPage() {
       try {
         const urlApi = Platform.OS === 'web' 
           ? `/api/usuarios/${auth.usuario.usuario_id}` 
-          : `${BASE_URL}/usuarios/${auth.usuario.usuario_id}`; 
+          : `${BASE_URL}/api/usuarios/${auth.usuario.usuario_id}`; 
         
         const respuesta = await fetch(urlApi, {
           method: 'GET',
@@ -107,7 +107,7 @@ export default function PerfilPage() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/usuarios/${auth?.usuario?.usuario_id}` 
-        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}`;
+        : `${BASE_URL}/api/usuarios/${auth?.usuario?.usuario_id}`;
       
       await fetch(urlApi, {
         method: 'PUT',
@@ -147,7 +147,7 @@ export default function PerfilPage() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/usuarios/${auth?.usuario?.usuario_id}/contrasena` 
-        : `${BASE_URL}/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
+        : `${BASE_URL}/api/usuarios/${auth?.usuario?.usuario_id}/contrasena`;
 
       const respuesta = await fetch(urlApi, {
         method: 'PUT',

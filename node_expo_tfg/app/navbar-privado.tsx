@@ -22,7 +22,7 @@ export default function NavbarPrivado() {
 
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
-  const BASE_URL = 'domitex.vercel.app';
+  const BASE_URL = 'https://domitex.vercel.app';
 
   const rutasPrincipales = ['/catalogo', '/panel-administrador', '/gestion-pedidos', '/gestion-usuarios'];
   const mostrarBotonVolver = esMovil && !rutasPrincipales.includes(pathname);
@@ -38,7 +38,7 @@ export default function NavbarPrivado() {
       try {
         const urlApi = Platform.OS === 'web' 
           ? `/api/articulos/buscar?q=${encodeURIComponent(busqueda)}` 
-          : `${BASE_URL}/articulos/buscar?q=${encodeURIComponent(busqueda)}`;
+          : `${BASE_URL}/api/articulos/buscar?q=${encodeURIComponent(busqueda)}`;
           
         const respuesta = await fetch(urlApi, {
           headers: auth?.usuario?.token ? { 'Authorization': `Bearer ${auth.usuario.token}` } : {}
@@ -61,7 +61,7 @@ export default function NavbarPrivado() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/notificaciones` 
-        : `${BASE_URL}/notificaciones`;
+        : `${BASE_URL}/api/notificaciones`;
         
       const respuesta = await fetch(urlApi, {
         headers: { 'Authorization': `Bearer ${auth.usuario.token}` }
@@ -84,7 +84,7 @@ export default function NavbarPrivado() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/notificaciones/marcar-leidas` 
-        : `${BASE_URL}/notificaciones/marcar-leidas`;
+        : `${BASE_URL}/api/notificaciones/marcar-leidas`;
         
       await fetch(urlApi, {
         method: 'PUT',
@@ -101,7 +101,7 @@ export default function NavbarPrivado() {
     try {
       const urlApi = Platform.OS === 'web' 
         ? `/api/notificaciones/limpiar` 
-        : `${BASE_URL}/notificaciones/limpiar`;
+        : `${BASE_URL}/api/notificaciones/limpiar`;
         
       const respuesta = await fetch(urlApi, {
         method: 'DELETE',
