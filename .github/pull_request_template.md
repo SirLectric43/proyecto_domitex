@@ -1,21 +1,19 @@
 ### 📝 Descripción
-Esta PR implementa la funcionalidad real de la casilla "Recordarme" en la pantalla de inicio de sesión, gestionando de forma inteligente la persistencia de los datos del usuario.
+Esta PR mejora significativamente la experiencia del usuario (UX) al gestionar los mensajes de error técnicos que devuelven la API y Supabase. Se ha diseñado un sistema centralizado para traducir errores crudos en inglés a mensajes amigables y comprensibles en español.
 
 **Resumen de los cambios implementados:**
 
-*   **Lógica de Persistencia (AuthContext):** Se ha refactorizado `auth-context.tsx` para soportar dos tipos de almacenamiento:
-    *   `AsyncStorage` (Memoria persistente): Se utiliza cuando el usuario marca "Recordarme". La sesión sobrevive al cierre de la pestaña y del navegador.
-    *   `sessionStorage` (Memoria volátil, solo Web): Se utiliza cuando el usuario **no** marca "Recordarme". La sesión resiste la recarga de la página (F5), pero se destruye automáticamente al cerrar la pestaña.
-*   **Limpieza de sesión segura:** Se ha actualizado `cerrarSesionContext` y la inicialización del login para limpiar siempre ambos tipos de almacenamiento, evitando conflictos o duplicidades de datos en el navegador.
-*   **Actualización del Login:** Se ha modificado `login.tsx` para pasar el valor booleano del estado `recordarme` a la función `iniciarSesionContext`.
+*   **Diccionario de Errores Centralizado (`utils/errores.ts`):** Se ha creado una utilidad global siguiendo el principio DRY (*Don't Repeat Yourself*). Intercepta y traduce los errores más comunes de autenticación, registro, caducidad de tokens y fallos de red.
+*   **Mejora en la UI de Alertas:** Los bloques `catch` en las peticiones (como en `login.tsx`) ahora pasan el `error.message` por la función `traducirError` antes de disparar el contexto de Alerta.
+*   **Escalabilidad:** El sistema está preparado para ser importado fácilmente mediante `@/utils/errores` en cualquier otra pantalla de la aplicación .
 
 ## 🔗 Issue relacionado
-Closes #65
+Closes #66
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
@@ -32,4 +30,4 @@ Closes #65
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-Se ha implementado una validación específica para `Platform.OS === 'web'` y `typeof window !== 'undefined'` en el uso de `sessionStorage` dentro del contexto de autenticación. Esto asegura que la aplicación web funcione perfectamente con las recargas de página (F5) sin romper la compatibilidad con las aplicaciones móviles nativas de Expo.
+La función `traducirError` ha sido diseñada de forma defensiva: convierte los mensajes recibidos a minúsculas y utiliza `.includes()` para buscar palabras clave en lugar de requerir strings exactos. Esto garantiza que la traducción no se rompa si la API o Supabase cambian ligeramente la estructura de sus errores en el futuro. Si ocurre un error no contemplado, se devuelve un mensaje genérico por defecto para evitar que la aplicación falle.

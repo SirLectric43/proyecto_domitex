@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform, ScrollView, ActivityIndica
 import { AuthContext } from './auth-context';
 import { router } from 'expo-router';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function GestionUsuariosPage() {
   const auth = useContext(AuthContext);
@@ -29,8 +30,9 @@ export default function GestionUsuariosPage() {
       if (respuesta.ok) {
         setUsuarios(datos);
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", String(error));
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
@@ -63,8 +65,9 @@ export default function GestionUsuariosPage() {
         const errorData = await respuesta.json();
         alerta?.mostrarAlerta("Error", errorData.detail || 'No se pudo eliminar');
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", String(error));
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 

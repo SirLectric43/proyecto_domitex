@@ -14,6 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function VerPedidoAdminPage() {
   const { id } = useLocalSearchParams();
@@ -98,8 +99,9 @@ export default function VerPedidoAdminPage() {
       } else {
         alerta?.mostrarAlerta("Error", "Error al guardar los cambios.");
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + mensajeError);
     } finally {
       setGuardando(false);
     }
@@ -121,8 +123,9 @@ export default function VerPedidoAdminPage() {
       if (res.ok) {
         router.back();
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + mensajeError);
     }
   };
 

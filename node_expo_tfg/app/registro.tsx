@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function RegistroPage() {
   const { width } = useWindowDimensions();
@@ -64,8 +65,9 @@ export default function RegistroPage() {
 
       router.push("/login");
 
-    } catch (error: any) {
-      alerta?.mostrarAlerta("Error", error.message);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }

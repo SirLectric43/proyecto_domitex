@@ -3,11 +3,14 @@ import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindo
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, usePathname } from 'expo-router';
 import { AuthContext } from './auth-context';
+import { traducirError } from '@/utils/errores';
+import { AlertaContext } from './alerta-context';
 
 export default function NavbarPrivado() {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const pathname = usePathname();
+  const alerta = useContext(AlertaContext);
   
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busquedaAbierta, setBusquedaAbierta] = useState(false);
@@ -47,7 +50,9 @@ export default function NavbarPrivado() {
           setResultados(datos);
           setMostrarDropdown(true);
         }
-      } catch (error) {
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       }
     }, 300);
 
@@ -67,7 +72,9 @@ export default function NavbarPrivado() {
         const datos = await respuesta.json();
         setNotificaciones(datos);
       }
-    } catch (error) {
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
@@ -86,7 +93,9 @@ export default function NavbarPrivado() {
       });
       
       setNotificaciones(notificaciones.map(n => ({ ...n, leida: true })));
-    } catch (error) {
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 

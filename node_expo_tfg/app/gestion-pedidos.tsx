@@ -13,6 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function GestionPedidosPage() {
   const { width } = useWindowDimensions();
@@ -89,9 +90,10 @@ export default function GestionPedidosPage() {
       if (!res.ok) {
         cargarPedidos();
       }
-    } catch (e) {
+    } catch (e: any) {
       cargarPedidos();
-      alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
