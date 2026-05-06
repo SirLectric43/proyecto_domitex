@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { AlertaContext } from './alerta-context';
 import { traducirError } from '@/utils/errores';
 
@@ -75,6 +76,9 @@ export default function RegistroPage() {
 
   return (
     <View style={styles.contenedor}>
+      <Head>
+          <title>Registro | Domitex</title>
+      </Head>
       <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
         <View style={styles.capaSuperpuesta}>
           <Text style={[styles.tituloBanner, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>

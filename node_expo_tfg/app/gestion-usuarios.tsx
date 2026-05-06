@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { AuthContext } from './auth-context';
 import { router } from 'expo-router';
+import Head from 'expo-router/head';
 import { AlertaContext } from './alerta-context';
 import { traducirError } from '@/utils/errores';
 
@@ -91,6 +92,9 @@ export default function GestionUsuariosPage() {
   if (cargando) {
     return (
       <View style={styles.contenedorCarga}>
+        <Head>
+            <title>Gestión de usuarios | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -99,6 +103,9 @@ export default function GestionUsuariosPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Gestión de usuarios | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Gestión de usuarios</Text>
 
         <View style={styles.gridUsuarios}>

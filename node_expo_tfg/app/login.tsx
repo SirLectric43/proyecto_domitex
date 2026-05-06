@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, ScrollView } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter} from 'expo-router';
+import Head from "expo-router/head";
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
 import { traducirError } from '@/utils/errores';
@@ -72,6 +73,9 @@ export default function LoginPage() {
 
     return (
         <ScrollView style={styles.contenedor} keyboardShouldPersistTaps="handled">
+            <Head>
+                <title>Inicio de sesión | Domitex</title>
+            </Head>
             <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
                 <View style={styles.capaSuperpuesta}>
                     <Text style={[styles.tituloBanner, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>

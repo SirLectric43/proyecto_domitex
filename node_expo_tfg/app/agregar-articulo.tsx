@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platform, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
 import { traducirError } from '@/utils/errores';
@@ -173,6 +174,9 @@ export default function AgregarArticuloPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+        <Head>
+            <title>Añadir un artículo | Domitex</title>
+        </Head>
         <View style={styles.contenedorFormulario}>
           
           <Text style={styles.tituloPagina}>Añadir nuevo artículo</Text>

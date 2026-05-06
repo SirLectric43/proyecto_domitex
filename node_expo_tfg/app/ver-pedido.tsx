@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import Head from "expo-router/head";
 
 export default function VerPedido() {
   const { pedidoId } = useLocalSearchParams();
@@ -76,6 +77,9 @@ export default function VerPedido() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Ver pedido - {pedido.referencia} | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Pedido {pedido.referencia}</Text>
 
         <View style={[styles.contenedorListaYResumen, esMovil && styles.contenedorListaYResumenMovil]}>
