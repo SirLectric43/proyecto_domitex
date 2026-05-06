@@ -50,7 +50,7 @@ export default function CatalogoPage() {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [catalogoAgrupado, setCatalogoAgrupado] = useState<any>({});
   const [cargando, setCargando] = useState(true);
@@ -62,10 +62,7 @@ export default function CatalogoPage() {
   useEffect(() => {
     const obtenerCatalogo = async () => {
       try {
-        const urlApi =
-          Platform.OS === "web"
-            ? `/api/articulos`
-            : `${BASE_URL}/api/articulos`;
+        const urlApi = `${BASE_URL}/api/articulos`;
 
         const headers: any = {
           "Cache-Control": "no-cache, no-store, must-revalidate",

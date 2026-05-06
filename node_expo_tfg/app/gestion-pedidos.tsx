@@ -20,7 +20,7 @@ export default function GestionPedidosPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -48,10 +48,7 @@ export default function GestionPedidosPage() {
   const cargarPedidos = async () => {
     setCargando(true);
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}`
-          : `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}`;
+      const urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
@@ -78,10 +75,7 @@ export default function GestionPedidosPage() {
     );
 
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/admin/pedidos/${id}/estado`
-          : `${BASE_URL}/api/admin/pedidos/${id}/estado`;
+      const urlApi = `${BASE_URL}/api/admin/pedidos/${id}/estado`;
 
       const res = await fetch(urlApi, {
         method: "PUT",

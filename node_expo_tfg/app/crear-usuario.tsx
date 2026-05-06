@@ -20,7 +20,7 @@ export default function CrearUsuarioPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -54,9 +54,7 @@ export default function CrearUsuarioPage() {
     setCargando(true);
 
     try {
-      const urlApi = Platform.OS === "web" 
-        ? "/api/admin/usuarios" 
-        : `${BASE_URL}/api/admin/usuarios`;
+      const urlApi = `${BASE_URL}/api/admin/usuarios`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",

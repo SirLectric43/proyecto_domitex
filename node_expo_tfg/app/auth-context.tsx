@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [usuario, setUsuario] = useState<{ nombre: string; token: string; usuario_id: string; rol: string } | null>(null);
   const [cargando, setCargando] = useState(true);
   const [cantidadCesta, setCantidadCesta] = useState(0);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   useEffect(() => {
     const cargarSesion = async () => {
@@ -68,9 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const urlApi = Platform.OS === 'web' 
-        ? `/api/carrito` 
-        : `${BASE_URL}/api/carrito`;
+      const urlApi = `${BASE_URL}/api/carrito`;
         
       const respuesta = await fetch(urlApi, {
         headers: { 'Authorization': `Bearer ${usuario.token}` }

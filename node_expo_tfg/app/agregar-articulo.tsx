@@ -11,7 +11,7 @@ export default function AgregarArticuloPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -33,7 +33,7 @@ export default function AgregarArticuloPage() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const urlApi = Platform.OS === 'web' ? '/api/categorias' : `${BASE_URL}/api/categorias`;
+        const urlApi = `${BASE_URL}/api/categorias`;
         const res = await fetch(urlApi);
         if (res.ok) {
           const data = await res.json();
@@ -51,7 +51,7 @@ export default function AgregarArticuloPage() {
   const guardarNuevaCategoria = async () => {
     if (!nuevaCategoriaTexto.trim()) return;
     try {
-      const urlApi = Platform.OS === 'web' ? '/api/categorias' : `${BASE_URL}/api/categorias`;
+      const urlApi = `${BASE_URL}/api/categorias`;
       const res = await fetch(urlApi, {
         method: 'POST',
         headers: {
@@ -124,9 +124,7 @@ export default function AgregarArticuloPage() {
     setGuardando(true);
 
     try {
-      const urlApi = Platform.OS === 'web' 
-        ? '/api/articulos' 
-        : `${BASE_URL}/api/articulos`;
+      const urlApi = `${BASE_URL}/api/articulos`;
       
       const medidasFormateadas = medidas.map(m => ({
         medida: m.medida,
