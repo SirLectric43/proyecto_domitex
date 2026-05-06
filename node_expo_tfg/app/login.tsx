@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
@@ -39,27 +39,27 @@ export default function LoginPage() {
                 }),
             });
 
-        const datos = await respuesta.json();
+            const datos = await respuesta.json();
 
-        if (!respuesta.ok) {
-            let mensajeError = "Error al iniciar sesión";
-            if (datos.detail) {
-                mensajeError = String(datos.detail);
+            if (!respuesta.ok) {
+                let mensajeError = "Error al iniciar sesión";
+                if (datos.detail) {
+                    mensajeError = String(datos.detail);
+                }
+                throw new Error(mensajeError);
             }
-            throw new Error(mensajeError);
-        }
 
-        if (auth?.iniciarSesionContext) {
-            await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol);
-        }
+            if (auth?.iniciarSesionContext) {
+                await auth.iniciarSesionContext(datos.nombre, datos.token, datos.usuario_id, datos.rol, recordarme);
+            }
 
-        alerta?.mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
+            alerta?.mostrarAlerta("Éxito", "Sesión iniciada correctamente.");
 
-        if (datos.rol === 'admin' || datos.rol === 'empleado') {
-            router.replace("/panel-administrador")
-        } else {
-            router.replace("/catalogo");
-        }
+            if (datos.rol === 'admin' || datos.rol === 'empleado') {
+                router.replace("/panel-administrador");
+            } else {
+                router.replace("/catalogo");
+            }
 
         } catch (error: any) {
             alerta?.mostrarAlerta("Acceso denegado", error.message);
@@ -68,74 +68,74 @@ export default function LoginPage() {
         }
     };
 
-return (
-<ScrollView style={styles.contenedor} keyboardShouldPersistTaps="handled">
-    <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
-    <View style={styles.capaSuperpuesta}>
-        <Text style={[styles.tituloBanner, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>
-        Domitex: Vistiendo tu hogar con elegancia
-        </Text>
-        <Text style={[styles.subtituloBanner, esMovil && { fontSize: 18, lineHeight: 24, marginTop: 20 }]}>
-        La calidad textil de siempre, ahora a un solo clic. Haz tus pedidos de forma rápida y eficaz.
-        </Text>
-        <Link href="/catalogo" asChild>
-        <Pressable style={esMovil ? styles.botonBannerMovil : styles.botonBanner}>
-            <Text style={[styles.textoBotonBanner, esMovil && { fontSize: 18 }]}>Explorar Catálogo</Text>
-        </Pressable>
-        </Link>
-    </View>
-    </ImageBackground>
+    return (
+        <ScrollView style={styles.contenedor} keyboardShouldPersistTaps="handled">
+            <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
+                <View style={styles.capaSuperpuesta}>
+                    <Text style={[styles.tituloBanner, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>
+                        Domitex: Vistiendo tu hogar con elegancia
+                    </Text>
+                    <Text style={[styles.subtituloBanner, esMovil && { fontSize: 18, lineHeight: 24, marginTop: 20 }]}>
+                        La calidad textil de siempre, ahora a un solo clic. Haz tus pedidos de forma rápida y eficaz.
+                    </Text>
+                    <Link href="/catalogo" asChild>
+                        <Pressable style={esMovil ? styles.botonBannerMovil : styles.botonBanner}>
+                            <Text style={[styles.textoBotonBanner, esMovil && { fontSize: 18 }]}>Explorar Catálogo</Text>
+                        </Pressable>
+                    </Link>
+                </View>
+            </ImageBackground>
 
-    <View style={styles.seccionFormulario}>
-    <View style={styles.contenedorFormulario}>
-        <Text style={styles.tituloFormulario}>Iniciar Sesión</Text>
+            <View style={styles.seccionFormulario}>
+                <View style={styles.contenedorFormulario}>
+                    <Text style={styles.tituloFormulario}>Iniciar Sesión</Text>
 
-        <View style={styles.grupoInput}>
-        <Text style={styles.label}>Correo electrónico</Text>
-        <TextInput 
-            style={styles.input} 
-            value={correo} 
-            onChangeText={setCorreo} 
-            keyboardType="email-address" 
-            autoCapitalize="none" 
-        />
-        </View>
+                    <View style={styles.grupoInput}>
+                        <Text style={styles.label}>Correo electrónico</Text>
+                        <TextInput 
+                            style={styles.input} 
+                            value={correo} 
+                            onChangeText={setCorreo} 
+                            keyboardType="email-address" 
+                            autoCapitalize="none" 
+                        />
+                    </View>
 
-        <View style={styles.grupoInput}>
-        <Text style={styles.label}>Contraseña</Text>
-        <TextInput 
-            style={styles.input} 
-            value={contrasena} 
-            onChangeText={setContrasena} 
-            secureTextEntry={true} 
-        />
-        </View>
+                    <View style={styles.grupoInput}>
+                        <Text style={styles.label}>Contraseña</Text>
+                        <TextInput 
+                            style={styles.input} 
+                            value={contrasena} 
+                            onChangeText={setContrasena} 
+                            secureTextEntry={true} 
+                        />
+                    </View>
 
-        <View style={styles.contenedorOpcionesExtra}>
-        <Pressable style={styles.contenedorCheckbox} onPress={() => setRecordarme(!recordarme)}>
-            <View style={styles.checkbox}>
-            {recordarme && <View style={styles.checkboxMarcado} />}
+                    <View style={styles.contenedorOpcionesExtra}>
+                        <Pressable style={styles.contenedorCheckbox} onPress={() => setRecordarme(!recordarme)}>
+                            <View style={styles.checkbox}>
+                                {recordarme && <View style={styles.checkboxMarcado} />}
+                            </View>
+                            <Text style={styles.textoCheckbox}>Recordarme</Text>
+                        </Pressable>
+
+                        <Pressable onPress={() => alerta?.mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
+                            <Text style={styles.linkRecuperar}>¿Has olvidado tu contraseña?</Text>
+                        </Pressable>
+                    </View>
+
+                    <Pressable style={styles.botonLogin} onPress={manejarLogin} disabled={cargando}>
+                        <Text style={styles.textoBotonLogin}>INICIAR SESIÓN</Text>
+                    </Pressable>
+
+                    <View style={styles.contenedorRegistroLink}>
+                        <Text style={styles.textoPregunta}>¿No tienes una cuenta? </Text>
+                        <Link href="/registro" style={styles.linkRegistro}>Regístrate aquí.</Link>
+                    </View>
+                </View>
             </View>
-            <Text style={styles.textoCheckbox}>Recordarme</Text>
-        </Pressable>
-
-        <Pressable onPress={() => alerta?.mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
-            <Text style={styles.linkRecuperar}>¿Has olvidado tu contraseña?</Text>
-        </Pressable>
-        </View>
-
-        <Pressable style={styles.botonLogin} onPress={manejarLogin} disabled={cargando}>
-        <Text style={styles.textoBotonLogin}>INICIAR SESIÓN</Text>
-        </Pressable>
-
-        <View style={styles.contenedorRegistroLink}>
-        <Text style={styles.textoPregunta}>¿No tienes una cuenta? </Text>
-        <Link href="/registro" style={styles.linkRegistro}>Regístrate aquí.</Link>
-        </View>
-    </View>
-    </View>
-</ScrollView>
-);
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
