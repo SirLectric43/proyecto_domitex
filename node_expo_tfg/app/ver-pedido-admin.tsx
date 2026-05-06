@@ -5,13 +5,13 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Platform,
   ActivityIndicator,
   Image,
   useWindowDimensions,
   TextInput,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
 import { traducirError } from "@/utils/errores";
@@ -141,6 +141,9 @@ export default function VerPedidoAdminPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={[styles.scrollContenido, esMovil && styles.scrollContenidoMovil]}>
+        <Head>
+            <title>Ver pedido (Administración) - {pedido.referencia} | Domitex</title>
+        </Head>
         <View style={[styles.tarjetaContenedora, esMovil && styles.tarjetaContenedoraMovil]}>
           <View style={[styles.cabecera, esMovil && styles.cabeceraMovil]}>
             <View>

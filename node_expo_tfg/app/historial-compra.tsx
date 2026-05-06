@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 
 export default function HistorialCompra() {
   const { width } = useWindowDimensions();
@@ -72,6 +73,9 @@ export default function HistorialCompra() {
   if (cargando) {
     return (
       <View style={styles.contenedorCentro}>
+        <Head>
+            <title>Historial de compra | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -80,6 +84,9 @@ export default function HistorialCompra() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Historial de compra | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Historial de Compras</Text>
 
         {pedidos.length === 0 ? (

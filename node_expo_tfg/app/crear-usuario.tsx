@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
 import { traducirError } from "@/utils/errores";
@@ -92,6 +93,9 @@ export default function CrearUsuarioPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+        <Head>
+            <title>Crear nuevo usuario | Domitex</title>
+        </Head>
         <View style={[styles.contenedorFormulario, esMovil && styles.contenedorFormularioMovil]}>
           
           <Text style={[styles.tituloPagina, esMovil && styles.tituloPaginaMovil]}>Crear nuevo usuario</Text>

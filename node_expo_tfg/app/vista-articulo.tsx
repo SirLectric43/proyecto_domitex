@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
@@ -340,6 +341,9 @@ export default function VistaArticuloPage() {
   if (cargando) {
     return (
       <View style={styles.contenedorCarga}>
+        <Head>
+          <title>Vista de artículo | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -347,9 +351,15 @@ export default function VistaArticuloPage() {
 
   if (!articulo)
     return (
-      <Text style={{ marginTop: 100, textAlign: "center" }}>
-        Artículo no encontrado.
-      </Text>
+    <View>
+        <Head>
+            <title>Vista de artículo | Domitex</title>
+        </Head>
+        <Text style={{ marginTop: 100, textAlign: "center" }}>
+          Artículo no encontrado.
+        </Text>
+      </View>
+        
     );
 
   const medidasVisibles = esAdmin
@@ -362,6 +372,9 @@ export default function VistaArticuloPage() {
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
       >
+        <Head>
+            <title>{articulo.nombre} | Domitex</title>
+        </Head>
         <View style={styles.tarjetaPrincipal}>
           {!esMovil && esAdmin && (
             <View

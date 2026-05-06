@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AlertaContext } from "./alerta-context";
 import { traducirError } from "@/utils/errores";
 
@@ -136,6 +137,9 @@ export default function Carrito() {
   if (cargando) {
     return (
       <View style={styles.contenedorCentro}>
+        <Head>
+            <title>Carrito | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -144,6 +148,9 @@ export default function Carrito() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Carrito | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Mi Cesta</Text>
 
         {items.length === 0 ? (

@@ -14,6 +14,7 @@ import {
   UIManager,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
 import { traducirError } from "@/utils/errores";
@@ -144,6 +145,9 @@ export default function CatalogoPage() {
   if (cargando) {
     return (
       <View style={styles.contenedorCarga}>
+        <Head>
+            <title>Catálogo | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -156,6 +160,9 @@ export default function CatalogoPage() {
           style={styles.contenedorPantalla}
           contentContainerStyle={styles.scrollContenido}
         >
+          <Head>
+              <title>Catálogo | Domitex</title>
+          </Head>
           <Text style={styles.textoNoProductos}>
             No hay productos disponibles en el catálogo.
           </Text>
@@ -172,6 +179,9 @@ export default function CatalogoPage() {
         style={styles.contenedorPantalla}
         contentContainerStyle={styles.scrollContenido}
       >
+        <Head>
+              <title>Catálogo | Domitex</title>
+        </Head>
         {auth?.usuario?.rol === "admin" && (
           <View
             style={[

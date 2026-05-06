@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { AuthContext } from './auth-context';
 
 export default function PanelAdmin() {
@@ -37,6 +38,9 @@ export default function PanelAdmin() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Panel de administrador | Domitex</title>
+        </Head>
         <View style={styles.contenedorTarjetas}>
           
           {opcionesFiltradas.map((opcion) => (

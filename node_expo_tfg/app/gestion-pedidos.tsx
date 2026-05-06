@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
 import { traducirError } from "@/utils/errores";
@@ -108,6 +109,9 @@ export default function GestionPedidosPage() {
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
       >
+        <Head>
+            <title>Gestión de pedidos | Domitex</title>
+        </Head>
         <View style={styles.tarjetaContenedora}>
           <Text style={styles.tituloPagina}>Gestión de pedidos</Text>
 

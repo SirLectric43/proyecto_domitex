@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Modal, Image, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import Head from 'expo-router/head';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
 import { traducirError } from '@/utils/errores';
@@ -182,7 +183,9 @@ export default function PerfilPage() {
   return (
     <View style={styles.contenedorPantalla}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
-        
+        <Head>
+            <title>Perfil de usuario | Domitex</title>
+        </Head>
         <View style={[styles.contenedorColumnas, esMovil && styles.contenedorColumnasMovil]}>
           
           <View style={[styles.columnaIzquierda, esMovil && styles.columnaIzquierdaMovil]}>
