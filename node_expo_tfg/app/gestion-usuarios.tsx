@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { AuthContext } from './auth-context';
 import { router } from 'expo-router';
 import Head from 'expo-router/head';
@@ -16,9 +16,13 @@ export default function GestionUsuariosPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [usuarioABorrar, setUsuarioABorrar] = useState<string | null>(null);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+
   const cargarUsuarios = async () => {
+    setCargando(true);
     try {
-      const urlApi = `${BASE_URL}/api/usuarios`; 
+      const urlApi = `${BASE_URL}/api/usuarios?page=${paginaActual}&limit=20`; 
       
       const respuesta = await fetch(urlApi, {
         method: 'GET',
@@ -29,7 +33,8 @@ export default function GestionUsuariosPage() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        setUsuarios(datos);
+        setUsuarios(datos.data);
+        setTotalPaginas(datos.total_pages);
       }
     } catch (e: any) {
         const mensajeError = traducirError(e.message);
@@ -43,7 +48,7 @@ export default function GestionUsuariosPage() {
     if (auth?.usuario?.token) {
       cargarUsuarios();
     }
-  }, [auth?.usuario?.token]);
+  }, [auth?.usuario?.token, paginaActual]);
 
   const confirmarBaja = async () => {
     if (!usuarioABorrar) return;
@@ -62,6 +67,11 @@ export default function GestionUsuariosPage() {
         setUsuarios(usuarios.filter(u => u.id !== usuarioABorrar));
         setModalVisible(false);
         setUsuarioABorrar(null);
+        if (usuarios.length === 1 && paginaActual > 1) {
+          setPaginaActual(paginaActual - 1);
+        } else {
+          cargarUsuarios();
+        }
       } else {
         const errorData = await respuesta.json();
         alerta?.mostrarAlerta("Error", errorData.detail || 'No se pudo eliminar');
@@ -89,7 +99,7 @@ export default function GestionUsuariosPage() {
     });
   };
 
-  if (cargando) {
+  if (cargando && usuarios.length === 0) {
     return (
       <View style={styles.contenedorCarga}>
         <Head>
@@ -109,6 +119,7 @@ export default function GestionUsuariosPage() {
         <Text style={styles.tituloPagina}>Gestión de usuarios</Text>
 
         <View style={styles.gridUsuarios}>
+          {cargando && <ActivityIndicator size="large" color="#29166F" />}
           {usuarios.map(u => (
             <View key={u.id} style={styles.tarjetaUsuario}>
               <View style={styles.infoContenedor}>
@@ -131,6 +142,26 @@ export default function GestionUsuariosPage() {
             </View>
           ))}
         </View>
+
+        {totalPaginas > 1 && (
+          <View style={styles.contenedorPaginacion}>
+            <Pressable 
+              style={[styles.botonPaginacion, paginaActual === 1 && styles.botonPaginacionDeshabilitado]}
+              onPress={() => setPaginaActual(p => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              <Image source={require('@/assets/images/iconoFlechaIzq.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+            </Pressable>
+            <Text style={styles.textoPaginacion}>Página {paginaActual} de {totalPaginas}</Text>
+            <Pressable 
+              style={[styles.botonPaginacion, paginaActual === totalPaginas && styles.botonPaginacionDeshabilitado]}
+              onPress={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas}
+            >
+              <Image source={require('@/assets/images/iconoFlechaDer.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+            </Pressable>
+          </View>
+        )}
         
         <Pressable style={styles.botonCrearUsuario} onPress={() => router.push('/crear-usuario')}>
           <Text style={styles.textoBotonCrear}>Crear nuevo usuario</Text>
@@ -326,4 +357,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     fontSize: 16,
   },
+  contenedorPaginacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+    gap: 20,
+    width: '100%',
+    maxWidth: 800,
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonPaginacionDeshabilitado: {
+    opacity: 0.4,
+  },
+  iconoPaginacion: {
+    width: 20,
+    height: 20,
+    tintColor: '#29166F',
+  },
+  textoPaginacion: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#29166F',
+  }
 });

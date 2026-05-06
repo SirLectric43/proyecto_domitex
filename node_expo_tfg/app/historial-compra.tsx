@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
@@ -22,11 +23,15 @@ export default function HistorialCompra() {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+
   useEffect(() => {
     const obtenerPedidos = async () => {
+      setCargando(true);
       if (!auth?.usuario?.token) return;
       try {
-        const urlApi = `${BASE_URL}/api/pedidos/historial`;
+        const urlApi = `${BASE_URL}/api/pedidos/historial?page=${paginaActual}&limit=15`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
@@ -34,7 +39,8 @@ export default function HistorialCompra() {
 
         if (respuesta.ok) {
           const datos = await respuesta.json();
-          setPedidos(datos);
+          setPedidos(datos.data);
+          setTotalPaginas(datos.total_pages);
         }
       } catch (error) {
         console.error("Error al cargar historial:", error);
@@ -43,7 +49,7 @@ export default function HistorialCompra() {
       }
     };
     obtenerPedidos();
-  }, [auth?.usuario?.token]);
+  }, [auth?.usuario?.token, paginaActual]);
 
   const formatearFecha = (fechaISO: string) => {
     const fecha = new Date(fechaISO);
@@ -70,7 +76,7 @@ export default function HistorialCompra() {
     }
   };
 
-  if (cargando) {
+  if (cargando && pedidos.length === 0) {
     return (
       <View style={styles.contenedorCentro}>
         <Head>
@@ -89,7 +95,7 @@ export default function HistorialCompra() {
         </Head>
         <Text style={styles.tituloPagina}>Historial de Compras</Text>
 
-        {pedidos.length === 0 ? (
+        {pedidos.length === 0 && !cargando ? (
           <View style={styles.contenedorVacio}>
             <Text style={styles.textoVacio}>Aún no has realizado ninguna compra.</Text>
             <Pressable
@@ -101,6 +107,7 @@ export default function HistorialCompra() {
           </View>
         ) : (
           <View style={styles.listaPedidos}>
+            {cargando && <ActivityIndicator size="large" color="#29166F" style={{marginBottom: 20}} />}
             {pedidos.map((pedido) => (
               <View 
                 key={pedido.id} 
@@ -131,6 +138,26 @@ export default function HistorialCompra() {
                 </View>
               </View>
             ))}
+
+            {totalPaginas > 1 && (
+              <View style={styles.contenedorPaginacion}>
+                <Pressable 
+                  style={[styles.botonPaginacion, paginaActual === 1 && styles.botonPaginacionDeshabilitado]}
+                  onPress={() => setPaginaActual(p => Math.max(1, p - 1))}
+                  disabled={paginaActual === 1}
+                >
+                  <Image source={require('@/assets/images/iconoFlechaIzq.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+                </Pressable>
+                <Text style={styles.textoPaginacion}>Página {paginaActual} de {totalPaginas}</Text>
+                <Pressable 
+                  style={[styles.botonPaginacion, paginaActual === totalPaginas && styles.botonPaginacionDeshabilitado]}
+                  onPress={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaActual === totalPaginas}
+                >
+                  <Image source={require('@/assets/images/iconoFlechaDer.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -267,4 +294,34 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 14,
   },
+  contenedorPaginacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    gap: 20,
+    width: '100%'
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonPaginacionDeshabilitado: {
+    opacity: 0.4,
+  },
+  iconoPaginacion: {
+    width: 20,
+    height: 20,
+    tintColor: '#29166F',
+  },
+  textoPaginacion: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#29166F',
+  }
 });

@@ -30,6 +30,9 @@ export default function GestionPedidosPage() {
   const [ordenFecha, setOrdenFecha] = useState<"desc" | "asc">("desc");
   const [pedidoAbierto, setPedidoAbierto] = useState<string | null>(null);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+
   const filtros = [
     "Todos",
     "Pendiente",
@@ -50,13 +53,16 @@ export default function GestionPedidosPage() {
   const cargarPedidos = async () => {
     setCargando(true);
     try {
-      const urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}`;
+      const urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}&page=${paginaActual}&limit=20`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
       });
       const datos = await res.json();
-      if (res.ok) setPedidos(datos);
+      if (res.ok) {
+        setPedidos(datos.data);
+        setTotalPaginas(datos.total_pages);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -66,7 +72,7 @@ export default function GestionPedidosPage() {
 
   useEffect(() => {
     if (auth?.usuario?.token) cargarPedidos();
-  }, [filtroEstado, ordenFecha]);
+  }, [filtroEstado, ordenFecha, paginaActual]);
 
   const actualizarEstado = async (id: string, nuevoEstado: string) => {
     setPedidoAbierto(null);
@@ -128,7 +134,10 @@ export default function GestionPedidosPage() {
                     styles.botonFiltro,
                     filtroEstado === f && styles.botonFiltroActivo,
                   ]}
-                  onPress={() => setFiltroEstado(f)}
+                  onPress={() => {
+                    setFiltroEstado(f);
+                    setPaginaActual(1);
+                  }}
                 >
                   <Text
                     style={[
@@ -152,9 +161,10 @@ export default function GestionPedidosPage() {
               ))}
               <Pressable
                 style={styles.botonOrden}
-                onPress={() =>
-                  setOrdenFecha(ordenFecha === "desc" ? "asc" : "desc")
-                }
+                onPress={() => {
+                  setOrdenFecha(ordenFecha === "desc" ? "asc" : "desc");
+                  setPaginaActual(1);
+                }}
               >
                 <Text style={styles.textoOrden}>
                   {ordenFecha === "desc"
@@ -165,7 +175,7 @@ export default function GestionPedidosPage() {
             </ScrollView>
           </View>
 
-          {cargando ? (
+          {cargando && pedidos.length === 0 ? (
             <ActivityIndicator
               size="large"
               color="#29166F"
@@ -281,6 +291,26 @@ export default function GestionPedidosPage() {
                 <Text style={styles.textoVacio}>
                   No se han encontrado pedidos.
                 </Text>
+              )}
+
+              {totalPaginas > 1 && (
+                <View style={styles.contenedorPaginacion}>
+                  <Pressable 
+                    style={[styles.botonPaginacion, paginaActual === 1 && styles.botonPaginacionDeshabilitado]}
+                    onPress={() => setPaginaActual(p => Math.max(1, p - 1))}
+                    disabled={paginaActual === 1}
+                  >
+                    <Image source={require('@/assets/images/iconoFlechaIzq.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+                  </Pressable>
+                  <Text style={styles.textoPaginacion}>Página {paginaActual} de {totalPaginas}</Text>
+                  <Pressable 
+                    style={[styles.botonPaginacion, paginaActual === totalPaginas && styles.botonPaginacionDeshabilitado]}
+                    onPress={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                    disabled={paginaActual === totalPaginas}
+                  >
+                    <Image source={require('@/assets/images/iconoFlechaDer.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+                  </Pressable>
+                </View>
               )}
             </View>
           )}
@@ -452,4 +482,34 @@ const styles = StyleSheet.create({
     color: "#999",
     fontSize: 18,
   },
+  contenedorPaginacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    gap: 20,
+    width: '100%'
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonPaginacionDeshabilitado: {
+    opacity: 0.4,
+  },
+  iconoPaginacion: {
+    width: 20,
+    height: 20,
+    tintColor: '#29166F',
+  },
+  textoPaginacion: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#29166F',
+  }
 });

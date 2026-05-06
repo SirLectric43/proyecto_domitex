@@ -56,6 +56,9 @@ export default function CatalogoPage() {
 
   const [catalogoAgrupado, setCatalogoAgrupado] = useState<any>({});
   const [cargando, setCargando] = useState(true);
+  
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
 
   const scrollRefs = useRef<any>({});
   const [indicesCatalogo, setIndicesCatalogo] = useState<any>({});
@@ -63,8 +66,9 @@ export default function CatalogoPage() {
 
   useEffect(() => {
     const obtenerCatalogo = async () => {
+      setCargando(true);
       try {
-        const urlApi = `${BASE_URL}/api/articulos`;
+        const urlApi = `${BASE_URL}/api/articulos?page=${paginaActual}&limit=8`;
 
         const headers: any = {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -84,11 +88,12 @@ export default function CatalogoPage() {
         const datos = await respuesta.json();
 
         if (respuesta.ok) {
-          setCatalogoAgrupado(datos);
+          setCatalogoAgrupado(datos.data);
+          setTotalPaginas(datos.total_pages);
 
           const indicesIniciales: any = {};
           const expandidasIniciales: any = {};
-          Object.keys(datos).forEach((categoria) => {
+          Object.keys(datos.data).forEach((categoria) => {
             indicesIniciales[categoria] = 0;
             expandidasIniciales[categoria] = false;
           });
@@ -108,9 +113,9 @@ export default function CatalogoPage() {
       }
     };
     obtenerCatalogo();
-  }, [auth?.usuario?.usuario_id, auth?.usuario?.token]);
+  }, [auth?.usuario?.usuario_id, auth?.usuario?.token, paginaActual]);
 
-  const paginaSiguiente = (categoria: string, totalArticulos: number) => {
+  const paginaSiguienteFila = (categoria: string, totalArticulos: number) => {
     const prevIndex = indicesCatalogo[categoria] || 0;
     const nextIndex = Math.min(totalArticulos - 4, prevIndex + 4);
 
@@ -122,7 +127,7 @@ export default function CatalogoPage() {
     });
   };
 
-  const paginaAnterior = (categoria: string) => {
+  const paginaAnteriorFila = (categoria: string) => {
     const prevIndex = indicesCatalogo[categoria] || 0;
     const nextIndex = Math.max(0, prevIndex - 4);
 
@@ -142,7 +147,7 @@ export default function CatalogoPage() {
     }));
   };
 
-  if (cargando) {
+  if (cargando && Object.keys(catalogoAgrupado).length === 0) {
     return (
       <View style={styles.contenedorCarga}>
         <Head>
@@ -198,6 +203,8 @@ export default function CatalogoPage() {
           </View>
         )}
 
+        {cargando && <ActivityIndicator size="large" color="#29166F" style={{marginBottom: 20}} />}
+
         {Object.keys(catalogoAgrupado).map((categoria, index) => {
           const articulos = catalogoAgrupado[categoria];
 
@@ -251,7 +258,7 @@ export default function CatalogoPage() {
                 <View style={styles.filaArticulosPcWrapper}>
                   <View style={styles.contenedorFlecha}>
                     {indicesCatalogo[categoria] > 0 && (
-                      <Pressable onPress={() => paginaAnterior(categoria)}>
+                      <Pressable onPress={() => paginaAnteriorFila(categoria)}>
                         <Image
                           source={require("@/assets/images/iconoFlechaIzq.png")}
                           style={styles.iconoFlecha}
@@ -302,7 +309,7 @@ export default function CatalogoPage() {
                     {indicesCatalogo[categoria] + 4 < articulos.length && (
                       <Pressable
                         onPress={() =>
-                          paginaSiguiente(categoria, articulos.length)
+                          paginaSiguienteFila(categoria, articulos.length)
                         }
                       >
                         <Image
@@ -346,6 +353,26 @@ export default function CatalogoPage() {
             </View>
           );
         })}
+
+        {totalPaginas > 1 && (
+          <View style={styles.contenedorPaginacion}>
+            <Pressable 
+              style={[styles.botonPaginacion, paginaActual === 1 && styles.botonPaginacionDeshabilitado]}
+              onPress={() => setPaginaActual(p => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              <Image source={require('@/assets/images/iconoFlechaIzq.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+            </Pressable>
+            <Text style={styles.textoPaginacion}>Página {paginaActual} de {totalPaginas}</Text>
+            <Pressable 
+              style={[styles.botonPaginacion, paginaActual === totalPaginas && styles.botonPaginacionDeshabilitado]}
+              onPress={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual === totalPaginas}
+            >
+              <Image source={require('@/assets/images/iconoFlechaDer.png')} style={styles.iconoPaginacion} resizeMode="contain" />
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -490,4 +517,34 @@ const styles = StyleSheet.create({
   },
   iconoFlecha: { width: 30, height: 30 },
   filaArticulosMovil: { paddingHorizontal: 5, paddingVertical: 10 },
+  contenedorPaginacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+    gap: 20,
+    width: '100%'
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonPaginacionDeshabilitado: {
+    opacity: 0.4,
+  },
+  iconoPaginacion: {
+    width: 20,
+    height: 20,
+    tintColor: '#29166F',
+  },
+  textoPaginacion: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#29166F',
+  }
 });
