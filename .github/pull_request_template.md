@@ -1,15 +1,23 @@
 ### 📝 Descripción
-Este PR finaliza la configuración del monorepo para su despliegue automático en Vercel, permitiendo que tanto el frontend (Expo/React Native) como el backend (FastAPI/Python) coexistan bajo el mismo dominio (`domitex.vercel.app`). Se han unificado las rutas de consumo de la API para asegurar la compatibilidad entre la versión Web y la futura APK de Android.
+Esta PR implementa la funcionalidad real de la casilla "Recordarme" en la pantalla de inicio de sesión, gestionando de forma inteligente la persistencia de los datos del usuario.
+
+**Resumen de los cambios implementados:**
+
+*   **Lógica de Persistencia (AuthContext):** Se ha refactorizado `auth-context.tsx` para soportar dos tipos de almacenamiento:
+    *   `AsyncStorage` (Memoria persistente): Se utiliza cuando el usuario marca "Recordarme". La sesión sobrevive al cierre de la pestaña y del navegador.
+    *   `sessionStorage` (Memoria volátil, solo Web): Se utiliza cuando el usuario **no** marca "Recordarme". La sesión resiste la recarga de la página (F5), pero se destruye automáticamente al cerrar la pestaña.
+*   **Limpieza de sesión segura:** Se ha actualizado `cerrarSesionContext` y la inicialización del login para limpiar siempre ambos tipos de almacenamiento, evitando conflictos o duplicidades de datos en el navegador.
+*   **Actualización del Login:** Se ha modificado `login.tsx` para pasar el valor booleano del estado `recordarme` a la función `iniciarSesionContext`.
 
 ## 🔗 Issue relacionado
-Closes #
+Closes #65
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
-- [X] 🔧 Configuración del proyecto / Dependencias
+- [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
@@ -24,4 +32,4 @@ Closes #
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-Se ha cambiado la **Production Branch** en el panel de Vercel a la rama `develop` para facilitar las pruebas constantes antes del merge final a `main`. Tras la aprobación de este PR, el proyecto está listo para generar la APK estable mediante `eas build`.
+Se ha implementado una validación específica para `Platform.OS === 'web'` y `typeof window !== 'undefined'` en el uso de `sessionStorage` dentro del contexto de autenticación. Esto asegura que la aplicación web funcione perfectamente con las recargas de página (F5) sin romper la compatibilidad con las aplicaciones móviles nativas de Expo.

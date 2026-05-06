@@ -118,7 +118,7 @@ class ActualizarLineasPedido(BaseModel):
 
 @api_router.get("/")
 def read_root():
-    return {"mensaje": "API de Domitex funcionando correctamente 🚀"}
+    return {"mensaje": "API de Domitex funcionando correctamente"}
 
 @api_router.post("/usuarios")
 def registrar_usuario(usuario: RegistroUsuario):
