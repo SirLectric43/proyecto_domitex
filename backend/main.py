@@ -182,7 +182,7 @@ def iniciar_sesion(credenciales: LoginUsuario):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/usuarios")
-def obtener_todos_usuarios(page: int = 1, limit: int = 20, authorization: str = Header(None)):
+def obtener_todos_usuarios(nombre: Optional[str] = None, rol: Optional[str] = None, page: int = 1, limit: int = 20, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     try:
@@ -195,9 +195,16 @@ def obtener_todos_usuarios(page: int = 1, limit: int = 20, authorization: str = 
         if not db_user.data or db_user.data[0].get("rol") != "admin":
             raise HTTPException(status_code=403, detail="Solo administradores pueden ver los usuarios")
             
+        consulta = supabase.table("usuarios").select("id, nombre, apellidos, rol, ultimo_acceso", count="exact")
+        
+        if nombre:
+            consulta = consulta.ilike("nombre", f"%{nombre}%")
+        if rol and rol != "Todos":
+            consulta = consulta.eq("rol", rol.lower())
+
         start = (page - 1) * limit
         end = start + limit - 1
-        respuesta = supabase.table("usuarios").select("id, nombre, apellidos, rol, ultimo_acceso", count="exact").range(start, end).execute()
+        respuesta = consulta.range(start, end).execute()
         
         total_pages = math.ceil(respuesta.count / limit) if respuesta.count else 0
         
@@ -234,7 +241,7 @@ def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/pedidos/historial")
-def obtener_historial_pedidos(usuario_id: Optional[str] = None, page: int = 1, limit: int = 15, authorization: str = Header(None)):
+def obtener_historial_pedidos(usuario_id: Optional[str] = None, estado: Optional[str] = None, fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, page: int = 1, limit: int = 15, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     
@@ -254,15 +261,18 @@ def obtener_historial_pedidos(usuario_id: Optional[str] = None, page: int = 1, l
             else:
                 raise HTTPException(status_code=403, detail="No tienes permiso para ver pedidos de otros usuarios")
 
+        consulta = supabase.table("pedidos").select("id, referencia, fecha_pedido, estado, total", count="exact").eq("usuario_id", target_id).order("fecha_pedido", desc=True)
+
+        if estado and estado != "Todos":
+            consulta = consulta.eq("estado", estado)
+        if fecha_inicio:
+            consulta = consulta.gte("fecha_pedido", fecha_inicio)
+        if fecha_fin:
+            consulta = consulta.lte("fecha_pedido", f"{fecha_fin}T23:59:59")
+
         start = (page - 1) * limit
         end = start + limit - 1
-
-        resp_pedidos = supabase.table("pedidos") \
-            .select("id, referencia, fecha_pedido, estado, total", count="exact") \
-            .eq("usuario_id", target_id) \
-            .order("fecha_pedido", desc=True) \
-            .range(start, end) \
-            .execute()
+        resp_pedidos = consulta.range(start, end).execute()
             
         total_pages = math.ceil(resp_pedidos.count / limit) if resp_pedidos.count else 0
         
@@ -805,7 +815,7 @@ def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/admin/pedidos")
-def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", page: int = 1, limit: int = 20, authorization: str = Header(None)):
+def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", referencia: Optional[str] = None, cliente: Optional[str] = None, rol: Optional[str] = None, fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, page: int = 1, limit: int = 20, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     
@@ -820,10 +830,20 @@ def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", pag
         if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
-        consulta = supabase.table("pedidos").select("*, usuarios(nombre, apellidos)", count="exact")
+        consulta = supabase.table("pedidos").select("*, usuarios!inner(nombre, apellidos, rol)", count="exact")
         
         if estado and estado != "Todos":
             consulta = consulta.eq("estado", estado)
+        if referencia:
+            consulta = consulta.ilike("referencia", f"%{referencia}%")
+        if rol and rol != "Todos":
+            consulta = consulta.eq("usuarios.rol", rol.lower())
+        if cliente:
+            consulta = consulta.ilike("usuarios.nombre", f"%{cliente}%")
+        if fecha_inicio:
+            consulta = consulta.gte("fecha_pedido", fecha_inicio)
+        if fecha_fin:
+            consulta = consulta.lte("fecha_pedido", f"{fecha_fin}T23:59:59")
         
         consulta = consulta.order("fecha_pedido", desc=(orden == "desc"))
         
