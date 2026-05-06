@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindo
 import { Link, useRouter } from 'expo-router';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function LoginPage() {
     const { width } = useWindowDimensions();
@@ -61,8 +62,9 @@ export default function LoginPage() {
                 router.replace("/catalogo");
             }
 
-        } catch (error: any) {
-            alerta?.mostrarAlerta("Acceso denegado", error.message);
+        } catch (e: any) {
+            const mensajeError = traducirError(e.message);
+            alerta?.mostrarAlerta("Error", mensajeError);
         } finally {
             setCargando(false);
         }

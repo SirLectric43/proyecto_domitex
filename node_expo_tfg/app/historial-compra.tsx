@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Platform,
   ScrollView,
   ActivityIndicator,
   useWindowDimensions,

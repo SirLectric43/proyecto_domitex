@@ -14,6 +14,7 @@ import {
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function Carrito() {
   const { width } = useWindowDimensions();
@@ -119,8 +120,9 @@ export default function Carrito() {
         const error = await respuesta.json();
         alerta?.mostrarAlerta("Error", error.detail);
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Hubo un problema al procesar el pedido.");
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 

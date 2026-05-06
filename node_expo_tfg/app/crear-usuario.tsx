@@ -13,6 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function CrearUsuarioPage() {
   const { width } = useWindowDimensions();
@@ -80,8 +81,9 @@ export default function CrearUsuarioPage() {
       } else {
         alerta?.mostrarAlerta("Error", datos.detail || "No se pudo crear el usuario.");
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }

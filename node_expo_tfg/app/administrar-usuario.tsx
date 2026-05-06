@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, u
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function AdministrarUsuarioPage() {
   const { id } = useLocalSearchParams();
@@ -64,8 +65,9 @@ export default function AdministrarUsuarioPage() {
           setRol(r);
           setBusquedaRol(r);
         }
-      } catch (e) {
-        alerta?.mostrarAlerta("Error", String(e));
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
@@ -95,8 +97,9 @@ export default function AdministrarUsuarioPage() {
         } else {
           alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");
         }
-      } catch (e) {
-        alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       }
     } else {
       setModoEdicion(true);
@@ -114,8 +117,9 @@ export default function AdministrarUsuarioPage() {
         setModalBaja(false);
         router.push('/gestion-usuarios');
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", "Error de conexión: " + mensajeError);
     }
   };
 

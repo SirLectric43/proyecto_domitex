@@ -16,6 +16,7 @@ import {
 import { Link, useRouter } from "expo-router";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 if (
   Platform.OS === "android" &&
@@ -98,8 +99,9 @@ export default function CatalogoPage() {
             datos.detail || "Error al cargar el catálogo.",
           );
         }
-      } catch (error: any) {
-        alerta?.mostrarAlerta("Error", error.message);
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }

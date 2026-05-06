@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, u
 import { useRouter, Link } from 'expo-router';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo = false, toggleEdicion }: any) => (
   <View style={styles.grupoInput}>
@@ -162,8 +163,9 @@ export default function PerfilPage() {
       setContrasenaActual('');
       setNuevaContrasena('');
       setRepetirContrasena('');
-    } catch (error: any) {
-      alerta?.mostrarAlerta("Error", error.message);
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargandoPassword(false);
     }

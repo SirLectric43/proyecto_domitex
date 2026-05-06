@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function VistaArticuloPage() {
   const { id } = useLocalSearchParams();
@@ -147,7 +148,10 @@ export default function VistaArticuloPage() {
       } else {
         alerta?.mostrarAlerta("Error", "No se pudo crear la categoría");
       }
-    } catch (e) {}
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
+      }
   };
 
   const manejarCantidad = (texto: string) => {
@@ -198,11 +202,9 @@ export default function VistaArticuloPage() {
           `Error al añadir: ${datos.detail || "Revisa tu conexión"}`,
         );
       }
-    } catch (error) {
-      alerta?.mostrarAlerta(
-        "Error",
-        "Hubo un problema al conectar con el servidor.",
-      );
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
