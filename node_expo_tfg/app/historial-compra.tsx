@@ -103,14 +103,6 @@ export default function HistorialCompra() {
     cargarPedidos();
   }, [cargarPedidos, auth?.usuario?.token]);
 
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) {
-      cargarPedidos();
-    } else {
-      setPaginaActual(1);
-    }
-  };
-
   const limpiarFiltros = () => {
     setFechaInicio("");
     setFechaFin("");
@@ -258,9 +250,6 @@ export default function HistorialCompra() {
               onPress={limpiarFiltros}
             >
               <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
-            </Pressable>
-            <Pressable style={styles.botonBuscar} onPress={aplicarFiltros}>
-              <Text style={styles.textoBotonBuscar}>Buscar</Text>
             </Pressable>
           </View>
         </View>
