@@ -110,7 +110,7 @@ export default function LoginPage() {
                     <View style={styles.grupoInput}>
                         <Text style={styles.label}>Contraseña</Text>
                         <TextInput 
-                            style={styles.input} 
+                            style={[styles.input, {fontFamily: undefined}]} 
                             value={contrasena} 
                             onChangeText={setContrasena} 
                             secureTextEntry={true} 

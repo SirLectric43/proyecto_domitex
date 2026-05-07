@@ -350,19 +350,21 @@ def obtener_categorias():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.post("/categorias")
-def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-    try:
-        resp = supabase.table("categorias").insert({"nombre": categoria.nombre}).execute()
-        return resp.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 @api_router.get("/articulos")
-def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
+def obtener_catalogo_agrupado(page: int = 1, limit: int = 8, authorization: str = Header(None)):
     try:
+        es_admin = False
+        if authorization and authorization.startswith("Bearer "):
+            try:
+                token = authorization.split(" ")[1]
+                user_auth = supabase.auth.get_user(token)
+                if user_auth and user_auth.user:
+                    db_user = supabase.table("usuarios").select("rol").eq("id", user_auth.user.id).execute()
+                    if db_user.data and db_user.data[0].get("rol") == "admin":
+                        es_admin = True
+            except:
+                pass
+
         resp_cat = supabase.table("articulos").select("categoria").execute()
         if not resp_cat.data:
             return {"data": {}, "total_pages": 0, "current_page": page}
@@ -377,13 +379,19 @@ def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
         if not categorias_pagina:
             return {"data": {}, "total_pages": total_pages, "current_page": page}
 
-        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").in_("categoria", categorias_pagina).execute()
+        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre), articulos_medidas(disponible)").in_("categoria", categorias_pagina).execute()
         
         if not respuesta.data:
             return {"data": {}, "total_pages": total_pages, "current_page": page}
 
         datos_procesados = []
         for item in respuesta.data:
+            medidas = item.get("articulos_medidas", [])
+            tiene_disponible = any(m.get("disponible", False) for m in medidas)
+            
+            if not es_admin and not tiene_disponible:
+                continue 
+
             cat_info = item.get('categorias')
             cat_nombre = cat_info.get('nombre') if cat_info else 'Otros'
             datos_procesados.append({
@@ -405,12 +413,49 @@ def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
         raise HTTPException(status_code=400, detail=str(e))
     
 @api_router.get("/articulos/buscar")
-def buscar_articulos(q: str):
+def buscar_articulos(q: str, authorization: str = Header(None)):
     try:
         if not q or len(q.strip()) < 2:
             return []
-        respuesta = supabase.table("articulos").select("id, nombre, imagen_url").ilike("nombre", f"%{q}%").execute()
-        return respuesta.data[:5] if respuesta.data else []
+            
+        es_admin = False
+        if authorization and authorization.startswith("Bearer "):
+            try:
+                token = authorization.split(" ")[1]
+                user_auth = supabase.auth.get_user(token)
+                if user_auth and user_auth.user:
+                    db_user = supabase.table("usuarios").select("rol").eq("id", user_auth.user.id).execute()
+                    if db_user.data and db_user.data[0].get("rol") == "admin":
+                        es_admin = True
+            except:
+                pass
+
+        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, articulos_medidas(disponible)").ilike("nombre", f"%{q}%").execute()
+        
+        resultados = []
+        if respuesta.data:
+            for item in respuesta.data:
+                medidas = item.get("articulos_medidas", [])
+                tiene_disponible = any(m.get("disponible", False) for m in medidas)
+                
+                if es_admin or tiene_disponible:
+                    resultados.append({
+                        "id": item["id"],
+                        "nombre": item["nombre"],
+                        "imagen_url": item["imagen_url"]
+                    })
+                    
+        return resultados[:5]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/categorias")
+def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    try:
+        resp = supabase.table("categorias").insert({"nombre": categoria.nombre}).execute()
+        return resp.data[0]
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     

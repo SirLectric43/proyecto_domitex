@@ -41,13 +41,15 @@ export default function Carrito() {
           const datos = await respuesta.json();
           setItems(datos);
         }
-      } catch (error) {
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     obtenerCarrito();
-  }, [auth?.usuario?.token]);
+  }, [auth?.usuario?.token, BASE_URL, alerta]);
 
   const cambiarCantidad = async (itemId: string, nuevaCantidad: number) => {
     if (nuevaCantidad < 0) return;
@@ -83,7 +85,9 @@ export default function Carrito() {
         auth.refrescarCarrito();
       }
 
-    } catch (error) {
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -34,7 +34,7 @@ export default function GestionUsuariosPage() {
 
   const roles = ["Todos", "Admin", "Empleado", "Cliente"];
 
-  const cargarUsuarios = async () => {
+  const cargarUsuarios = useCallback(async () => {
     setCargando(true);
     try {
       let urlApi = `${BASE_URL}/api/usuarios?page=${paginaActual}&limit=20`;
@@ -63,21 +63,27 @@ export default function GestionUsuariosPage() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, paginaActual, busquedaNombre, filtroRol, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
-    if (auth?.usuario?.token) {
-      cargarUsuarios();
-    }
-  }, [auth?.usuario?.token, paginaActual]);
+    if (!auth?.usuario?.token) return;
 
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) {
-      cargarUsuarios();
-    } else {
-      setPaginaActual(1);
+    const nombreLen = busquedaNombre.trim().length;
+
+    if (nombreLen > 0 && nombreLen < 3) {
+      return;
     }
-  };
+
+    const timeoutId = setTimeout(() => {
+      if (paginaActual === 1) {
+        cargarUsuarios();
+      } else {
+        setPaginaActual(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [cargarUsuarios, auth?.usuario?.token, busquedaNombre, paginaActual]);
 
   const confirmarBaja = async () => {
     if (!usuarioABorrar) return;
@@ -172,12 +178,6 @@ export default function GestionUsuariosPage() {
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable
-            style={[styles.botonBuscar, { marginTop: 15 }]}
-            onPress={aplicarFiltros}
-          >
-            <Text style={styles.textoBotonBuscar}>Buscar / Filtrar</Text>
-          </Pressable>
         </View>
 
         {cargando ? (

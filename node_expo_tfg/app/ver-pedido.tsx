@@ -48,7 +48,7 @@ export default function VerPedido() {
       }
     };
     obtenerDetallePedido();
-  }, [auth?.usuario?.token, pedidoId]);
+  }, [auth?.usuario?.token, pedidoId, BASE_URL, router]);
 
   const getColorEstado = (estado: string) => {
     switch (estado?.toLowerCase()) {

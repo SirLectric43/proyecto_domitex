@@ -19,7 +19,7 @@ export default function LandingPage() {
         router.replace('/catalogo');
       }
     }
-  }, [auth?.usuario]);
+  }, [auth?.usuario, router]);
 
   return (
     <View style={styles.contenedor}>

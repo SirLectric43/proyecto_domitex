@@ -1,6 +1,6 @@
-import { useEffect, useContext } from 'react';
-import { Slot, useSegments, useRouter } from 'expo-router';
-import { ScrollView, View, ActivityIndicator } from "react-native";
+import { useEffect, useContext, useRef } from 'react';
+import { Slot, useSegments, useRouter, usePathname } from 'expo-router';
+import { ScrollView, View, ActivityIndicator, useWindowDimensions } from "react-native";
 import * as SplashScreen from 'expo-splash-screen';
 import NavbarPublico from "@/app/navbar-publico";
 import NavbarPrivado from "@/app/navbar-privado"; 
@@ -27,6 +27,9 @@ function EnrutadorPrincipal() {
   const auth = useContext(AuthContext);
   const segments = useSegments();
   const router = useRouter();
+  const pathname = usePathname();
+  const { height } = useWindowDimensions();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (auth?.cargando) return;
@@ -50,11 +53,17 @@ function EnrutadorPrincipal() {
         }
       }
     }
-  }, [segments, auth?.usuario, auth?.cargando]);
+  }, [segments, auth?.usuario, auth?.cargando, router]);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [pathname]);
 
   if (auth?.cargando) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF', minHeight: height }}>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -65,11 +74,12 @@ function EnrutadorPrincipal() {
       {auth?.usuario ? <NavbarPrivado /> : <NavbarPublico />}
       
       <ScrollView 
+        ref={scrollViewRef}
         style={{flex: 1}} 
         contentContainerStyle={{ flexGrow: 1 }} 
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minHeight: height }}>
           <Slot/>
         </View>
         <Footer/>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
 import Head from "expo-router/head";
+import { traducirError } from "@/utils/errores";
+import { AlertaContext } from "./alerta-context";
 
 export default function HistorialCompra() {
   const { width } = useWindowDimensions();
@@ -21,6 +23,7 @@ export default function HistorialCompra() {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "";
+  const alerta = useContext(AlertaContext);
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -67,7 +70,7 @@ export default function HistorialCompra() {
     setter(formatted);
   };
 
-  const cargarPedidos = async () => {
+  const cargarPedidos = useCallback(async () => {
     setCargando(true);
     if (!auth?.usuario?.token) return;
     try {
@@ -88,24 +91,17 @@ export default function HistorialCompra() {
         setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
-    } catch (error) {
-      console.error("Error al cargar historial:", error);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, paginaActual, fechaInicio, fechaFin, filtroEstado, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
     cargarPedidos();
-  }, [auth?.usuario?.token, paginaActual]);
-
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) {
-      cargarPedidos();
-    } else {
-      setPaginaActual(1);
-    }
-  };
+  }, [cargarPedidos, auth?.usuario?.token]);
 
   const limpiarFiltros = () => {
     setFechaInicio("");
@@ -254,9 +250,6 @@ export default function HistorialCompra() {
               onPress={limpiarFiltros}
             >
               <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
-            </Pressable>
-            <Pressable style={styles.botonBuscar} onPress={aplicarFiltros}>
-              <Text style={styles.textoBotonBuscar}>Buscar</Text>
             </Pressable>
           </View>
         </View>

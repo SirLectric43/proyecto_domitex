@@ -114,7 +114,7 @@ export default function CatalogoPage() {
       }
     };
     obtenerCatalogo();
-  }, [auth?.usuario?.usuario_id, auth?.usuario?.token, paginaActual]);
+  }, [auth?.usuario?.usuario_id, auth?.usuario?.token, paginaActual, BASE_URL, alerta]);
 
   const paginaSiguiente = (categoria: string, totalArticulos: number) => {
     const prevIndex = indicesCatalogo[categoria] || 0;

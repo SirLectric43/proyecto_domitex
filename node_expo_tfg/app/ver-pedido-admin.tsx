@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -30,7 +30,7 @@ export default function VerPedidoAdminPage() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  const cargarDetallePedido = async () => {
+  const cargarDetallePedido = useCallback(async () => {
     try {
       const urlApi = `${BASE_URL}/api/pedidos/${id}`;
 
@@ -51,11 +51,11 @@ export default function VerPedidoAdminPage() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, id, auth?.usuario?.token]);
 
   useEffect(() => {
     if (id && auth?.usuario?.token) cargarDetallePedido();
-  }, [id, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.token, cargarDetallePedido]);
 
   const actualizarCantidadLocal = (index: number, nuevaCantidad: string) => {
     const num = parseInt(nuevaCantidad.replace(/[^0-9]/g, "")) || 0;

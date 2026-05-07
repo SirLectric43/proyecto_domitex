@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -83,7 +83,7 @@ export default function GestionPedidosPage() {
     setter(formatted);
   };
 
-  const cargarPedidos = async () => {
+  const cargarPedidos = useCallback(async () => {
     setCargando(true);
     try {
       let urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}&page=${paginaActual}&limit=20`;
@@ -106,21 +106,34 @@ export default function GestionPedidosPage() {
         setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, filtroEstado, ordenFecha, paginaActual, busquedaRef, busquedaCliente, filtroRol, fechaInicio, fechaFin, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
-    if (auth?.usuario?.token) cargarPedidos();
-  }, [filtroEstado, ordenFecha, paginaActual]);
+    if (!auth?.usuario?.token) return;
 
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) cargarPedidos();
-    else setPaginaActual(1);
-  };
+    const refLen = busquedaRef.trim().length;
+    const cliLen = busquedaCliente.trim().length;
+
+    if ((refLen > 0 && refLen < 3) || (cliLen > 0 && cliLen < 3)) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (paginaActual === 1) {
+        cargarPedidos();
+      } else {
+        setPaginaActual(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [cargarPedidos, auth?.usuario?.token, busquedaRef, busquedaCliente, paginaActual]);
 
   const limpiarFiltrosAvanzados = () => {
     setBusquedaRef("");
@@ -155,27 +168,6 @@ export default function GestionPedidosPage() {
   const formatearFecha = (fechaStr: string) => {
     const d = new Date(fechaStr);
     return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
-  };
-
-  const getColorEstado = (estado: string) => {
-    switch (estado?.toLowerCase()) {
-      case "completado":
-      case "entregado":
-        return "#4CAF50";
-      case "validado":
-        return "#009688";
-      case "en preparación":
-      case "preparando":
-        return "#FF9800";
-      case "pendiente":
-        return "#2196F3";
-      case "pausado":
-        return "#607D8B";
-      case "cancelado":
-        return "#DB3632";
-      default:
-        return "#666666";
-    }
   };
 
   return (
@@ -335,12 +327,6 @@ export default function GestionPedidosPage() {
               >
                 <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
               </Pressable>
-              <Pressable
-                style={styles.botonBuscarAvanzado}
-                onPress={aplicarFiltros}
-              >
-                <Text style={styles.textoBotonBuscar}>Buscar</Text>
-              </Pressable>
             </View>
           </View>
 
@@ -414,20 +400,12 @@ export default function GestionPedidosPage() {
                               )
                             }
                           >
-                            <Text
-                              style={[
-                                styles.textoSelect,
-                                { color: getColorEstado(pedido.estado) },
-                              ]}
-                            >
+                            <Text style={styles.textoSelect}>
                               {pedido.estado}
                             </Text>
                             <Image
                               source={require("@/assets/images/iconoFlechaDer.png")}
-                              style={[
-                                styles.iconoFlecha,
-                                { tintColor: getColorEstado(pedido.estado) },
-                              ]}
+                              style={styles.iconoFlecha}
                             />
                           </Pressable>
 
@@ -455,7 +433,6 @@ export default function GestionPedidosPage() {
                                         style={[
                                           styles.textoOpcion,
                                           {
-                                            color: getColorEstado(est),
                                             fontFamily: "Inter_600SemiBold",
                                           },
                                         ]}

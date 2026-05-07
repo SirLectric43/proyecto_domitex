@@ -74,7 +74,7 @@ export default function AdministrarUsuarioPage() {
       }
     };
     if (id) cargarPerfil();
-  }, [id, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.token, BASE_URL, alerta]);
 
   const manejarBotonEdicion = async () => {
     if (modoEdicion) {
@@ -95,6 +95,7 @@ export default function AdministrarUsuarioPage() {
             }
           }
           setModoEdicion(false);
+          alerta?.mostrarAlerta("Éxito", "Usuario actualizado correctamente.");
         } else {
           alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");
         }
