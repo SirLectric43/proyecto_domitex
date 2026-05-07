@@ -1,6 +1,6 @@
 import os
+import math
 from datetime import datetime, timezone
-from typing import Optional
 from typing import Optional, Dict, List
 from fastapi import FastAPI, HTTPException, Header, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -182,7 +182,7 @@ def iniciar_sesion(credenciales: LoginUsuario):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/usuarios")
-def obtener_todos_usuarios(authorization: str = Header(None)):
+def obtener_todos_usuarios(nombre: Optional[str] = None, rol: Optional[str] = None, page: int = 1, limit: int = 20, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     try:
@@ -194,8 +194,20 @@ def obtener_todos_usuarios(authorization: str = Header(None)):
         if not db_user.data or db_user.data[0].get("rol") != "admin":
             raise HTTPException(status_code=403, detail="Solo administradores pueden ver los usuarios")
             
-        respuesta = supabase.table("usuarios").select("id, nombre, apellidos, rol, ultimo_acceso").execute()
-        return respuesta.data
+        consulta = supabase.table("usuarios").select("id, nombre, apellidos, rol, ultimo_acceso", count="exact")
+        
+        if nombre:
+            consulta = consulta.ilike("nombre", f"%{nombre}%")
+        if rol and rol != "Todos":
+            consulta = consulta.eq("rol", rol.lower())
+
+        start = (page - 1) * limit
+        end = start + limit - 1
+        respuesta = consulta.range(start, end).execute()
+        
+        total_pages = math.ceil(respuesta.count / limit) if respuesta.count else 0
+        
+        return {"data": respuesta.data, "total_pages": total_pages, "current_page": page}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -228,7 +240,7 @@ def obtener_perfil(usuario_id: str, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/pedidos/historial")
-def obtener_historial_pedidos(usuario_id: Optional[str] = None, authorization: str = Header(None)):
+def obtener_historial_pedidos(usuario_id: Optional[str] = None, estado: Optional[str] = None, fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, page: int = 1, limit: int = 15, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     
@@ -247,13 +259,22 @@ def obtener_historial_pedidos(usuario_id: Optional[str] = None, authorization: s
             else:
                 raise HTTPException(status_code=403, detail="No tienes permiso para ver pedidos de otros usuarios")
 
-        resp_pedidos = supabase.table("pedidos") \
-            .select("id, referencia, fecha_pedido, estado, total") \
-            .eq("usuario_id", target_id) \
-            .order("fecha_pedido", desc=True) \
-            .execute()
+        consulta = supabase.table("pedidos").select("id, referencia, fecha_pedido, estado, total", count="exact").eq("usuario_id", target_id).order("fecha_pedido", desc=True)
+
+        if estado and estado != "Todos":
+            consulta = consulta.eq("estado", estado)
+        if fecha_inicio:
+            consulta = consulta.gte("fecha_pedido", fecha_inicio)
+        if fecha_fin:
+            consulta = consulta.lte("fecha_pedido", f"{fecha_fin}T23:59:59")
+
+        start = (page - 1) * limit
+        end = start + limit - 1
+        resp_pedidos = consulta.range(start, end).execute()
             
-        return resp_pedidos.data if resp_pedidos.data else []
+        total_pages = math.ceil(resp_pedidos.count / limit) if resp_pedidos.count else 0
+        
+        return {"data": resp_pedidos.data if resp_pedidos.data else [], "total_pages": total_pages, "current_page": page}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -321,7 +342,6 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
     except Exception as e:
         raise HTTPException(status_code=400, detail="Hubo un error al cambiar la contraseña.")
 
-
 @api_router.get("/categorias")
 def obtener_categorias():
     try:
@@ -340,13 +360,27 @@ def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.get("/articulos", response_model=Dict[str, List[ArticuloResponse]])
-def obtener_catalogo_agrupado():
+@api_router.get("/articulos")
+def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
     try:
-        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").execute()
+        resp_cat = supabase.table("articulos").select("categoria").execute()
+        if not resp_cat.data:
+            return {"data": {}, "total_pages": 0, "current_page": page}
+
+        todas_categorias = sorted(list(set([item['categoria'] for item in resp_cat.data])))
+        total_categorias = len(todas_categorias)
+        total_pages = math.ceil(total_categorias / limit) if total_categorias > 0 else 0
+
+        offset = (page - 1) * limit
+        categorias_pagina = todas_categorias[offset:offset + limit]
+
+        if not categorias_pagina:
+            return {"data": {}, "total_pages": total_pages, "current_page": page}
+
+        respuesta = supabase.table("articulos").select("id, nombre, imagen_url, categoria, categorias(nombre)").in_("categoria", categorias_pagina).execute()
         
         if not respuesta.data:
-            return {}
+            return {"data": {}, "total_pages": total_pages, "current_page": page}
 
         datos_procesados = []
         for item in respuesta.data:
@@ -365,7 +399,7 @@ def obtener_catalogo_agrupado():
         for categoria, articulos in groupby(datos_ordenados, key=lambda x: x['categoria']):
             catalogo_agrupado[categoria] = list(articulos)
 
-        return catalogo_agrupado
+        return {"data": catalogo_agrupado, "total_pages": total_pages, "current_page": page}
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -462,26 +496,6 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
         return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
     except Exception as e:
         print(f"Error POST carrito: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
-@api_router.get("/pedidos/historial")
-def obtener_historial_pedidos(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-    try:
-        token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
-
-        resp_pedidos = supabase.table("pedidos") \
-            .select("id, referencia, fecha_pedido, estado, total") \
-            .eq("usuario_id", usuario_id) \
-            .order("fecha_pedido", desc=True) \
-            .execute()
-            
-        return resp_pedidos.data if resp_pedidos.data else []
-    except Exception as e:
-        print(f"Error GET historial pedidos: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @api_router.post("/pedidos/confirmar")
@@ -776,7 +790,7 @@ def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/admin/pedidos")
-def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", authorization: str = Header(None)):
+def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", referencia: Optional[str] = None, cliente: Optional[str] = None, rol: Optional[str] = None, fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, page: int = 1, limit: int = 20, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     
@@ -790,15 +804,30 @@ def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", aut
         if not db_user.data or db_user.data[0].get("rol") not in ["admin", "empleado"]:
             raise HTTPException(status_code=403, detail="Acceso denegado")
 
-        consulta = supabase.table("pedidos").select("*, usuarios(nombre, apellidos)")
+        consulta = supabase.table("pedidos").select("*, usuarios!inner(nombre, apellidos, rol)", count="exact")
         
         if estado and estado != "Todos":
             consulta = consulta.eq("estado", estado)
+        if referencia:
+            consulta = consulta.ilike("referencia", f"%{referencia}%")
+        if rol and rol != "Todos":
+            consulta = consulta.eq("usuarios.rol", rol.lower())
+        if cliente:
+            consulta = consulta.ilike("usuarios.nombre", f"%{cliente}%")
+        if fecha_inicio:
+            consulta = consulta.gte("fecha_pedido", fecha_inicio)
+        if fecha_fin:
+            consulta = consulta.lte("fecha_pedido", f"{fecha_fin}T23:59:59")
         
         consulta = consulta.order("fecha_pedido", desc=(orden == "desc"))
         
-        respuesta = consulta.execute()
-        return respuesta.data
+        start = (page - 1) * limit
+        end = start + limit - 1
+        respuesta = consulta.range(start, end).execute()
+        
+        total_pages = math.ceil(respuesta.count / limit) if respuesta.count else 0
+        
+        return {"data": respuesta.data, "total_pages": total_pages, "current_page": page}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -869,71 +898,6 @@ def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.post("/articulos")
-def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-
-    try:
-        import base64
-        import uuid
-        
-        token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
-
-        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
-            raise HTTPException(status_code=403, detail="Solo administradores pueden crear artículos")
-
-        imagen_url = None
-        if articulo.imagen_base64:
-            base64_data = articulo.imagen_base64
-            if "," in base64_data:
-                base64_data = base64_data.split(",")[1]
-            
-            image_bytes = base64.b64decode(base64_data)
-            file_name = f"{uuid.uuid4()}.jpg"
-            
-            supabase.storage.from_("articulos").upload(file_name, image_bytes, {"content-type": "image/jpeg"})
-            imagen_url = supabase.storage.from_("articulos").get_public_url(file_name)
-
-        ahora_utc = datetime.now(timezone.utc).isoformat()
-
-        resp_articulo = supabase.table("articulos").insert({
-            "nombre": articulo.nombre,
-            "descripcion": articulo.descripcion,
-            "categoria": articulo.categoria,
-            "imagen_url": imagen_url,
-            "fecha_creacion": ahora_utc
-        }).execute()
-        
-        nuevo_articulo_id = resp_articulo.data[0]["id"]
-
-        if articulo.medidas:
-            medidas_insert = []
-            for m in articulo.medidas:
-                if m.precio < 0:
-                    raise HTTPException(status_code=400, detail="El precio no puede ser negativo")
-                
-                disponible_final = False if m.stock <= 0 else m.disponible
-                
-                medidas_insert.append({
-                    "articulo_id": nuevo_articulo_id,
-                    "medida": m.medida,
-                    "precio": m.precio,
-                    "stock": m.stock,
-                    "disponible": disponible_final
-                })
-            supabase.table("articulos_medidas").insert(medidas_insert).execute()
-
-        return {"exito": True, "id": nuevo_articulo_id}
-
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
 @api_router.delete("/articulos/{articulo_id}")
 def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):

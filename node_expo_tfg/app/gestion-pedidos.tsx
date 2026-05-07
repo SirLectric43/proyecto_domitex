@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   useWindowDimensions,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Head from "expo-router/head";
@@ -22,7 +23,7 @@ export default function GestionPedidosPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "";
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -30,6 +31,16 @@ export default function GestionPedidosPage() {
   const [ordenFecha, setOrdenFecha] = useState<"desc" | "asc">("desc");
   const [pedidoAbierto, setPedidoAbierto] = useState<string | null>(null);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+
+  const [busquedaRef, setBusquedaRef] = useState("");
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [filtroRol, setFiltroRol] = useState("Todos");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
+
+  const roles = ["Todos", "Admin", "Empleado", "Cliente"];
   const filtros = [
     "Todos",
     "Pendiente",
@@ -38,6 +49,7 @@ export default function GestionPedidosPage() {
     "Pausado",
     "Completado",
     "Entregado",
+    "Cancelado",
   ];
   const estadosParaSelect = [
     "Validado",
@@ -45,18 +57,55 @@ export default function GestionPedidosPage() {
     "Pausado",
     "Completado",
     "Entregado",
+    "Cancelado",
   ];
+
+  const formatForAPI = (dateStr: string) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("/")) {
+      const [dd, mm, yyyy] = dateStr.split("/");
+      if (yyyy && yyyy.length === 4) {
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    return dateStr;
+  };
+
+  const handleFechaChange = (text: string, setter: (val: string) => void) => {
+    let cleaned = text.replace(/[^0-9]/g, "");
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + "/" + cleaned.slice(2);
+    }
+    if (cleaned.length > 4) {
+      formatted = formatted.slice(0, 5) + "/" + cleaned.slice(4, 8);
+    }
+    setter(formatted);
+  };
 
   const cargarPedidos = async () => {
     setCargando(true);
     try {
-      const urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}`;
+      let urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}&page=${paginaActual}&limit=20`;
+      if (busquedaRef.trim())
+        urlApi += `&referencia=${encodeURIComponent(busquedaRef)}`;
+      if (busquedaCliente.trim())
+        urlApi += `&cliente=${encodeURIComponent(busquedaCliente)}`;
+      if (filtroRol !== "Todos")
+        urlApi += `&rol=${encodeURIComponent(filtroRol)}`;
+      if (fechaInicio.length === 10)
+        urlApi += `&fecha_inicio=${formatForAPI(fechaInicio)}`;
+      if (fechaFin.length === 10)
+        urlApi += `&fecha_fin=${formatForAPI(fechaFin)}`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
       });
       const datos = await res.json();
-      if (res.ok) setPedidos(datos);
+      if (res.ok) {
+        setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
+        setTotalPaginas(datos.total_pages || 1);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -66,20 +115,29 @@ export default function GestionPedidosPage() {
 
   useEffect(() => {
     if (auth?.usuario?.token) cargarPedidos();
-  }, [filtroEstado, ordenFecha]);
+  }, [filtroEstado, ordenFecha, paginaActual]);
+
+  const aplicarFiltros = () => {
+    if (paginaActual === 1) cargarPedidos();
+    else setPaginaActual(1);
+  };
+
+  const limpiarFiltrosAvanzados = () => {
+    setBusquedaRef("");
+    setBusquedaCliente("");
+    setFiltroRol("Todos");
+    setFechaInicio("");
+    setFechaFin("");
+    setPaginaActual(1);
+  };
 
   const actualizarEstado = async (id: string, nuevoEstado: string) => {
     setPedidoAbierto(null);
-    setPedidos((pedidosPrevios) =>
-      pedidosPrevios.map((pedido) =>
-        pedido.id === id ? { ...pedido, estado: nuevoEstado } : pedido
-      )
+    setPedidos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p)),
     );
-
     try {
-      const urlApi = `${BASE_URL}/api/admin/pedidos/${id}/estado`;
-
-      const res = await fetch(urlApi, {
+      const res = await fetch(`${BASE_URL}/api/admin/pedidos/${id}/estado`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -87,20 +145,37 @@ export default function GestionPedidosPage() {
         },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
-
-      if (!res.ok) {
-        cargarPedidos();
-      }
+      if (!res.ok) cargarPedidos();
     } catch (e: any) {
       cargarPedidos();
-      const mensajeError = traducirError(e.message);
-      alerta?.mostrarAlerta("Error", mensajeError);
+      alerta?.mostrarAlerta("Error", traducirError(e.message));
     }
   };
 
   const formatearFecha = (fechaStr: string) => {
     const d = new Date(fechaStr);
     return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+  };
+
+  const getColorEstado = (estado: string) => {
+    switch (estado?.toLowerCase()) {
+      case "completado":
+      case "entregado":
+        return "#4CAF50";
+      case "validado":
+        return "#009688";
+      case "en preparación":
+      case "preparando":
+        return "#FF9800";
+      case "pendiente":
+        return "#2196F3";
+      case "pausado":
+        return "#607D8B";
+      case "cancelado":
+        return "#DB3632";
+      default:
+        return "#666666";
+    }
   };
 
   return (
@@ -110,25 +185,25 @@ export default function GestionPedidosPage() {
         keyboardShouldPersistTaps="handled"
       >
         <Head>
-            <title>Gestión de pedidos | Domitex</title>
+          <title>Gestión de pedidos | Domitex</title>
         </Head>
         <View style={styles.tarjetaContenedora}>
           <Text style={styles.tituloPagina}>Gestión de pedidos</Text>
 
           <View style={styles.contenedorControles}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filaFiltros}
-            >
-              {filtros.map((f) => (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {filtros.map((f, index) => (
                 <Pressable
                   key={f}
                   style={[
                     styles.botonFiltro,
                     filtroEstado === f && styles.botonFiltroActivo,
+                    { marginRight: index === filtros.length - 1 ? 0 : 10 },
                   ]}
-                  onPress={() => setFiltroEstado(f)}
+                  onPress={() => {
+                    setFiltroEstado(f);
+                    setPaginaActual(1);
+                  }}
                 >
                   <Text
                     style={[
@@ -146,30 +221,134 @@ export default function GestionPedidosPage() {
                             ? "Completados"
                             : f === "Entregado"
                               ? "Entregados"
-                              : f}
+                              : f === "Cancelado"
+                                ? "Cancelados"
+                                : f}
                   </Text>
                 </Pressable>
               ))}
               <Pressable
                 style={styles.botonOrden}
-                onPress={() =>
-                  setOrdenFecha(ordenFecha === "desc" ? "asc" : "desc")
-                }
+                onPress={() => {
+                  setOrdenFecha(ordenFecha === "desc" ? "asc" : "desc");
+                  setPaginaActual(1);
+                }}
               >
                 <Text style={styles.textoOrden}>
-                  {ordenFecha === "desc"
-                    ? "Más recientes primero ↓"
-                    : "Más antiguos primero ↑"}
+                  {ordenFecha === "desc" ? "Más recientes ↓" : "Más antiguos ↑"}
                 </Text>
               </Pressable>
             </ScrollView>
+          </View>
+
+          <View style={styles.cajaBusqueda}>
+            <View
+              style={[
+                styles.filaBusqueda,
+                esMovil && { flexDirection: "column" },
+              ]}
+            >
+              <TextInput
+                style={[
+                  styles.inputFiltro,
+                  !esMovil && { marginRight: 15 },
+                  esMovil && { marginBottom: 15 },
+                ]}
+                placeholder="Nº Referencia..."
+                value={busquedaRef}
+                onChangeText={setBusquedaRef}
+              />
+              <TextInput
+                style={styles.inputFiltro}
+                placeholder="Nombre del cliente..."
+                value={busquedaCliente}
+                onChangeText={setBusquedaCliente}
+              />
+            </View>
+            <View
+              style={[
+                styles.filaBusqueda,
+                esMovil && { flexDirection: "column" },
+                { marginTop: 15 },
+              ]}
+            >
+              <View style={styles.grupoFiltro}>
+                <Text style={styles.labelFiltro}>Desde:</Text>
+                <TextInput
+                  style={styles.inputFiltro}
+                  placeholder="DD/MM/YYYY"
+                  value={fechaInicio}
+                  onChangeText={(t) => handleFechaChange(t, setFechaInicio)}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+              <View
+                style={[
+                  styles.grupoFiltro,
+                  !esMovil && { marginLeft: 15 },
+                  esMovil && { marginTop: 15 },
+                ]}
+              >
+                <Text style={styles.labelFiltro}>Hasta:</Text>
+                <TextInput
+                  style={styles.inputFiltro}
+                  placeholder="DD/MM/YYYY"
+                  value={fechaFin}
+                  onChangeText={(t) => handleFechaChange(t, setFechaFin)}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+            </View>
+            <View style={[styles.grupoFiltroScroll, { marginTop: 15 }]}>
+              <Text style={[styles.labelFiltro, { marginRight: 10 }]}>
+                Rol:
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {roles.map((r, index) => (
+                  <Pressable
+                    key={r}
+                    style={[
+                      styles.botonRol,
+                      filtroRol === r && styles.botonRolActivo,
+                      { marginRight: index === roles.length - 1 ? 0 : 8 },
+                    ]}
+                    onPress={() => setFiltroRol(r)}
+                  >
+                    <Text
+                      style={[
+                        styles.textoRolPill,
+                        filtroRol === r && styles.textoRolActivo,
+                      ]}
+                    >
+                      {r}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+            <View style={[styles.filaBotonesAvanzados, { marginTop: 15 }]}>
+              <Pressable
+                style={[styles.botonLimpiarAvanzado, { marginRight: 10 }]}
+                onPress={limpiarFiltrosAvanzados}
+              >
+                <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
+              </Pressable>
+              <Pressable
+                style={styles.botonBuscarAvanzado}
+                onPress={aplicarFiltros}
+              >
+                <Text style={styles.textoBotonBuscar}>Buscar</Text>
+              </Pressable>
+            </View>
           </View>
 
           {cargando ? (
             <ActivityIndicator
               size="large"
               color="#29166F"
-              style={{ marginTop: 50 }}
+              style={{ marginVertical: 80 }}
             />
           ) : (
             <View style={styles.listaPedidos}>
@@ -182,7 +361,12 @@ export default function GestionPedidosPage() {
                     { zIndex: pedidoAbierto === pedido.id ? 100 : 1 },
                   ]}
                 >
-                  <View style={[styles.colIzquierda, esMovil && styles.colIzquierdaMovil]}>
+                  <View
+                    style={[
+                      styles.colIzquierda,
+                      esMovil && styles.colIzquierdaMovil,
+                    ]}
+                  >
                     <Text style={styles.referencia}>
                       Pedido Nº{pedido.referencia}
                     </Text>
@@ -190,11 +374,19 @@ export default function GestionPedidosPage() {
                       Fecha: {formatearFecha(pedido.fecha_pedido)}
                     </Text>
                     <Text style={styles.cliente}>
-                      {pedido.usuarios?.nombre} {pedido.usuarios?.apellidos}
+                      {pedido.usuarios?.nombre} {pedido.usuarios?.apellidos}{" "}
+                      <Text style={{ color: "#999", fontSize: 12 }}>
+                        ({pedido.usuarios?.rol})
+                      </Text>
                     </Text>
                   </View>
 
-                  <View style={[styles.colDerecha, esMovil && styles.colDerechaMovil]}>
+                  <View
+                    style={[
+                      styles.colDerecha,
+                      esMovil && styles.colDerechaMovil,
+                    ]}
+                  >
                     <View
                       style={{
                         zIndex: pedidoAbierto === pedido.id ? 1001 : 1,
@@ -222,12 +414,20 @@ export default function GestionPedidosPage() {
                               )
                             }
                           >
-                            <Text style={styles.textoSelect}>
+                            <Text
+                              style={[
+                                styles.textoSelect,
+                                { color: getColorEstado(pedido.estado) },
+                              ]}
+                            >
                               {pedido.estado}
                             </Text>
                             <Image
                               source={require("@/assets/images/iconoFlechaDer.png")}
-                              style={styles.iconoFlecha}
+                              style={[
+                                styles.iconoFlecha,
+                                { tintColor: getColorEstado(pedido.estado) },
+                              ]}
                             />
                           </Pressable>
 
@@ -238,9 +438,10 @@ export default function GestionPedidosPage() {
                                 onPress={() => setPedidoAbierto(null)}
                               />
                               <View style={styles.dropdownEstado}>
-                                <ScrollView 
-                                  nestedScrollEnabled={true} 
+                                <ScrollView
+                                  nestedScrollEnabled={true}
                                   keyboardShouldPersistTaps="handled"
+                                  style={{ maxHeight: 200 }}
                                 >
                                   {estadosParaSelect.map((est) => (
                                     <Pressable
@@ -250,7 +451,15 @@ export default function GestionPedidosPage() {
                                         actualizarEstado(pedido.id, est)
                                       }
                                     >
-                                      <Text style={styles.textoOpcion}>
+                                      <Text
+                                        style={[
+                                          styles.textoOpcion,
+                                          {
+                                            color: getColorEstado(est),
+                                            fontFamily: "Inter_600SemiBold",
+                                          },
+                                        ]}
+                                      >
                                         {est}
                                       </Text>
                                     </Pressable>
@@ -279,8 +488,47 @@ export default function GestionPedidosPage() {
               ))}
               {pedidos.length === 0 && (
                 <Text style={styles.textoVacio}>
-                  No se han encontrado pedidos.
+                  No se han encontrado pedidos con esos filtros.
                 </Text>
+              )}
+
+              {totalPaginas > 1 && (
+                <View style={styles.contenedorPaginacion}>
+                  <Pressable
+                    style={[
+                      styles.botonPaginacion,
+                      paginaActual === 1 && styles.botonPaginacionDeshabilitado,
+                    ]}
+                    onPress={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                    disabled={paginaActual === 1}
+                  >
+                    <Image
+                      source={require("@/assets/images/iconoFlechaIzq.png")}
+                      style={styles.iconoPaginacion}
+                      resizeMode="contain"
+                    />
+                  </Pressable>
+                  <Text style={styles.textoPaginacion}>
+                    Página {paginaActual} de {totalPaginas}
+                  </Text>
+                  <Pressable
+                    style={[
+                      styles.botonPaginacion,
+                      paginaActual === totalPaginas &&
+                        styles.botonPaginacionDeshabilitado,
+                    ]}
+                    onPress={() =>
+                      setPaginaActual((p) => Math.min(totalPaginas, p + 1))
+                    }
+                    disabled={paginaActual === totalPaginas}
+                  >
+                    <Image
+                      source={require("@/assets/images/iconoFlechaDer.png")}
+                      style={styles.iconoPaginacion}
+                      resizeMode="contain"
+                    />
+                  </Pressable>
+                </View>
               )}
             </View>
           )}
@@ -317,8 +565,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEE",
     paddingBottom: 15,
   },
-  contenedorControles: { marginBottom: 30, gap: 20 },
-  filaFiltros: { gap: 10, paddingBottom: 5 },
+  contenedorControles: { marginBottom: 30 },
   botonFiltro: {
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -330,15 +577,76 @@ const styles = StyleSheet.create({
   botonFiltroActivo: { backgroundColor: "#29166F", borderColor: "#29166F" },
   textoFiltro: { fontFamily: "Inter_600SemiBold", color: "#666", fontSize: 14 },
   textoFiltroActivo: { color: "#FFF" },
-  botonOrden: { alignSelf: "flex-end" },
+  botonOrden: { alignSelf: "flex-end", marginLeft: 15, paddingVertical: 8 },
   textoOrden: {
     fontFamily: "Inter_600SemiBold",
     color: "#29166F",
-    fontSize: 15,
-    marginBottom: 9,
-    marginLeft: 10,
+    fontSize: 14,
   },
-  listaPedidos: { gap: 20 },
+
+  cajaBusqueda: {
+    backgroundColor: "#F9F9F9",
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+    marginBottom: 30,
+  },
+  filaBusqueda: { flexDirection: "row" },
+  inputFiltro: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 8,
+    padding: 10,
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
+    backgroundColor: "#FFF",
+  },
+  grupoFiltro: { flex: 1, flexDirection: "row", alignItems: "center" },
+  grupoFiltroScroll: { flexDirection: "row", alignItems: "center" },
+  labelFiltro: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: "#333",
+    marginRight: 10,
+  },
+  botonRol: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  botonRolActivo: { backgroundColor: "#29166F", borderColor: "#29166F" },
+  textoRolPill: { fontFamily: "Inter_400Regular", color: "#666", fontSize: 12 },
+  textoRolActivo: { color: "#FFF" },
+  filaBotonesAvanzados: { flexDirection: "row", justifyContent: "flex-end" },
+  botonLimpiarAvanzado: {
+    backgroundColor: "#EEEEEE",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  textoBotonLimpiar: {
+    color: "#333",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+  },
+  botonBuscarAvanzado: {
+    backgroundColor: "#29166F",
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+  },
+  textoBotonBuscar: {
+    color: "#FFF",
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+  },
+
+  listaPedidos: {},
   tarjetaPedido: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -351,13 +659,17 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
+    marginBottom: 20,
   },
-  tarjetaPedidoMovil: {
-    flexDirection: "column",
-  },
-  colIzquierda: { flex: 1, justifyContent: "center", gap: 5 },
+  tarjetaPedidoMovil: { flexDirection: "column" },
+  colIzquierda: { flex: 1, justifyContent: "center", marginBottom: 5 },
   colIzquierdaMovil: { width: "100%", marginBottom: 15 },
-  referencia: { fontFamily: "Montserrat_700Bold", fontSize: 20, color: "#000" },
+  referencia: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 20,
+    color: "#000",
+    marginBottom: 5,
+  },
   fecha: { fontFamily: "Inter_400Regular", fontSize: 16, color: "#666" },
   cliente: {
     fontFamily: "Inter_600SemiBold",
@@ -365,20 +677,21 @@ const styles = StyleSheet.create({
     color: "#29166F",
     marginTop: 5,
   },
-  colDerecha: { width: 200, gap: 15, alignItems: "flex-end" },
+  colDerecha: { width: 200, alignItems: "flex-end" },
   colDerechaMovil: { width: "100%", alignItems: "stretch" },
   botonValidar: {
-    backgroundColor: '#29166F',
+    backgroundColor: "#29166F",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    marginBottom: 15,
   },
   textoBotonValidar: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
+    color: "#FFFFFF",
+    fontFamily: "Inter_700Bold",
     fontSize: 16,
   },
   selectEstado: {
@@ -392,6 +705,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 6,
+    marginBottom: 15,
   },
   textoSelect: {
     fontFamily: "Inter_600SemiBold",
@@ -424,17 +738,17 @@ const styles = StyleSheet.create({
   },
   textoOpcion: { fontFamily: "Inter_400Regular", fontSize: 14, color: "#333" },
   botonVer: {
-    backgroundColor: '#EEEEEE',
+    backgroundColor: "#EEEEEE",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
   textoBotonVer: {
-    color: '#333333',
-    fontFamily: 'Inter_600SemiBold',
+    color: "#333333",
+    fontFamily: "Inter_600SemiBold",
     fontSize: 16,
   },
   overlayCerrar: {
@@ -451,5 +765,29 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "#999",
     fontSize: 18,
+  },
+  contenedorPaginacion: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+    width: "100%",
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+  },
+  botonPaginacionDeshabilitado: { opacity: 0.4 },
+  iconoPaginacion: { width: 20, height: 20, tintColor: "#29166F" },
+  textoPaginacion: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+    color: "#29166F",
   },
 });
