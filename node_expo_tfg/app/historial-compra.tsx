@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   cajaFiltros: {
     width: "100%",
     maxWidth: 900,
-    backgroundColor: "#FFF",
+    backgroundColor: "# F9F9F9",
     padding: 20,
     borderRadius: 10,
     borderWidth: 1,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F9F9F9",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#29166F",
     width: "100%",
