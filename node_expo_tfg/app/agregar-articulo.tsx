@@ -41,10 +41,13 @@ export default function AgregarArticuloPage() {
           const data = await res.json();
           setCategoriasLista(data);
         }
-      } catch (e) {}
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
+      }
     };
     fetchCategorias();
-  }, []);
+  }, [BASE_URL, alerta]);
 
   const categoriasFiltradas = categoriasLista.filter(c => 
     c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase())

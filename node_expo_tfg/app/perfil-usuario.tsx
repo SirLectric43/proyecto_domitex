@@ -103,7 +103,7 @@ export default function PerfilPage() {
       }
     };
     obtenerDatos();
-  }, [auth?.usuario?.usuario_id, auth?.usuario?.token]);
+  }, [auth?.usuario?.usuario_id, auth?.usuario?.token, BASE_URL]);
 
   const guardarDatosPerfil = async () => {
     try {

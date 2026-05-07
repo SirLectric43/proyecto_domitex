@@ -64,10 +64,12 @@ export default function VistaArticuloPage() {
           const data = await res.json();
           setCategoriasLista(data);
         }
-      } catch (e) {}
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);}
     };
     fetchCategorias();
-  }, []);
+  }, [BASE_URL, alerta]);
 
   const categoriasFiltradas = categoriasLista.filter((c) =>
     c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase()),
@@ -120,13 +122,15 @@ export default function VistaArticuloPage() {
             setModoEdicion(true);
           }
         }
-      } catch (error) {
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     if (id) obtenerDetalle();
-  }, [id, auth?.usuario?.rol, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.rol, auth?.usuario?.token, BASE_URL, alerta, esAdmin]);
 
   const guardarNuevaCategoria = async () => {
     if (!nuevaCategoriaTexto.trim()) return;
@@ -316,8 +320,9 @@ export default function VistaArticuloPage() {
           datos.detail || "Hubo un error al actualizar.",
         );
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor: " + mensajeError);
     } finally {
       setGuardando(false);
     }
@@ -361,8 +366,9 @@ export default function VistaArticuloPage() {
       } else {
         alerta?.mostrarAlerta("Error", "No se pudo descatalogar el artículo.");
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor: " + mensajeError);
     } finally {
       setGuardando(false);
     }

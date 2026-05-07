@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /* Función global para consultar la base de datos y tener el número real de artículos en el carrito. */
-  const refrescarCarrito = async () => {
+  const refrescarCarrito = useCallback(async () => {
     if (!usuario?.token) {
       setCantidadCesta(0);
       return;
@@ -145,11 +145,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error al refrescar carrito global:", error);
     }
-  };
+  }, [usuario?.token, BASE_URL]);
 
   useEffect(() => {
     refrescarCarrito();
-  }, [usuario]);
+  }, [refrescarCarrito]);
+
+  useEffect(() => {
+    refrescarCarrito();
+  }, [usuario, refrescarCarrito]);
 
   return (
     <AuthContext.Provider value={{ 

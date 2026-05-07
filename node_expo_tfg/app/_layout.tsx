@@ -53,7 +53,7 @@ function EnrutadorPrincipal() {
         }
       }
     }
-  }, [segments, auth?.usuario, auth?.cargando]);
+  }, [segments, auth?.usuario, auth?.cargando, router]);
 
   useEffect(() => {
     if (scrollViewRef.current) {

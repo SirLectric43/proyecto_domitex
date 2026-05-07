@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { AlertaContext } from './alerta-context';

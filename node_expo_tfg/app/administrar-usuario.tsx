@@ -74,7 +74,7 @@ export default function AdministrarUsuarioPage() {
       }
     };
     if (id) cargarPerfil();
-  }, [id, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.token, BASE_URL, alerta]);
 
   const manejarBotonEdicion = async () => {
     if (modoEdicion) {

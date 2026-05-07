@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -83,7 +83,7 @@ export default function GestionPedidosPage() {
     setter(formatted);
   };
 
-  const cargarPedidos = async () => {
+  const cargarPedidos = useCallback(async () => {
     setCargando(true);
     try {
       let urlApi = `${BASE_URL}/api/admin/pedidos?estado=${filtroEstado}&orden=${ordenFecha}&page=${paginaActual}&limit=20`;
@@ -106,16 +106,17 @@ export default function GestionPedidosPage() {
         setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, filtroEstado, ordenFecha, paginaActual, busquedaRef, busquedaCliente, filtroRol, fechaInicio, fechaFin, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
     if (auth?.usuario?.token) cargarPedidos();
-  }, [filtroEstado, ordenFecha, paginaActual]);
+  }, [cargarPedidos, auth?.usuario?.token]);
 
   const aplicarFiltros = () => {
     if (paginaActual === 1) cargarPedidos();

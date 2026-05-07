@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, usePathname } from 'expo-router';
@@ -59,9 +59,9 @@ export default function NavbarPrivado() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [busqueda]);
+  }, [busqueda, BASE_URL, alerta, auth?.usuario?.token]);
 
-  const cargarNotificaciones = async () => {
+  const cargarNotificaciones = useCallback(async () => {
     if (!auth?.usuario?.token || esAdmin) return;
     try {
       const urlApi = `${BASE_URL}/api/notificaciones`;
@@ -78,11 +78,11 @@ export default function NavbarPrivado() {
         const mensajeError = traducirError(e.message);
         alerta?.mostrarAlerta("Error", mensajeError);
     }
-  };
+  }, [auth?.usuario?.token, esAdmin, BASE_URL, alerta]);
 
   useEffect(() => {
     cargarNotificaciones();
-  }, [auth?.usuario?.token]);
+  }, [cargarNotificaciones]);
 
   const marcarComoLeidas = async () => {
     if (!auth?.usuario?.token || cantidadNoLeidas === 0 || esAdmin) return;
@@ -114,7 +114,9 @@ export default function NavbarPrivado() {
       if (respuesta.ok) {
         setNotificaciones([]);
       }
-    } catch (error) {
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
