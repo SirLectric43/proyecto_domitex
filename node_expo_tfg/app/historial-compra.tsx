@@ -44,7 +44,6 @@ export default function HistorialCompra() {
     "Cancelado",
   ];
 
-  // Conversor: De DD/MM/YYYY (Usuario) a YYYY-MM-DD (API)
   const formatForAPI = (dateStr: string) => {
     if (!dateStr) return "";
     if (dateStr.includes("/")) {
@@ -56,7 +55,6 @@ export default function HistorialCompra() {
     return dateStr;
   };
 
-  // Máscara: Añade las barras / automáticamente mientras escribes
   const handleFechaChange = (text: string, setter: (val: string) => void) => {
     let cleaned = text.replace(/[^0-9]/g, "");
     let formatted = cleaned;
@@ -87,7 +85,7 @@ export default function HistorialCompra() {
 
       if (respuesta.ok) {
         const datos = await respuesta.json();
-        setPedidos(datos.data || []);
+        setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
     } catch (error) {
@@ -161,7 +159,10 @@ export default function HistorialCompra() {
 
   const formatearFecha = (fechaISO: string) => {
     const fecha = new Date(fechaISO);
-    return `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`;
+    const dia = fecha.getDate().toString().padStart(2, "0");
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
   };
 
   const getColorEstado = (estado: string) => {
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 32,
     color: "#000",
-    marginBottom: 20,
+    marginBottom: 30,
     width: "100%",
     maxWidth: 900,
     textAlign: "left",

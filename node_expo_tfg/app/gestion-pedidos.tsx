@@ -60,7 +60,6 @@ export default function GestionPedidosPage() {
     "Cancelado",
   ];
 
-  // Conversor: De DD/MM/YYYY (Usuario) a YYYY-MM-DD (API)
   const formatForAPI = (dateStr: string) => {
     if (!dateStr) return "";
     if (dateStr.includes("/")) {
@@ -72,7 +71,6 @@ export default function GestionPedidosPage() {
     return dateStr;
   };
 
-  // Máscara: Añade las barras / automáticamente mientras escribes
   const handleFechaChange = (text: string, setter: (val: string) => void) => {
     let cleaned = text.replace(/[^0-9]/g, "");
     let formatted = cleaned;
@@ -105,7 +103,7 @@ export default function GestionPedidosPage() {
       });
       const datos = await res.json();
       if (res.ok) {
-        setPedidos(datos.data || []);
+        setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
     } catch (e) {
@@ -159,34 +157,25 @@ export default function GestionPedidosPage() {
     return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
   };
 
-  const renderDateInput = (value: string, setValue: (val: string) => void) => {
-    if (Platform.OS === "web") {
-      return (
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 8,
-            borderColor: "#CCC",
-            borderWidth: 1,
-            outlineColor: "#29166F",
-            fontFamily: "Inter_400Regular",
-            fontSize: 14,
-          }}
-        />
-      );
+  const getColorEstado = (estado: string) => {
+    switch (estado?.toLowerCase()) {
+      case "completado":
+      case "entregado":
+        return "#4CAF50";
+      case "validado":
+        return "#009688";
+      case "en preparación":
+      case "preparando":
+        return "#FF9800";
+      case "pendiente":
+        return "#2196F3";
+      case "pausado":
+        return "#607D8B";
+      case "cancelado":
+        return "#DB3632";
+      default:
+        return "#666666";
     }
-    return (
-      <TextInput
-        style={styles.inputFiltro}
-        placeholder="AAAA-MM-DD"
-        value={value}
-        onChangeText={setValue}
-      />
-    );
   };
 
   return (
@@ -202,11 +191,7 @@ export default function GestionPedidosPage() {
           <Text style={styles.tituloPagina}>Gestión de pedidos</Text>
 
           <View style={styles.contenedorControles}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filaFiltros}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {filtros.map((f, index) => (
                 <Pressable
                   key={f}
@@ -429,12 +414,20 @@ export default function GestionPedidosPage() {
                               )
                             }
                           >
-                            <Text style={styles.textoSelect}>
+                            <Text
+                              style={[
+                                styles.textoSelect,
+                                { color: getColorEstado(pedido.estado) },
+                              ]}
+                            >
                               {pedido.estado}
                             </Text>
                             <Image
                               source={require("@/assets/images/iconoFlechaDer.png")}
-                              style={styles.iconoFlecha}
+                              style={[
+                                styles.iconoFlecha,
+                                { tintColor: getColorEstado(pedido.estado) },
+                              ]}
                             />
                           </Pressable>
 
@@ -462,6 +455,7 @@ export default function GestionPedidosPage() {
                                         style={[
                                           styles.textoOpcion,
                                           {
+                                            color: getColorEstado(est),
                                             fontFamily: "Inter_600SemiBold",
                                           },
                                         ]}
@@ -566,13 +560,12 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 32,
     color: "#29166F",
-    marginBottom: 20,
+    marginBottom: 30,
     borderBottomWidth: 1,
     borderBottomColor: "#EEE",
     paddingBottom: 15,
   },
   contenedorControles: { marginBottom: 30 },
-  filaFiltros: { paddingBottom: 5 },
   botonFiltro: {
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -736,7 +729,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     elevation: 5,
     zIndex: 2000,
-    maxHeight: 200,
+    maxHeight: 300,
   },
   opcionEstado: {
     padding: 12,

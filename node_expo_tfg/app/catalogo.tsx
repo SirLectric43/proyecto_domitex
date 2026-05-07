@@ -88,12 +88,13 @@ export default function CatalogoPage() {
         const datos = await respuesta.json();
 
         if (respuesta.ok) {
-          setCatalogoAgrupado(datos.data || {});
+          const catData = datos.data ? datos.data : datos;
+          setCatalogoAgrupado(catData || {});
           setTotalPaginas(datos.total_pages || 1);
 
           const indicesIniciales: any = {};
           const expandidasIniciales: any = {};
-          Object.keys(datos.data || {}).forEach((categoria) => {
+          Object.keys(catData || {}).forEach((categoria) => {
             indicesIniciales[categoria] = 0;
             expandidasIniciales[categoria] = false;
           });
@@ -115,7 +116,7 @@ export default function CatalogoPage() {
     obtenerCatalogo();
   }, [auth?.usuario?.usuario_id, auth?.usuario?.token, paginaActual]);
 
-  const paginaSiguienteFila = (categoria: string, totalArticulos: number) => {
+  const paginaSiguiente = (categoria: string, totalArticulos: number) => {
     const prevIndex = indicesCatalogo[categoria] || 0;
     const nextIndex = Math.min(totalArticulos - 4, prevIndex + 4);
 
@@ -127,7 +128,7 @@ export default function CatalogoPage() {
     });
   };
 
-  const paginaAnteriorFila = (categoria: string) => {
+  const paginaAnterior = (categoria: string) => {
     const prevIndex = indicesCatalogo[categoria] || 0;
     const nextIndex = Math.max(0, prevIndex - 4);
 
@@ -264,7 +265,7 @@ export default function CatalogoPage() {
                 <View style={styles.filaArticulosPcWrapper}>
                   <View style={styles.contenedorFlecha}>
                     {indicesCatalogo[categoria] > 0 && (
-                      <Pressable onPress={() => paginaAnteriorFila(categoria)}>
+                      <Pressable onPress={() => paginaAnterior(categoria)}>
                         <Image
                           source={require("@/assets/images/iconoFlechaIzq.png")}
                           style={styles.iconoFlecha}
@@ -315,7 +316,7 @@ export default function CatalogoPage() {
                     {indicesCatalogo[categoria] + 4 < articulos.length && (
                       <Pressable
                         onPress={() =>
-                          paginaSiguienteFila(categoria, articulos.length)
+                          paginaSiguiente(categoria, articulos.length)
                         }
                       >
                         <Image

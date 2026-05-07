@@ -52,7 +52,9 @@ export default function GestionUsuariosPage() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        setUsuarios(datos.data || []);
+        setUsuarios(
+          datos.data ? datos.data : Array.isArray(datos) ? datos : [],
+        );
         setTotalPaginas(datos.total_pages || 1);
       }
     } catch (e: any) {
@@ -178,11 +180,11 @@ export default function GestionUsuariosPage() {
           </Pressable>
         </View>
 
-        {cargando && usuarios.length === 0 ? (
+        {cargando ? (
           <ActivityIndicator
             size="large"
             color="#29166F"
-            style={{ marginTop: 50 }}
+            style={{ marginVertical: 80 }}
           />
         ) : (
           <View style={styles.gridUsuarios}>
@@ -224,45 +226,45 @@ export default function GestionUsuariosPage() {
                 </View>
               </View>
             ))}
-          </View>
-        )}
 
-        {totalPaginas > 1 && (
-          <View style={styles.contenedorPaginacion}>
-            <Pressable
-              style={[
-                styles.botonPaginacion,
-                paginaActual === 1 && styles.botonPaginacionDeshabilitado,
-              ]}
-              onPress={() => setPaginaActual((p) => Math.max(1, p - 1))}
-              disabled={paginaActual === 1}
-            >
-              <Image
-                source={require("@/assets/images/iconoFlechaIzq.png")}
-                style={styles.iconoPaginacion}
-                resizeMode="contain"
-              />
-            </Pressable>
-            <Text style={styles.textoPaginacion}>
-              Página {paginaActual} de {totalPaginas}
-            </Text>
-            <Pressable
-              style={[
-                styles.botonPaginacion,
-                paginaActual === totalPaginas &&
-                  styles.botonPaginacionDeshabilitado,
-              ]}
-              onPress={() =>
-                setPaginaActual((p) => Math.min(totalPaginas, p + 1))
-              }
-              disabled={paginaActual === totalPaginas}
-            >
-              <Image
-                source={require("@/assets/images/iconoFlechaDer.png")}
-                style={styles.iconoPaginacion}
-                resizeMode="contain"
-              />
-            </Pressable>
+            {totalPaginas > 1 && (
+              <View style={styles.contenedorPaginacion}>
+                <Pressable
+                  style={[
+                    styles.botonPaginacion,
+                    paginaActual === 1 && styles.botonPaginacionDeshabilitado,
+                  ]}
+                  onPress={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                  disabled={paginaActual === 1}
+                >
+                  <Image
+                    source={require("@/assets/images/iconoFlechaIzq.png")}
+                    style={styles.iconoPaginacion}
+                    resizeMode="contain"
+                  />
+                </Pressable>
+                <Text style={styles.textoPaginacion}>
+                  Página {paginaActual} de {totalPaginas}
+                </Text>
+                <Pressable
+                  style={[
+                    styles.botonPaginacion,
+                    paginaActual === totalPaginas &&
+                      styles.botonPaginacionDeshabilitado,
+                  ]}
+                  onPress={() =>
+                    setPaginaActual((p) => Math.min(totalPaginas, p + 1))
+                  }
+                  disabled={paginaActual === totalPaginas}
+                >
+                  <Image
+                    source={require("@/assets/images/iconoFlechaDer.png")}
+                    style={styles.iconoPaginacion}
+                    resizeMode="contain"
+                  />
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
 

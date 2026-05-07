@@ -1,7 +1,6 @@
 import os
 import math
 from datetime import datetime, timezone
-from typing import Optional
 from typing import Optional, Dict, List
 from fastapi import FastAPI, HTTPException, Header, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -187,7 +186,6 @@ def obtener_todos_usuarios(nombre: Optional[str] = None, rol: Optional[str] = No
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     try:
-        import math
         token = authorization.split(" ")[1]
         user_auth = supabase.auth.get_user(token)
         usuario_id = user_auth.user.id
@@ -247,7 +245,6 @@ def obtener_historial_pedidos(usuario_id: Optional[str] = None, estado: Optional
         raise HTTPException(status_code=401, detail="No autorizado")
     
     try:
-        import math
         token = authorization.split(" ")[1]
         auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
         user_auth = auth_client.auth.get_user(token)
@@ -345,7 +342,6 @@ def cambiar_contrasena_api(usuario_id: str, datos: CambiarContrasena, authorizat
     except Exception as e:
         raise HTTPException(status_code=400, detail="Hubo un error al cambiar la contraseña.")
 
-
 @api_router.get("/categorias")
 def obtener_categorias():
     try:
@@ -399,7 +395,6 @@ def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
 
         datos_ordenados = sorted(datos_procesados, key=lambda x: x['categoria'])
         
-        from itertools import groupby
         catalogo_agrupado = {}
         for categoria, articulos in groupby(datos_ordenados, key=lambda x: x['categoria']):
             catalogo_agrupado[categoria] = list(articulos)
@@ -800,7 +795,6 @@ def admin_obtener_pedidos(estado: Optional[str] = None, orden: str = "desc", ref
         raise HTTPException(status_code=401, detail="No autorizado")
     
     try:
-        import math
         token = authorization.split(" ")[1]
         auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
         user_auth = auth_client.auth.get_user(token)
@@ -904,71 +898,6 @@ def admin_actualizar_lineas_pedido(pedido_id: str, datos: ActualizarLineasPedido
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.post("/articulos")
-def crear_articulo(articulo: ArticuloCrear, authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-
-    try:
-        import base64
-        import uuid
-        
-        token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
-
-        db_user = supabase.table("usuarios").select("rol").eq("id", usuario_id).execute()
-        if not db_user.data or db_user.data[0].get("rol") != "admin":
-            raise HTTPException(status_code=403, detail="Solo administradores pueden crear artículos")
-
-        imagen_url = None
-        if articulo.imagen_base64:
-            base64_data = articulo.imagen_base64
-            if "," in base64_data:
-                base64_data = base64_data.split(",")[1]
-            
-            image_bytes = base64.b64decode(base64_data)
-            file_name = f"{uuid.uuid4()}.jpg"
-            
-            supabase.storage.from_("articulos").upload(file_name, image_bytes, {"content-type": "image/jpeg"})
-            imagen_url = supabase.storage.from_("articulos").get_public_url(file_name)
-
-        ahora_utc = datetime.now(timezone.utc).isoformat()
-
-        resp_articulo = supabase.table("articulos").insert({
-            "nombre": articulo.nombre,
-            "descripcion": articulo.descripcion,
-            "categoria": articulo.categoria,
-            "imagen_url": imagen_url,
-            "fecha_creacion": ahora_utc
-        }).execute()
-        
-        nuevo_articulo_id = resp_articulo.data[0]["id"]
-
-        if articulo.medidas:
-            medidas_insert = []
-            for m in articulo.medidas:
-                if m.precio < 0:
-                    raise HTTPException(status_code=400, detail="El precio no puede ser negativo")
-                
-                disponible_final = False if m.stock <= 0 else m.disponible
-                
-                medidas_insert.append({
-                    "articulo_id": nuevo_articulo_id,
-                    "medida": m.medida,
-                    "precio": m.precio,
-                    "stock": m.stock,
-                    "disponible": disponible_final
-                })
-            supabase.table("articulos_medidas").insert(medidas_insert).execute()
-
-        return {"exito": True, "id": nuevo_articulo_id}
-
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
 @api_router.delete("/articulos/{articulo_id}")
 def eliminar_articulo(articulo_id: str, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
