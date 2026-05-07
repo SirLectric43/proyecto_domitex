@@ -27,8 +27,25 @@ export default function RegistroPage() {
       return;
     }
 
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexCorreo.test(correo)) {
+      alerta?.mostrarAlerta("Error", "El formato del correo electrónico no es válido.");
+      return;
+    }
+
+    const regexTelefono = /^\+?[0-9]{9,15}$/;
+    if (!regexTelefono.test(telefono)) {
+      alerta?.mostrarAlerta("Error", "El formato del teléfono no es válido. Debe contener entre 9 y 15 números.");
+      return;
+    } 
+
     if (contrasena !== repetirContrasena) {
       alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
+      return;
+    }
+
+    if (contrasena.length < 6) {
+      alerta?.mostrarAlerta("Error", "La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 

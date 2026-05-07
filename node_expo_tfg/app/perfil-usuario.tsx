@@ -106,6 +106,11 @@ export default function PerfilPage() {
   }, [auth?.usuario?.usuario_id, auth?.usuario?.token, BASE_URL]);
 
   const guardarDatosPerfil = async () => {
+    const regexTelefono = /^\+?[0-9]{9,15}$/;
+      if (!regexTelefono.test(telefono)) {
+        alerta?.mostrarAlerta("Error", "El formato del teléfono no es válido. Debe contener entre 9 y 15 números.");
+        return;
+      }
     try {
       const urlApi = `${BASE_URL}/api/usuarios/${auth?.usuario?.usuario_id}`;
       
@@ -166,11 +171,17 @@ export default function PerfilPage() {
 
       if (!respuesta.ok) throw new Error("Contraseña actual incorrecta.");
 
-      alerta?.mostrarAlerta("Éxito", "Contraseña cambiada con éxito.");
       setModalVisible(false);
       setContrasenaActual('');
       setNuevaContrasena('');
       setRepetirContrasena('');
+
+      if (auth?.cerrarSesionContext) {
+        await auth.cerrarSesionContext();
+        alerta?.mostrarAlerta("Éxito", "Contraseña cambiada. Por favor, inicia sesión de nuevo.");
+        router.replace('/'); 
+      }
+      
     } catch (e: any) {
       const mensajeError = traducirError(e.message);
       alerta?.mostrarAlerta("Error", mensajeError);
