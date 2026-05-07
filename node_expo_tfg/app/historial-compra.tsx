@@ -44,13 +44,40 @@ export default function HistorialCompra() {
     "Cancelado",
   ];
 
+  // Conversor: De DD/MM/YYYY (Usuario) a YYYY-MM-DD (API)
+  const formatForAPI = (dateStr: string) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("/")) {
+      const [dd, mm, yyyy] = dateStr.split("/");
+      if (yyyy && yyyy.length === 4) {
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    return dateStr;
+  };
+
+  // Máscara: Añade las barras / automáticamente mientras escribes
+  const handleFechaChange = (text: string, setter: (val: string) => void) => {
+    let cleaned = text.replace(/[^0-9]/g, "");
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + "/" + cleaned.slice(2);
+    }
+    if (cleaned.length > 4) {
+      formatted = formatted.slice(0, 5) + "/" + cleaned.slice(4, 8);
+    }
+    setter(formatted);
+  };
+
   const cargarPedidos = async () => {
     setCargando(true);
     if (!auth?.usuario?.token) return;
     try {
       let urlApi = `${BASE_URL}/api/pedidos/historial?page=${paginaActual}&limit=15`;
-      if (fechaInicio) urlApi += `&fecha_inicio=${fechaInicio}`;
-      if (fechaFin) urlApi += `&fecha_fin=${fechaFin}`;
+      if (fechaInicio.length === 10)
+        urlApi += `&fecha_inicio=${formatForAPI(fechaInicio)}`;
+      if (fechaFin.length === 10)
+        urlApi += `&fecha_fin=${formatForAPI(fechaFin)}`;
       if (filtroEstado !== "Todos")
         urlApi += `&estado=${encodeURIComponent(filtroEstado)}`;
 
@@ -60,8 +87,8 @@ export default function HistorialCompra() {
 
       if (respuesta.ok) {
         const datos = await respuesta.json();
-        setPedidos(datos.data);
-        setTotalPaginas(datos.total_pages);
+        setPedidos(datos.data || []);
+        setTotalPaginas(datos.total_pages || 1);
       }
     } catch (error) {
       console.error("Error al cargar historial:", error);
@@ -87,37 +114,6 @@ export default function HistorialCompra() {
     setFechaFin("");
     setFiltroEstado("Todos");
     setPaginaActual(1);
-  };
-
-  const renderDateInput = (value: string, setValue: (val: string) => void) => {
-    if (Platform.OS === "web") {
-      return (
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 8,
-            borderColor: "#CCC",
-            borderWidth: 1,
-            outlineColor: "#29166F",
-            fontFamily: "Inter_400Regular",
-            fontSize: 14,
-            minWidth: 0,
-          }}
-        />
-      );
-    }
-    return (
-      <TextInput
-        style={styles.inputFiltro}
-        placeholder="AAAA-MM-DD"
-        value={value}
-        onChangeText={setValue}
-      />
-    );
   };
 
   const renderSelectEstado = () => (
@@ -217,20 +213,45 @@ export default function HistorialCompra() {
             style={[
               styles.filaFiltrosConfig,
               esMovil && { flexDirection: "column" },
-              { zIndex: 1 },
+              { zIndex: 1, marginTop: 15 },
             ]}
           >
             <View style={styles.grupoFiltro}>
               <Text style={styles.labelFiltro}>Desde:</Text>
-              {renderDateInput(fechaInicio, setFechaInicio)}
+              <TextInput
+                style={styles.inputFiltro}
+                placeholder="DD/MM/YYYY"
+                value={fechaInicio}
+                onChangeText={(t) => handleFechaChange(t, setFechaInicio)}
+                keyboardType="numeric"
+                maxLength={10}
+              />
             </View>
-            <View style={styles.grupoFiltro}>
+            <View
+              style={[
+                styles.grupoFiltro,
+                !esMovil && { marginLeft: 15 },
+                esMovil && { marginTop: 15 },
+              ]}
+            >
               <Text style={styles.labelFiltro}>Hasta:</Text>
-              {renderDateInput(fechaFin, setFechaFin)}
+              <TextInput
+                style={styles.inputFiltro}
+                placeholder="DD/MM/YYYY"
+                value={fechaFin}
+                onChangeText={(t) => handleFechaChange(t, setFechaFin)}
+                keyboardType="numeric"
+                maxLength={10}
+              />
             </View>
           </View>
-          <View style={[styles.filaBotonesFiltro, { zIndex: 1 }]}>
-            <Pressable style={styles.botonLimpiar} onPress={limpiarFiltros}>
+          <View
+            style={[styles.filaBotonesFiltro, { zIndex: 1, marginTop: 15 }]}
+          >
+            <Pressable
+              style={[styles.botonLimpiar, { marginRight: 10 }]}
+              onPress={limpiarFiltros}
+            >
               <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
             </Pressable>
             <Pressable style={styles.botonBuscar} onPress={aplicarFiltros}>
@@ -243,11 +264,13 @@ export default function HistorialCompra() {
           <ActivityIndicator
             size="large"
             color="#29166F"
-            style={{ marginTop: 50 }}
+            style={{ marginVertical: 80 }}
           />
         ) : pedidos.length === 0 ? (
           <View style={styles.contenedorVacio}>
-            <Text style={styles.textoVacio}>No se encontraron pedidos.</Text>
+            <Text style={styles.textoVacio}>
+              No se encontraron pedidos con esos filtros.
+            </Text>
             <Pressable
               style={styles.botonVolver}
               onPress={() => router.push("/catalogo")}
@@ -257,59 +280,67 @@ export default function HistorialCompra() {
           </View>
         ) : (
           <View style={[styles.listaPedidos, { zIndex: 1 }]}>
-            {pedidos.map((pedido) => (
-              <View
-                key={pedido.id}
-                style={[
-                  styles.tarjetaPedido,
-                  esMovil && styles.tarjetaPedidoMovil,
-                ]}
-              >
+            {pedidos.map((pedido) => {
+              const totalSeguro = pedido.total ? pedido.total : 0;
+              return (
                 <View
-                  style={[styles.infoPedido, esMovil && styles.infoPedidoMovil]}
-                >
-                  <Text style={styles.tituloPedido}>
-                    Pedido {pedido.referencia}
-                  </Text>
-                  <View style={styles.contenedorEstado}>
-                    <Text style={styles.etiquetaEstado}>Estado: </Text>
-                    <Text
-                      style={[
-                        styles.valorEstado,
-                        { color: getColorEstado(pedido.estado) },
-                      ]}
-                    >
-                      {pedido.estado}
-                    </Text>
-                  </View>
-                  <Text style={styles.totalPedido}>
-                    Total: {pedido.total?.toFixed(2).replace(".", ",")} €
-                  </Text>
-                </View>
-
-                <View
+                  key={pedido.id}
                   style={[
-                    styles.accionesPedido,
-                    esMovil && styles.accionesPedidoMovil,
+                    styles.tarjetaPedido,
+                    esMovil && styles.tarjetaPedidoMovil,
                   ]}
                 >
-                  <Text style={styles.fechaPedido}>
-                    {formatearFecha(pedido.fecha_pedido)}
-                  </Text>
-                  <Pressable
-                    style={styles.botonDetalles}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/ver-pedido",
-                        params: { pedidoId: pedido.id },
-                      })
-                    }
+                  <View
+                    style={[
+                      styles.infoPedido,
+                      esMovil && styles.infoPedidoMovil,
+                    ]}
                   >
-                    <Text style={styles.textoBotonDetalles}>Detalles pedido</Text>
-                  </Pressable>
+                    <Text style={styles.tituloPedido}>
+                      Pedido {pedido.referencia}
+                    </Text>
+                    <View style={styles.contenedorEstado}>
+                      <Text style={styles.etiquetaEstado}>Estado: </Text>
+                      <Text
+                        style={[
+                          styles.valorEstado,
+                          { color: getColorEstado(pedido.estado) },
+                        ]}
+                      >
+                        {pedido.estado}
+                      </Text>
+                    </View>
+                    <Text style={styles.totalPedido}>
+                      Total: {totalSeguro.toFixed(2).replace(".", ",")} €
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.accionesPedido,
+                      esMovil && styles.accionesPedidoMovil,
+                    ]}
+                  >
+                    <Text style={styles.fechaPedido}>
+                      {formatearFecha(pedido.fecha_pedido)}
+                    </Text>
+                    <Pressable
+                      style={styles.botonDetalles}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/ver-pedido",
+                          params: { pedidoId: pedido.id },
+                        })
+                      }
+                    >
+                      <Text style={styles.textoBotonDetalles}>
+                        Detalles de pedido
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
 
             {totalPaginas > 1 && (
               <View style={styles.contenedorPaginacion}>
@@ -357,6 +388,12 @@ export default function HistorialCompra() {
 }
 
 const styles = StyleSheet.create({
+  contenedorCentro: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+  },
   contenedorFondo: { flex: 1, backgroundColor: "#FAFAFA" },
   scrollContenido: { padding: 20, alignItems: "center", paddingBottom: 100 },
   tituloPagina: {
@@ -371,26 +408,26 @@ const styles = StyleSheet.create({
   cajaFiltros: {
     width: "100%",
     maxWidth: 900,
-    backgroundColor: "# F9F9F9",
+    backgroundColor: "#FFF",
     padding: 20,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#EAEAEA",
     marginBottom: 30,
-    gap: 15,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
     zIndex: 10,
   },
-  filaFiltrosConfig: { flexDirection: "row", gap: 15 },
-  grupoFiltro: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
+  filaFiltrosConfig: { flexDirection: "row" },
+  grupoFiltro: { flex: 1, flexDirection: "row", alignItems: "center" },
   labelFiltro: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 14,
     color: "#333",
     width: 55,
+    marginRight: 10,
   },
   inputFiltro: {
     flex: 1,
@@ -402,12 +439,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: "#FFF",
   },
-
   selectEstado: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F9F9F9",
     borderWidth: 1,
     borderColor: "#29166F",
     width: "100%",
@@ -452,13 +488,8 @@ const styles = StyleSheet.create({
     left: -2000,
     right: -2000,
     zIndex: 1000,
-  },
-  filaBotonesFiltro: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 5,
-  },
+  } as any,
+  filaBotonesFiltro: { flexDirection: "row", justifyContent: "flex-end" },
   botonLimpiar: {
     backgroundColor: "#EEEEEE",
     paddingVertical: 10,
@@ -499,7 +530,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 16,
   },
-  listaPedidos: { width: "100%", maxWidth: 900 },
+  listaPedidos: { width: "100%", maxWidth: 900, zIndex: 1 },
   tarjetaPedido: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -570,7 +601,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 20,
-    gap: 20,
     width: "100%",
   },
   botonPaginacion: {
@@ -581,6 +611,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 20,
   },
   botonPaginacionDeshabilitado: { opacity: 0.4 },
   iconoPaginacion: { width: 20, height: 20, tintColor: "#29166F" },

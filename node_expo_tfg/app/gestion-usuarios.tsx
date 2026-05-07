@@ -7,8 +7,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Image,
   TextInput,
+  Image,
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { router } from "expo-router";
@@ -52,8 +52,8 @@ export default function GestionUsuariosPage() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        setUsuarios(datos.data);
-        setTotalPaginas(datos.total_pages);
+        setUsuarios(datos.data || []);
+        setTotalPaginas(datos.total_pages || 1);
       }
     } catch (e: any) {
       const mensajeError = traducirError(e.message);
@@ -142,23 +142,20 @@ export default function GestionUsuariosPage() {
 
         <View style={styles.cajaFiltros}>
           <TextInput
-            style={styles.inputBusqueda}
+            style={[styles.inputBusqueda, { marginBottom: 15 }]}
             placeholder="Buscar por nombre..."
             placeholderTextColor="#999"
             value={busquedaNombre}
             onChangeText={setBusquedaNombre}
           />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filaRoles}
-          >
-            {roles.map((r) => (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {roles.map((r, index) => (
               <Pressable
                 key={r}
                 style={[
                   styles.botonRol,
                   filtroRol === r && styles.botonRolActivo,
+                  { marginRight: index === roles.length - 1 ? 0 : 10 },
                 ]}
                 onPress={() => setFiltroRol(r)}
               >
@@ -173,7 +170,10 @@ export default function GestionUsuariosPage() {
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable style={styles.botonBuscar} onPress={aplicarFiltros}>
+          <Pressable
+            style={[styles.botonBuscar, { marginTop: 15 }]}
+            onPress={aplicarFiltros}
+          >
             <Text style={styles.textoBotonBuscar}>Buscar / Filtrar</Text>
           </Pressable>
         </View>
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     fontSize: 32,
     color: "#29166F",
-    marginBottom: 20,
+    marginBottom: 40,
     width: "100%",
     maxWidth: 800,
     textAlign: "left",
@@ -333,7 +333,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EAEAEA",
     marginBottom: 30,
-    gap: 15,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -348,7 +347,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: "#F9F9F9",
   },
-  filaRoles: { gap: 10, paddingBottom: 5 },
   botonRol: {
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -365,7 +363,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 5,
   },
   textoBotonBuscar: {
     color: "#FFF",
@@ -508,7 +505,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 30,
-    gap: 20,
     width: "100%",
     maxWidth: 800,
   },
@@ -520,6 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 20,
   },
   botonPaginacionDeshabilitado: { opacity: 0.4 },
   iconoPaginacion: { width: 20, height: 20, tintColor: "#29166F" },

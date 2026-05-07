@@ -1,4 +1,5 @@
 import os
+import math
 from datetime import datetime, timezone
 from typing import Optional
 from typing import Optional, Dict, List
@@ -366,7 +367,6 @@ def crear_categoria(categoria: CategoriaCrear, authorization: str = Header(None)
 @api_router.get("/articulos")
 def obtener_catalogo_agrupado(page: int = 1, limit: int = 8):
     try:
-        import math
         resp_cat = supabase.table("articulos").select("categoria").execute()
         if not resp_cat.data:
             return {"data": {}, "total_pages": 0, "current_page": page}
@@ -501,26 +501,6 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
         return {"exito": True, "mensaje": "Añadido a la cesta correctamente"}
     except Exception as e:
         print(f"Error POST carrito: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
-@api_router.get("/pedidos/historial")
-def obtener_historial_pedidos(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No autorizado")
-    try:
-        token = authorization.split(" ")[1]
-        user_auth = supabase.auth.get_user(token)
-        usuario_id = user_auth.user.id
-
-        resp_pedidos = supabase.table("pedidos") \
-            .select("id, referencia, fecha_pedido, estado, total") \
-            .eq("usuario_id", usuario_id) \
-            .order("fecha_pedido", desc=True) \
-            .execute()
-            
-        return resp_pedidos.data if resp_pedidos.data else []
-    except Exception as e:
-        print(f"Error GET historial pedidos: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
 @api_router.post("/pedidos/confirmar")

@@ -60,6 +60,31 @@ export default function GestionPedidosPage() {
     "Cancelado",
   ];
 
+  // Conversor: De DD/MM/YYYY (Usuario) a YYYY-MM-DD (API)
+  const formatForAPI = (dateStr: string) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("/")) {
+      const [dd, mm, yyyy] = dateStr.split("/");
+      if (yyyy && yyyy.length === 4) {
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    return dateStr;
+  };
+
+  // Máscara: Añade las barras / automáticamente mientras escribes
+  const handleFechaChange = (text: string, setter: (val: string) => void) => {
+    let cleaned = text.replace(/[^0-9]/g, "");
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + "/" + cleaned.slice(2);
+    }
+    if (cleaned.length > 4) {
+      formatted = formatted.slice(0, 5) + "/" + cleaned.slice(4, 8);
+    }
+    setter(formatted);
+  };
+
   const cargarPedidos = async () => {
     setCargando(true);
     try {
@@ -70,16 +95,18 @@ export default function GestionPedidosPage() {
         urlApi += `&cliente=${encodeURIComponent(busquedaCliente)}`;
       if (filtroRol !== "Todos")
         urlApi += `&rol=${encodeURIComponent(filtroRol)}`;
-      if (fechaInicio) urlApi += `&fecha_inicio=${fechaInicio}`;
-      if (fechaFin) urlApi += `&fecha_fin=${fechaFin}`;
+      if (fechaInicio.length === 10)
+        urlApi += `&fecha_inicio=${formatForAPI(fechaInicio)}`;
+      if (fechaFin.length === 10)
+        urlApi += `&fecha_fin=${formatForAPI(fechaFin)}`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
       });
       const datos = await res.json();
       if (res.ok) {
-        setPedidos(datos.data);
-        setTotalPaginas(datos.total_pages);
+        setPedidos(datos.data || []);
+        setTotalPaginas(datos.total_pages || 1);
       }
     } catch (e) {
       console.error(e);
@@ -180,12 +207,13 @@ export default function GestionPedidosPage() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filaFiltros}
             >
-              {filtros.map((f) => (
+              {filtros.map((f, index) => (
                 <Pressable
                   key={f}
                   style={[
                     styles.botonFiltro,
                     filtroEstado === f && styles.botonFiltroActivo,
+                    { marginRight: index === filtros.length - 1 ? 0 : 10 },
                   ]}
                   onPress={() => {
                     setFiltroEstado(f);
@@ -236,7 +264,11 @@ export default function GestionPedidosPage() {
               ]}
             >
               <TextInput
-                style={styles.inputFiltro}
+                style={[
+                  styles.inputFiltro,
+                  !esMovil && { marginRight: 15 },
+                  esMovil && { marginBottom: 15 },
+                ]}
                 placeholder="Nº Referencia..."
                 value={busquedaRef}
                 onChangeText={setBusquedaRef}
@@ -252,30 +284,50 @@ export default function GestionPedidosPage() {
               style={[
                 styles.filaBusqueda,
                 esMovil && { flexDirection: "column" },
+                { marginTop: 15 },
               ]}
             >
               <View style={styles.grupoFiltro}>
                 <Text style={styles.labelFiltro}>Desde:</Text>
-                {renderDateInput(fechaInicio, setFechaInicio)}
+                <TextInput
+                  style={styles.inputFiltro}
+                  placeholder="DD/MM/YYYY"
+                  value={fechaInicio}
+                  onChangeText={(t) => handleFechaChange(t, setFechaInicio)}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
               </View>
-              <View style={styles.grupoFiltro}>
+              <View
+                style={[
+                  styles.grupoFiltro,
+                  !esMovil && { marginLeft: 15 },
+                  esMovil && { marginTop: 15 },
+                ]}
+              >
                 <Text style={styles.labelFiltro}>Hasta:</Text>
-                {renderDateInput(fechaFin, setFechaFin)}
+                <TextInput
+                  style={styles.inputFiltro}
+                  placeholder="DD/MM/YYYY"
+                  value={fechaFin}
+                  onChangeText={(t) => handleFechaChange(t, setFechaFin)}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
               </View>
             </View>
-            <View style={styles.grupoFiltroScroll}>
-              <Text style={styles.labelFiltro}>Rol del cliente:</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filaRoles}
-              >
-                {roles.map((r) => (
+            <View style={[styles.grupoFiltroScroll, { marginTop: 15 }]}>
+              <Text style={[styles.labelFiltro, { marginRight: 10 }]}>
+                Rol:
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {roles.map((r, index) => (
                   <Pressable
                     key={r}
                     style={[
                       styles.botonRol,
                       filtroRol === r && styles.botonRolActivo,
+                      { marginRight: index === roles.length - 1 ? 0 : 8 },
                     ]}
                     onPress={() => setFiltroRol(r)}
                   >
@@ -291,12 +343,12 @@ export default function GestionPedidosPage() {
                 ))}
               </ScrollView>
             </View>
-            <View style={styles.filaBotonesAvanzados}>
+            <View style={[styles.filaBotonesAvanzados, { marginTop: 15 }]}>
               <Pressable
-                style={styles.botonLimpiarAvanzado}
+                style={[styles.botonLimpiarAvanzado, { marginRight: 10 }]}
                 onPress={limpiarFiltrosAvanzados}
               >
-                <Text style={styles.textoBotonLimpiar}>Limpiar Todo</Text>
+                <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
               </Pressable>
               <Pressable
                 style={styles.botonBuscarAvanzado}
@@ -311,7 +363,7 @@ export default function GestionPedidosPage() {
             <ActivityIndicator
               size="large"
               color="#29166F"
-              style={{ marginTop: 50 }}
+              style={{ marginVertical: 80 }}
             />
           ) : (
             <View style={styles.listaPedidos}>
@@ -406,7 +458,14 @@ export default function GestionPedidosPage() {
                                         actualizarEstado(pedido.id, est)
                                       }
                                     >
-                                      <Text style={styles.textoOpcion}>
+                                      <Text
+                                        style={[
+                                          styles.textoOpcion,
+                                          {
+                                            fontFamily: "Inter_600SemiBold",
+                                          },
+                                        ]}
+                                      >
                                         {est}
                                       </Text>
                                     </Pressable>
@@ -435,7 +494,7 @@ export default function GestionPedidosPage() {
               ))}
               {pedidos.length === 0 && (
                 <Text style={styles.textoVacio}>
-                  No se han encontrado pedidos.
+                  No se han encontrado pedidos con esos filtros.
                 </Text>
               )}
 
@@ -512,8 +571,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEE",
     paddingBottom: 15,
   },
-  contenedorControles: { marginBottom: 15 },
-  filaFiltros: { gap: 10, paddingBottom: 5 },
+  contenedorControles: { marginBottom: 30 },
+  filaFiltros: { paddingBottom: 5 },
   botonFiltro: {
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -539,9 +598,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EAEAEA",
     marginBottom: 30,
-    gap: 15,
   },
-  filaBusqueda: { flexDirection: "row", gap: 15 },
+  filaBusqueda: { flexDirection: "row" },
   inputFiltro: {
     flex: 1,
     borderWidth: 1,
@@ -552,10 +610,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: "#FFF",
   },
-  grupoFiltro: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
-  grupoFiltroScroll: { flexDirection: "row", alignItems: "center", gap: 10 },
-  labelFiltro: { fontFamily: "Inter_600SemiBold", fontSize: 14, color: "#333" },
-  filaRoles: { gap: 8 },
+  grupoFiltro: { flex: 1, flexDirection: "row", alignItems: "center" },
+  grupoFiltroScroll: { flexDirection: "row", alignItems: "center" },
+  labelFiltro: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    color: "#333",
+    marginRight: 10,
+  },
   botonRol: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -567,12 +629,7 @@ const styles = StyleSheet.create({
   botonRolActivo: { backgroundColor: "#29166F", borderColor: "#29166F" },
   textoRolPill: { fontFamily: "Inter_400Regular", color: "#666", fontSize: 12 },
   textoRolActivo: { color: "#FFF" },
-  filaBotonesAvanzados: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 5,
-  },
+  filaBotonesAvanzados: { flexDirection: "row", justifyContent: "flex-end" },
   botonLimpiarAvanzado: {
     backgroundColor: "#EEEEEE",
     paddingVertical: 10,
@@ -596,7 +653,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  listaPedidos: { gap: 20 },
+  listaPedidos: {},
   tarjetaPedido: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -609,11 +666,17 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
+    marginBottom: 20,
   },
   tarjetaPedidoMovil: { flexDirection: "column" },
-  colIzquierda: { flex: 1, justifyContent: "center", gap: 5 },
+  colIzquierda: { flex: 1, justifyContent: "center", marginBottom: 5 },
   colIzquierdaMovil: { width: "100%", marginBottom: 15 },
-  referencia: { fontFamily: "Montserrat_700Bold", fontSize: 20, color: "#000" },
+  referencia: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 20,
+    color: "#000",
+    marginBottom: 5,
+  },
   fecha: { fontFamily: "Inter_400Regular", fontSize: 16, color: "#666" },
   cliente: {
     fontFamily: "Inter_600SemiBold",
@@ -621,7 +684,7 @@ const styles = StyleSheet.create({
     color: "#29166F",
     marginTop: 5,
   },
-  colDerecha: { width: 200, gap: 15, alignItems: "flex-end" },
+  colDerecha: { width: 200, alignItems: "flex-end" },
   colDerechaMovil: { width: "100%", alignItems: "stretch" },
   botonValidar: {
     backgroundColor: "#29166F",
@@ -631,6 +694,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
+    marginBottom: 15,
   },
   textoBotonValidar: {
     color: "#FFFFFF",
@@ -648,6 +712,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 6,
+    marginBottom: 15,
   },
   textoSelect: {
     fontFamily: "Inter_600SemiBold",
@@ -713,7 +778,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 20,
-    gap: 20,
     width: "100%",
   },
   botonPaginacion: {
@@ -724,6 +788,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 20,
   },
   botonPaginacionDeshabilitado: { opacity: 0.4 },
   iconoPaginacion: { width: 20, height: 20, tintColor: "#29166F" },
