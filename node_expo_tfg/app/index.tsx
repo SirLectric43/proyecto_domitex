@@ -1,5 +1,6 @@
 import { Text, View, Image, StyleSheet, ImageBackground, Pressable, useWindowDimensions } from "react-native";
 import { Link, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { useEffect, useContext } from "react";
 import { AuthContext } from './auth-context';
 
@@ -18,10 +19,13 @@ export default function LandingPage() {
         router.replace('/catalogo');
       }
     }
-  }, [auth?.usuario]);
+  }, [auth?.usuario, router]);
 
   return (
     <View style={styles.contenedor}>
+      <Head>
+          <title>Domitex | Vistiendo tu hogar con elegancia</title>
+      </Head>
       <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
         <View style={styles.capaSuperpuesta}>
           <Text style={[styles.titulo, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>

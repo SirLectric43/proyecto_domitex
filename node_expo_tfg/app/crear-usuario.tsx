@@ -11,8 +11,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function CrearUsuarioPage() {
   const { width } = useWindowDimensions();
@@ -20,7 +22,7 @@ export default function CrearUsuarioPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -46,6 +48,23 @@ export default function CrearUsuarioPage() {
       return;
     }
 
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexCorreo.test(correo)) {
+      alerta?.mostrarAlerta("Error", "El formato del correo electrónico no es válido.");
+      return;
+    }
+
+    if (contrasena.length < 6) {
+      alerta?.mostrarAlerta("Error", "La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    const regexTelefono = /^\+?[0-9]{9,15}$/;
+    if (!regexTelefono.test(telefono)) {
+      alerta?.mostrarAlerta("Error", "El formato del teléfono no es válido. Debe contener entre 9 y 15 números.");
+      return;
+    }
+
     if (contrasena !== repetirContrasena) {
       alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
       return;
@@ -54,9 +73,7 @@ export default function CrearUsuarioPage() {
     setCargando(true);
 
     try {
-      const urlApi = Platform.OS === "web" 
-        ? "/api/admin/usuarios" 
-        : `${BASE_URL}/api/admin/usuarios`;
+      const urlApi = `${BASE_URL}/api/admin/usuarios`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -82,8 +99,9 @@ export default function CrearUsuarioPage() {
       } else {
         alerta?.mostrarAlerta("Error", datos.detail || "No se pudo crear el usuario.");
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
@@ -92,6 +110,9 @@ export default function CrearUsuarioPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+        <Head>
+            <title>Crear nuevo usuario | Domitex</title>
+        </Head>
         <View style={[styles.contenedorFormulario, esMovil && styles.contenedorFormularioMovil]}>
           
           <Text style={[styles.tituloPagina, esMovil && styles.tituloPaginaMovil]}>Crear nuevo usuario</Text>

@@ -2,8 +2,10 @@ import { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platform, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function AgregarArticuloPage() {
   const { width } = useWindowDimensions();
@@ -11,7 +13,7 @@ export default function AgregarArticuloPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -33,16 +35,19 @@ export default function AgregarArticuloPage() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const urlApi = Platform.OS === 'web' ? '/api/categorias' : `${BASE_URL}/api/categorias`;
+        const urlApi = `${BASE_URL}/api/categorias`;
         const res = await fetch(urlApi);
         if (res.ok) {
           const data = await res.json();
           setCategoriasLista(data);
         }
-      } catch (e) {}
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
+      }
     };
     fetchCategorias();
-  }, []);
+  }, [BASE_URL, alerta]);
 
   const categoriasFiltradas = categoriasLista.filter(c => 
     c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase())
@@ -51,7 +56,7 @@ export default function AgregarArticuloPage() {
   const guardarNuevaCategoria = async () => {
     if (!nuevaCategoriaTexto.trim()) return;
     try {
-      const urlApi = Platform.OS === 'web' ? '/api/categorias' : `${BASE_URL}/api/categorias`;
+      const urlApi = `${BASE_URL}/api/categorias`;
       const res = await fetch(urlApi, {
         method: 'POST',
         headers: {
@@ -71,7 +76,10 @@ export default function AgregarArticuloPage() {
       } else {
         alerta?.mostrarAlerta("Error", "No se pudo crear la categoría");
       }
-    } catch (e) {}
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
+    }
   };
 
   const seleccionarImagen = async () => {
@@ -124,9 +132,7 @@ export default function AgregarArticuloPage() {
     setGuardando(true);
 
     try {
-      const urlApi = Platform.OS === 'web' 
-        ? '/api/articulos' 
-        : `${BASE_URL}/api/articulos`;
+      const urlApi = `${BASE_URL}/api/articulos`;
       
       const medidasFormateadas = medidas.map(m => ({
         medida: m.medida,
@@ -160,8 +166,9 @@ export default function AgregarArticuloPage() {
       } else {
         alerta?.mostrarAlerta("Error", datos.detail || "Hubo un error al guardar el artículo.");
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+            const mensajeError = traducirError(e.message);
+            alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setGuardando(false);
     }
@@ -170,6 +177,9 @@ export default function AgregarArticuloPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+        <Head>
+            <title>Añadir un artículo | Domitex</title>
+        </Head>
         <View style={styles.contenedorFormulario}>
           
           <Text style={styles.tituloPagina}>Añadir nuevo artículo</Text>

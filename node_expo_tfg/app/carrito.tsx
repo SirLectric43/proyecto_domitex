@@ -13,7 +13,9 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function Carrito() {
   const { width } = useWindowDimensions();
@@ -23,16 +25,13 @@ export default function Carrito() {
   const alerta = useContext(AlertaContext);
   const [items, setItems] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   useEffect(() => {
     const obtenerCarrito = async () => {
       if (!auth?.usuario?.token) return;
       try {
-        const urlApi =
-          Platform.OS === "web"
-            ? `/api/carrito`
-            : `${BASE_URL}/api/carrito`;
+        const urlApi = `${BASE_URL}/api/carrito`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
@@ -42,13 +41,15 @@ export default function Carrito() {
           const datos = await respuesta.json();
           setItems(datos);
         }
-      } catch (error) {
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     obtenerCarrito();
-  }, [auth?.usuario?.token]);
+  }, [auth?.usuario?.token, BASE_URL, alerta]);
 
   const cambiarCantidad = async (itemId: string, nuevaCantidad: number) => {
     if (nuevaCantidad < 0) return;
@@ -69,10 +70,7 @@ export default function Carrito() {
     }
 
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/carrito/items/${itemId}`
-          : `${BASE_URL}/api/carrito/items/${itemId}`;
+      const urlApi = `${BASE_URL}/api/carrito/items/${itemId}`;
 
       const respuesta = await fetch(urlApi, {
         method: "PUT",
@@ -87,7 +85,9 @@ export default function Carrito() {
         auth.refrescarCarrito();
       }
 
-    } catch (error) {
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
@@ -102,9 +102,7 @@ export default function Carrito() {
     if (items.length === 0) return;
 
     try {
-      const urlApi = Platform.OS === "web"
-        ? `/api/pedidos/confirmar`
-        : `${BASE_URL}/api/pedidos/confirmar`;
+      const urlApi = `${BASE_URL}/api/pedidos/confirmar`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -127,8 +125,9 @@ export default function Carrito() {
         const error = await respuesta.json();
         alerta?.mostrarAlerta("Error", error.detail);
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Hubo un problema al procesar el pedido.");
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
@@ -142,6 +141,9 @@ export default function Carrito() {
   if (cargando) {
     return (
       <View style={styles.contenedorCentro}>
+        <Head>
+            <title>Carrito | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -150,6 +152,9 @@ export default function Carrito() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Carrito | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Mi Cesta</Text>
 
         {items.length === 0 ? (

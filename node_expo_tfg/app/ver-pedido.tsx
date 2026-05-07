@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { AuthContext } from "./auth-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import Head from "expo-router/head";
 
 export default function VerPedido() {
   const { pedidoId } = useLocalSearchParams();
@@ -19,7 +20,7 @@ export default function VerPedido() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
   
   const [pedido, setPedido] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -28,10 +29,7 @@ export default function VerPedido() {
     const obtenerDetallePedido = async () => {
       if (!auth?.usuario?.token || !pedidoId) return;
       try {
-        const urlApi =
-          Platform.OS === "web"
-            ? `/api/pedidos/${pedidoId}`
-            : `${BASE_URL}/api/pedidos/${pedidoId}`;
+        const urlApi = `${BASE_URL}/api/pedidos/${pedidoId}`;
 
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
@@ -50,7 +48,7 @@ export default function VerPedido() {
       }
     };
     obtenerDetallePedido();
-  }, [auth?.usuario?.token, pedidoId]);
+  }, [auth?.usuario?.token, pedidoId, BASE_URL, router]);
 
   const getColorEstado = (estado: string) => {
     switch (estado?.toLowerCase()) {
@@ -79,6 +77,9 @@ export default function VerPedido() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
+        <Head>
+            <title>Ver pedido - {pedido.referencia} | Domitex</title>
+        </Head>
         <Text style={styles.tituloPagina}>Pedido {pedido.referencia}</Text>
 
         <View style={[styles.contenedorListaYResumen, esMovil && styles.contenedorListaYResumenMovil]}>

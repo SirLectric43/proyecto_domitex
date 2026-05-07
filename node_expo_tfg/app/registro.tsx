@@ -1,14 +1,16 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function RegistroPage() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
   const router = useRouter();
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -25,8 +27,25 @@ export default function RegistroPage() {
       return;
     }
 
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexCorreo.test(correo)) {
+      alerta?.mostrarAlerta("Error", "El formato del correo electrónico no es válido.");
+      return;
+    }
+
+    const regexTelefono = /^\+?[0-9]{9,15}$/;
+    if (!regexTelefono.test(telefono)) {
+      alerta?.mostrarAlerta("Error", "El formato del teléfono no es válido. Debe contener entre 9 y 15 números.");
+      return;
+    } 
+
     if (contrasena !== repetirContrasena) {
       alerta?.mostrarAlerta("Error", "Las contraseñas no coinciden.");
+      return;
+    }
+
+    if (contrasena.length < 6) {
+      alerta?.mostrarAlerta("Error", "La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
@@ -38,7 +57,7 @@ export default function RegistroPage() {
     setCargando(true);
 
     try {
-      const urlApi = Platform.OS === 'web' ? '/api/usuarios' : `${BASE_URL}/api/usuarios`;
+      const urlApi = `${BASE_URL}/api/usuarios`;
       
       const respuesta = await fetch(urlApi, {
         method: 'POST',
@@ -64,8 +83,9 @@ export default function RegistroPage() {
 
       router.push("/login");
 
-    } catch (error: any) {
-      alerta?.mostrarAlerta("Error", error.message);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
     } finally {
       setCargando(false);
     }
@@ -73,6 +93,9 @@ export default function RegistroPage() {
 
   return (
     <View style={styles.contenedor}>
+      <Head>
+          <title>Registro | Domitex</title>
+      </Head>
       <ImageBackground source={require('@/assets/images/bannerLanding.png')} style={styles.contenedorImagen} resizeMode="cover">
         <View style={styles.capaSuperpuesta}>
           <Text style={[styles.tituloBanner, esMovil && { fontSize: 36, lineHeight: 40, marginTop: 10 }]}>
@@ -115,12 +138,12 @@ export default function RegistroPage() {
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput style={styles.input} value={contrasena} onChangeText={setContrasena} secureTextEntry={true} />
+            <TextInput style={[styles.input, {fontFamily: undefined}]}  value={contrasena} onChangeText={setContrasena} secureTextEntry={true} />
           </View>
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Repetir Contraseña</Text>
-            <TextInput style={styles.input} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry={true} />
+            <TextInput style={[styles.input, {fontFamily: undefined}]}  value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry={true} />
           </View>
 
           <Pressable style={styles.contenedorCheckbox} onPress={() => setAceptaTerminos(!aceptaTerminos)}>

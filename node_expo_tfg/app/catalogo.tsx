@@ -14,8 +14,10 @@ import {
   UIManager,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 if (
   Platform.OS === "android" &&
@@ -50,10 +52,13 @@ export default function CatalogoPage() {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "";
 
   const [catalogoAgrupado, setCatalogoAgrupado] = useState<any>({});
   const [cargando, setCargando] = useState(true);
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
 
   const scrollRefs = useRef<any>({});
   const [indicesCatalogo, setIndicesCatalogo] = useState<any>({});
@@ -61,11 +66,9 @@ export default function CatalogoPage() {
 
   useEffect(() => {
     const obtenerCatalogo = async () => {
+      setCargando(true);
       try {
-        const urlApi =
-          Platform.OS === "web"
-            ? `/api/articulos`
-            : `${BASE_URL}/api/articulos`;
+        const urlApi = `${BASE_URL}/api/articulos?page=${paginaActual}&limit=8`;
 
         const headers: any = {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -85,11 +88,13 @@ export default function CatalogoPage() {
         const datos = await respuesta.json();
 
         if (respuesta.ok) {
-          setCatalogoAgrupado(datos);
+          const catData = datos.data ? datos.data : datos;
+          setCatalogoAgrupado(catData || {});
+          setTotalPaginas(datos.total_pages || 1);
 
           const indicesIniciales: any = {};
           const expandidasIniciales: any = {};
-          Object.keys(datos).forEach((categoria) => {
+          Object.keys(catData || {}).forEach((categoria) => {
             indicesIniciales[categoria] = 0;
             expandidasIniciales[categoria] = false;
           });
@@ -101,14 +106,15 @@ export default function CatalogoPage() {
             datos.detail || "Error al cargar el catálogo.",
           );
         }
-      } catch (error: any) {
-        alerta?.mostrarAlerta("Error", error.message);
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     obtenerCatalogo();
-  }, [auth?.usuario?.usuario_id, auth?.usuario?.token]);
+  }, [auth?.usuario?.usuario_id, auth?.usuario?.token, paginaActual, BASE_URL, alerta]);
 
   const paginaSiguiente = (categoria: string, totalArticulos: number) => {
     const prevIndex = indicesCatalogo[categoria] || 0;
@@ -142,9 +148,12 @@ export default function CatalogoPage() {
     }));
   };
 
-  if (cargando) {
+  if (cargando && Object.keys(catalogoAgrupado).length === 0) {
     return (
       <View style={styles.contenedorCarga}>
+        <Head>
+          <title>Catálogo | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -157,6 +166,9 @@ export default function CatalogoPage() {
           style={styles.contenedorPantalla}
           contentContainerStyle={styles.scrollContenido}
         >
+          <Head>
+            <title>Catálogo | Domitex</title>
+          </Head>
           <Text style={styles.textoNoProductos}>
             No hay productos disponibles en el catálogo.
           </Text>
@@ -173,6 +185,9 @@ export default function CatalogoPage() {
         style={styles.contenedorPantalla}
         contentContainerStyle={styles.scrollContenido}
       >
+        <Head>
+          <title>Catálogo | Domitex</title>
+        </Head>
         {auth?.usuario?.rol === "admin" && (
           <View
             style={[
@@ -187,6 +202,14 @@ export default function CatalogoPage() {
               <Text style={styles.textoBotonAnadir}>Añadir nuevo artículo</Text>
             </Pressable>
           </View>
+        )}
+
+        {cargando && (
+          <ActivityIndicator
+            size="large"
+            color="#29166F"
+            style={{ marginBottom: 20 }}
+          />
         )}
 
         {Object.keys(catalogoAgrupado).map((categoria, index) => {
@@ -337,6 +360,45 @@ export default function CatalogoPage() {
             </View>
           );
         })}
+
+        {totalPaginas > 1 && (
+          <View style={styles.contenedorPaginacion}>
+            <Pressable
+              style={[
+                styles.botonPaginacion,
+                paginaActual === 1 && styles.botonPaginacionDeshabilitado,
+              ]}
+              onPress={() => setPaginaActual((p) => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              <Image
+                source={require("@/assets/images/iconoFlechaIzq.png")}
+                style={styles.iconoPaginacion}
+                resizeMode="contain"
+              />
+            </Pressable>
+            <Text style={styles.textoPaginacion}>
+              Página {paginaActual} de {totalPaginas}
+            </Text>
+            <Pressable
+              style={[
+                styles.botonPaginacion,
+                paginaActual === totalPaginas &&
+                  styles.botonPaginacionDeshabilitado,
+              ]}
+              onPress={() =>
+                setPaginaActual((p) => Math.min(totalPaginas, p + 1))
+              }
+              disabled={paginaActual === totalPaginas}
+            >
+              <Image
+                source={require("@/assets/images/iconoFlechaDer.png")}
+                style={styles.iconoPaginacion}
+                resizeMode="contain"
+              />
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -372,16 +434,16 @@ const styles = StyleSheet.create({
   },
   contenedorBotonAnadirMovil: { alignItems: "center" },
   botonAnadir: {
-    backgroundColor: '#29166F',
+    backgroundColor: "#29166F",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   textoBotonAnadir: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
+    color: "#FFFFFF",
+    fontFamily: "Inter_700Bold",
     fontSize: 18,
   },
   contenedorFilaCategoria: { width: "100%", maxWidth: 1100, marginBottom: 40 },
@@ -481,4 +543,28 @@ const styles = StyleSheet.create({
   },
   iconoFlecha: { width: 30, height: 30 },
   filaArticulosMovil: { paddingHorizontal: 5, paddingVertical: 10 },
+  contenedorPaginacion: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 30,
+    width: "100%",
+  },
+  botonPaginacion: {
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+  },
+  botonPaginacionDeshabilitado: { opacity: 0.4 },
+  iconoPaginacion: { width: 20, height: 20, tintColor: "#29166F" },
+  textoPaginacion: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+    color: "#29166F",
+  },
 });

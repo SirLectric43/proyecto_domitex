@@ -1,8 +1,10 @@
 import { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Platform, Modal, Image, useWindowDimensions, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Head from 'expo-router/head'
 import { AuthContext } from './auth-context';
 import { AlertaContext } from './alerta-context';
+import { traducirError } from '@/utils/errores';
 
 export default function AdministrarUsuarioPage() {
   const { id } = useLocalSearchParams();
@@ -11,7 +13,7 @@ export default function AdministrarUsuarioPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [cargando, setCargando] = useState(true);
   const [datosUsuario, setDatosUsuario] = useState<any>(null);
@@ -48,7 +50,7 @@ export default function AdministrarUsuarioPage() {
   useEffect(() => {
     const cargarPerfil = async () => {
       try {
-        const urlApi = Platform.OS === 'web' ? `/api/usuarios/${id}` : `${BASE_URL}/api/usuarios/${id}`;
+        const urlApi = `${BASE_URL}/api/usuarios/${id}`;
         const res = await fetch(urlApi, {
           headers: { 'Authorization': `Bearer ${auth?.usuario?.token}` }
         });
@@ -64,19 +66,20 @@ export default function AdministrarUsuarioPage() {
           setRol(r);
           setBusquedaRol(r);
         }
-      } catch (e) {
-        alerta?.mostrarAlerta("Error", String(e));
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     if (id) cargarPerfil();
-  }, [id, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.token, BASE_URL, alerta]);
 
   const manejarBotonEdicion = async () => {
     if (modoEdicion) {
       try {
-        const urlApi = Platform.OS === 'web' ? `/api/admin/usuarios/${id}` : `${BASE_URL}/api/admin/usuarios/${id}`;
+        const urlApi = `${BASE_URL}/api/admin/usuarios/${id}`;
         const res = await fetch(urlApi, {
           method: 'PUT',
           headers: {
@@ -92,11 +95,13 @@ export default function AdministrarUsuarioPage() {
             }
           }
           setModoEdicion(false);
+          alerta?.mostrarAlerta("Éxito", "Usuario actualizado correctamente.");
         } else {
           alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");
         }
-      } catch (e) {
-        alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       }
     } else {
       setModoEdicion(true);
@@ -105,7 +110,7 @@ export default function AdministrarUsuarioPage() {
 
   const manejarBaja = async () => {
     try {
-      const urlApi = Platform.OS === 'web' ? `/api/admin/usuarios/${id}` : `${BASE_URL}/api/admin/usuarios/${id}`;
+      const urlApi = `${BASE_URL}/api/admin/usuarios/${id}`;
       const res = await fetch(urlApi, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${auth?.usuario?.token}` }
@@ -114,8 +119,9 @@ export default function AdministrarUsuarioPage() {
         setModalBaja(false);
         router.push('/gestion-usuarios');
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error de conexión: " + e);
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", "Error de conexión: " + mensajeError);
     }
   };
 
@@ -124,6 +130,9 @@ export default function AdministrarUsuarioPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+        <Head>
+            <title>Administrar usuario | Domitex</title>
+        </Head>
         <View style={[styles.tarjetaBlanca, esMovil && styles.tarjetaBlancaMovil]}>
           
           <View style={[styles.cabecera, esMovil && styles.cabeceraMovil]}>

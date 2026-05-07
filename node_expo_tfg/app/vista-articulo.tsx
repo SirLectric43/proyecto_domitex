@@ -10,11 +10,14 @@ import {
   ActivityIndicator,
   TextInput,
   useWindowDimensions,
+  Modal,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import Head from "expo-router/head";
 import * as ImagePicker from "expo-image-picker";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function VistaArticuloPage() {
   const { id } = useLocalSearchParams();
@@ -22,8 +25,7 @@ export default function VistaArticuloPage() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const router = useRouter();
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const esAdmin = auth?.usuario?.rol === "admin";
 
@@ -36,6 +38,8 @@ export default function VistaArticuloPage() {
 
   const [modoEdicion, setModoEdicion] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [modalDescatalogar, setModalDescatalogar] = useState(false);
+  
   const [formulario, setFormulario] = useState<any>({
     nombre: "",
     descripcion: "",
@@ -54,19 +58,18 @@ export default function VistaArticuloPage() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const urlApi =
-          Platform.OS === "web"
-            ? "/api/categorias"
-            : `${BASE_URL}/api/categorias`;
+        const urlApi = `${BASE_URL}/api/categorias`;
         const res = await fetch(urlApi);
         if (res.ok) {
           const data = await res.json();
           setCategoriasLista(data);
         }
-      } catch (e) {}
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);}
     };
     fetchCategorias();
-  }, []);
+  }, [BASE_URL, alerta]);
 
   const categoriasFiltradas = categoriasLista.filter((c) =>
     c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase()),
@@ -76,10 +79,7 @@ export default function VistaArticuloPage() {
     const obtenerDetalle = async () => {
       try {
         setImgError(false);
-        const urlApi =
-          Platform.OS === "web"
-            ? `/api/articulos/${id}`
-            : `${BASE_URL}/api/articulos/${id}`;
+        const urlApi = `${BASE_URL}/api/articulos/${id}`;
 
         const respuesta = await fetch(urlApi, {
           headers: auth?.usuario?.token
@@ -122,21 +122,20 @@ export default function VistaArticuloPage() {
             setModoEdicion(true);
           }
         }
-      } catch (error) {
+      } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
       } finally {
         setCargando(false);
       }
     };
     if (id) obtenerDetalle();
-  }, [id, auth?.usuario?.rol, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.rol, auth?.usuario?.token, BASE_URL, alerta, esAdmin]);
 
   const guardarNuevaCategoria = async () => {
     if (!nuevaCategoriaTexto.trim()) return;
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? "/api/categorias"
-          : `${BASE_URL}/api/categorias`;
+      const urlApi = `${BASE_URL}/api/categorias`;
       const res = await fetch(urlApi, {
         method: "POST",
         headers: {
@@ -156,7 +155,10 @@ export default function VistaArticuloPage() {
       } else {
         alerta?.mostrarAlerta("Error", "No se pudo crear la categoría");
       }
-    } catch (e) {}
+    } catch (e: any) {
+        const mensajeError = traducirError(e.message);
+        alerta?.mostrarAlerta("Error", mensajeError);
+      }
   };
 
   const manejarCantidad = (texto: string) => {
@@ -169,16 +171,18 @@ export default function VistaArticuloPage() {
     setCantidad(String(Math.max(1, Number(cantidad || 0) - 1)));
 
   const anadirAlCarrito = async () => {
+    if (!auth?.usuario?.token) {
+      alerta?.mostrarAlerta("Atención", "Para añadir un artículo al carrito tiene que registrarse/iniciar sesión.");
+      return;
+    }
+
     if (!medidaSeleccionada) return;
     const cantNum = Number(cantidad);
     if (cantNum <= 0)
       return alerta?.mostrarAlerta("Atención", "Introduce una cantidad válida");
 
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/carrito/anadir`
-          : `${BASE_URL}/api/carrito/anadir`;
+      const urlApi = `${BASE_URL}/api/carrito/anadir`;
 
       const respuesta = await fetch(urlApi, {
         method: "POST",
@@ -210,11 +214,9 @@ export default function VistaArticuloPage() {
           `Error al añadir: ${datos.detail || "Revisa tu conexión"}`,
         );
       }
-    } catch (error) {
-      alerta?.mostrarAlerta(
-        "Error",
-        "Hubo un problema al conectar con el servidor.",
-      );
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", mensajeError);
     }
   };
 
@@ -263,10 +265,7 @@ export default function VistaArticuloPage() {
     setGuardando(true);
 
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/articulos/${id}`
-          : `${BASE_URL}/api/articulos/${id}`;
+      const urlApi = `${BASE_URL}/api/articulos/${id}`;
 
       const medidasFormateadas = formulario.medidas.map((m: any) => ({
         id: m.id,
@@ -321,41 +320,66 @@ export default function VistaArticuloPage() {
           datos.detail || "Hubo un error al actualizar.",
         );
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor.");
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor: " + mensajeError);
     } finally {
       setGuardando(false);
     }
   };
 
-  const manejarEliminar = async () => {
+  const confirmarDescatalogar = async () => {
+    setModalDescatalogar(false);
+    setGuardando(true);
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/articulos/${id}`
-          : `${BASE_URL}/api/articulos/${id}`;
+      const urlApi = `${BASE_URL}/api/articulos/${id}`;
+
+      const medidasFormateadas = formulario.medidas.map((m: any) => ({
+        id: m.id,
+        medida: m.medida,
+        precio: parseFloat(m.precio),
+        stock: parseInt(m.stock, 10) || 0,
+        disponible: false, 
+      }));
+
+      const bodyJSON = {
+        nombre: formulario.nombre,
+        descripcion: formulario.descripcion,
+        categoria: formulario.categoria,
+        imagen_base64: formulario.imagenBase64,
+        medidas: medidasFormateadas,
+      };
 
       const respuesta = await fetch(urlApi, {
-        method: "DELETE",
+        method: "PUT",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${auth?.usuario?.token}`,
         },
+        body: JSON.stringify(bodyJSON),
       });
 
       if (respuesta.ok) {
-        alerta?.mostrarAlerta("Éxito", "El artículo ha sido eliminado.");
-        router.replace("/catalogo");
+        alerta?.mostrarAlerta("Éxito", "El artículo ha sido descatalogado correctamente.");
+        setFormulario({ ...formulario, medidas: medidasFormateadas });
+        setArticulo({ ...articulo, medidas: medidasFormateadas });
       } else {
-        alerta?.mostrarAlerta("Error", "No se pudo eliminar el artículo.");
+        alerta?.mostrarAlerta("Error", "No se pudo descatalogar el artículo.");
       }
-    } catch (error) {
-      alerta?.mostrarAlerta("Error", "Problema de conexión.");
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Problema de conexión con el servidor: " + mensajeError);
+    } finally {
+      setGuardando(false);
     }
   };
 
   if (cargando) {
     return (
       <View style={styles.contenedorCarga}>
+        <Head>
+          <title>Vista de artículo | Domitex</title>
+        </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
     );
@@ -363,9 +387,15 @@ export default function VistaArticuloPage() {
 
   if (!articulo)
     return (
-      <Text style={{ marginTop: 100, textAlign: "center" }}>
-        Artículo no encontrado.
-      </Text>
+    <View>
+        <Head>
+            <title>Vista de artículo | Domitex</title>
+        </Head>
+        <Text style={{ marginTop: 100, textAlign: "center" }}>
+          Artículo no encontrado.
+        </Text>
+      </View>
+        
     );
 
   const medidasVisibles = esAdmin
@@ -378,6 +408,9 @@ export default function VistaArticuloPage() {
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
       >
+        <Head>
+            <title>{articulo.nombre} | Domitex</title>
+        </Head>
         <View style={styles.tarjetaPrincipal}>
           {!esMovil && esAdmin && (
             <View
@@ -395,10 +428,10 @@ export default function VistaArticuloPage() {
                   guardando && { opacity: 0.7 },
                   { backgroundColor: "#DB3632" },
                 ]}
-                onPress={manejarEliminar}
+                onPress={() => setModalDescatalogar(true)}
               >
                 <Text style={styles.textoBotonGuardarCambios}>
-                  Eliminar artículo
+                  Descatalogar
                 </Text>
               </Pressable>
               <Pressable
@@ -925,15 +958,36 @@ export default function VistaArticuloPage() {
                 styles.botonEliminarMovilAdmin,
                 guardando && { opacity: 0.7 },
               ]}
-              onPress={manejarEliminar}
+              onPress={() => setModalDescatalogar(true)}
             >
               <Text style={styles.textoBotonGuardarCambios}>
-                Eliminar artículo
+                Descatalogar
               </Text>
             </Pressable>
           </View>
         )}
       </ScrollView>
+
+      <Modal visible={modalDescatalogar} transparent animationType="fade">
+        <View style={styles.fondoModal}>
+          <View style={styles.contenedorModalCentrado}>
+            <View style={styles.tarjetaBlancaModal}>
+              <Text style={styles.tituloModal}>¿Descatalogar artículo?</Text>
+              <Text style={{textAlign: 'center', marginBottom: 20, fontFamily: 'Inter_400Regular', fontSize: 16}}>
+                El artículo ya no será visible para los clientes. Todas sus variantes pasarán a estar agotadas.
+              </Text>
+              <View style={{flexDirection: 'row', gap: 15}}>
+                <Pressable style={[styles.botonModal, {backgroundColor: '#EEE', flex: 1}]} onPress={() => setModalDescatalogar(false)}>
+                  <Text style={[styles.textoBotonModal, {color: '#000'}]}>Cancelar</Text>
+                </Pressable>
+                <Pressable style={[styles.botonModal, {backgroundColor: '#DB3632', flex: 1}]} onPress={confirmarDescatalogar}>
+                  <Text style={styles.textoBotonModal}>Descatalogar</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1298,4 +1352,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
   },
+  fondoModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contenedorModalCentrado: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+  },
+  tarjetaBlancaModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 30,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  tituloModal: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 24,
+    color: '#29166F',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  botonModal: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textoBotonModal: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: '#FFF',
+  }
 });

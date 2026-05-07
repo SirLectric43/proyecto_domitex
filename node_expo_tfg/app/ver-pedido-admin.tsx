@@ -1,19 +1,20 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   ScrollView,
-  Platform,
   ActivityIndicator,
   Image,
   useWindowDimensions,
   TextInput,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import Head from "expo-router/head";
 import { AuthContext } from "./auth-context";
 import { AlertaContext } from "./alerta-context";
+import { traducirError } from "@/utils/errores";
 
 export default function VerPedidoAdminPage() {
   const { id } = useLocalSearchParams();
@@ -22,19 +23,16 @@ export default function VerPedidoAdminPage() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const alerta = useContext(AlertaContext);
-  const BASE_URL = 'https://domitex.vercel.app';
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
   const [pedido, setPedido] = useState<any>(null);
   const [lineas, setLineas] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  const cargarDetallePedido = async () => {
+  const cargarDetallePedido = useCallback(async () => {
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/pedidos/${id}`
-          : `${BASE_URL}/api/pedidos/${id}`;
+      const urlApi = `${BASE_URL}/api/pedidos/${id}`;
 
       const res = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth?.usuario?.token}` },
@@ -53,11 +51,11 @@ export default function VerPedidoAdminPage() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [BASE_URL, id, auth?.usuario?.token]);
 
   useEffect(() => {
     if (id && auth?.usuario?.token) cargarDetallePedido();
-  }, [id, auth?.usuario?.token]);
+  }, [id, auth?.usuario?.token, cargarDetallePedido]);
 
   const actualizarCantidadLocal = (index: number, nuevaCantidad: string) => {
     const num = parseInt(nuevaCantidad.replace(/[^0-9]/g, "")) || 0;
@@ -81,10 +79,7 @@ export default function VerPedidoAdminPage() {
   const guardarCambios = async () => {
     setGuardando(true);
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/admin/pedidos/${id}/lineas`
-          : `${BASE_URL}/api/admin/pedidos/${id}/lineas`;
+      const urlApi = `${BASE_URL}/api/admin/pedidos/${id}/lineas`;
 
       const payload = {
         lineas: lineas.map((l) => ({ id: l.id, preparados: l.preparados })),
@@ -104,8 +99,9 @@ export default function VerPedidoAdminPage() {
       } else {
         alerta?.mostrarAlerta("Error", "Error al guardar los cambios.");
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + mensajeError);
     } finally {
       setGuardando(false);
     }
@@ -113,10 +109,7 @@ export default function VerPedidoAdminPage() {
 
   const marcarCompletado = async () => {
     try {
-      const urlApi =
-        Platform.OS === "web"
-          ? `/api/admin/pedidos/${id}/estado`
-          : `${BASE_URL}/api/admin/pedidos/${id}/estado`;
+      const urlApi = `${BASE_URL}/api/admin/pedidos/${id}/estado`;
 
       const res = await fetch(urlApi, {
         method: "PUT",
@@ -130,8 +123,9 @@ export default function VerPedidoAdminPage() {
       if (res.ok) {
         router.back();
       }
-    } catch (e) {
-      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + e);
+    } catch (e: any) {
+      const mensajeError = traducirError(e.message);
+      alerta?.mostrarAlerta("Error", "Error al conectar con el servidor: " + mensajeError);
     }
   };
 
@@ -147,6 +141,9 @@ export default function VerPedidoAdminPage() {
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={[styles.scrollContenido, esMovil && styles.scrollContenidoMovil]}>
+        <Head>
+            <title>Ver pedido (Administración) - {pedido.referencia} | Domitex</title>
+        </Head>
         <View style={[styles.tarjetaContenedora, esMovil && styles.tarjetaContenedoraMovil]}>
           <View style={[styles.cabecera, esMovil && styles.cabeceraMovil]}>
             <View>
