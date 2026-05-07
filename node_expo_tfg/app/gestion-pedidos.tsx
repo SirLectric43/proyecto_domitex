@@ -115,13 +115,25 @@ export default function GestionPedidosPage() {
   }, [BASE_URL, filtroEstado, ordenFecha, paginaActual, busquedaRef, busquedaCliente, filtroRol, fechaInicio, fechaFin, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
-    if (auth?.usuario?.token) cargarPedidos();
-  }, [cargarPedidos, auth?.usuario?.token]);
+    if (!auth?.usuario?.token) return;
 
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) cargarPedidos();
-    else setPaginaActual(1);
-  };
+    const refLen = busquedaRef.trim().length;
+    const cliLen = busquedaCliente.trim().length;
+
+    if ((refLen > 0 && refLen < 3) || (cliLen > 0 && cliLen < 3)) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (paginaActual === 1) {
+        cargarPedidos();
+      } else {
+        setPaginaActual(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [cargarPedidos, auth?.usuario?.token, busquedaRef, busquedaCliente, paginaActual]);
 
   const limpiarFiltrosAvanzados = () => {
     setBusquedaRef("");
@@ -314,12 +326,6 @@ export default function GestionPedidosPage() {
                 onPress={limpiarFiltrosAvanzados}
               >
                 <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
-              </Pressable>
-              <Pressable
-                style={styles.botonBuscarAvanzado}
-                onPress={aplicarFiltros}
-              >
-                <Text style={styles.textoBotonBuscar}>Buscar</Text>
               </Pressable>
             </View>
           </View>

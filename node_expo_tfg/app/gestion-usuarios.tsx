@@ -66,18 +66,24 @@ export default function GestionUsuariosPage() {
   }, [BASE_URL, paginaActual, busquedaNombre, filtroRol, auth?.usuario?.token, alerta]);
 
   useEffect(() => {
-    if (auth?.usuario?.token) {
-      cargarUsuarios();
-    }
-  }, [cargarUsuarios, auth?.usuario?.token]);
+    if (!auth?.usuario?.token) return;
 
-  const aplicarFiltros = () => {
-    if (paginaActual === 1) {
-      cargarUsuarios();
-    } else {
-      setPaginaActual(1);
+    const nombreLen = busquedaNombre.trim().length;
+
+    if (nombreLen > 0 && nombreLen < 3) {
+      return;
     }
-  };
+
+    const timeoutId = setTimeout(() => {
+      if (paginaActual === 1) {
+        cargarUsuarios();
+      } else {
+        setPaginaActual(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [cargarUsuarios, auth?.usuario?.token, busquedaNombre, paginaActual]);
 
   const confirmarBaja = async () => {
     if (!usuarioABorrar) return;
@@ -172,12 +178,6 @@ export default function GestionUsuariosPage() {
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable
-            style={[styles.botonBuscar, { marginTop: 15 }]}
-            onPress={aplicarFiltros}
-          >
-            <Text style={styles.textoBotonBuscar}>Buscar / Filtrar</Text>
-          </Pressable>
         </View>
 
         {cargando ? (
