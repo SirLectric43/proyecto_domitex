@@ -157,27 +157,6 @@ export default function GestionPedidosPage() {
     return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
   };
 
-  const getColorEstado = (estado: string) => {
-    switch (estado?.toLowerCase()) {
-      case "completado":
-      case "entregado":
-        return "#4CAF50";
-      case "validado":
-        return "#009688";
-      case "en preparación":
-      case "preparando":
-        return "#FF9800";
-      case "pendiente":
-        return "#2196F3";
-      case "pausado":
-        return "#607D8B";
-      case "cancelado":
-        return "#DB3632";
-      default:
-        return "#666666";
-    }
-  };
-
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView
@@ -414,20 +393,12 @@ export default function GestionPedidosPage() {
                               )
                             }
                           >
-                            <Text
-                              style={[
-                                styles.textoSelect,
-                                { color: getColorEstado(pedido.estado) },
-                              ]}
-                            >
+                            <Text style={styles.textoSelect}>
                               {pedido.estado}
                             </Text>
                             <Image
                               source={require("@/assets/images/iconoFlechaDer.png")}
-                              style={[
-                                styles.iconoFlecha,
-                                { tintColor: getColorEstado(pedido.estado) },
-                              ]}
+                              style={styles.iconoFlecha}
                             />
                           </Pressable>
 
@@ -455,7 +426,6 @@ export default function GestionPedidosPage() {
                                         style={[
                                           styles.textoOpcion,
                                           {
-                                            color: getColorEstado(est),
                                             fontFamily: "Inter_600SemiBold",
                                           },
                                         ]}

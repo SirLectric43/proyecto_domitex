@@ -95,6 +95,7 @@ export default function AdministrarUsuarioPage() {
             }
           }
           setModoEdicion(false);
+          alerta?.mostrarAlerta("Éxito", "Usuario actualizado correctamente.");
         } else {
           alerta?.mostrarAlerta("Error", "Error al actualizar el usuario");
         }

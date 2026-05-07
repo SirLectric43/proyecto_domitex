@@ -121,12 +121,12 @@ export default function RegistroPage() {
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput style={styles.input} value={contrasena} onChangeText={setContrasena} secureTextEntry={true} />
+            <TextInput style={[styles.input, {fontFamily: undefined}]}  value={contrasena} onChangeText={setContrasena} secureTextEntry={true} />
           </View>
 
           <View style={styles.grupoInput}>
             <Text style={styles.label}>Repetir Contraseña</Text>
-            <TextInput style={styles.input} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry={true} />
+            <TextInput style={[styles.input, {fontFamily: undefined}]}  value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry={true} />
           </View>
 
           <Pressable style={styles.contenedorCheckbox} onPress={() => setAceptaTerminos(!aceptaTerminos)}>

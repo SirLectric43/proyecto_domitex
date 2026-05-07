@@ -30,6 +30,8 @@ export default function NavbarPrivado() {
   const rutasPrincipales = ['/catalogo', '/panel-administrador', '/gestion-pedidos', '/gestion-usuarios'];
   const mostrarBotonVolver = esMovil && !rutasPrincipales.includes(pathname);
 
+  const esAdmin = auth?.usuario?.rol === 'admin';
+
   useEffect(() => {
     if (busqueda.trim().length < 2) {
       setResultados([]);
@@ -60,7 +62,7 @@ export default function NavbarPrivado() {
   }, [busqueda]);
 
   const cargarNotificaciones = async () => {
-    if (!auth?.usuario?.token) return;
+    if (!auth?.usuario?.token || esAdmin) return;
     try {
       const urlApi = `${BASE_URL}/api/notificaciones`;
         
@@ -83,7 +85,7 @@ export default function NavbarPrivado() {
   }, [auth?.usuario?.token]);
 
   const marcarComoLeidas = async () => {
-    if (!auth?.usuario?.token || cantidadNoLeidas === 0) return;
+    if (!auth?.usuario?.token || cantidadNoLeidas === 0 || esAdmin) return;
     try {
       const urlApi = `${BASE_URL}/api/notificaciones/marcar-leidas`;
         
@@ -100,7 +102,7 @@ export default function NavbarPrivado() {
   };
 
   const limpiarNotificaciones = async () => {
-    if (!auth?.usuario?.token) return;
+    if (!auth?.usuario?.token || esAdmin) return;
     try {
       const urlApi = `${BASE_URL}/api/notificaciones/limpiar`;
         
@@ -245,11 +247,110 @@ export default function NavbarPrivado() {
                 <Pressable><Text style={styles.textoCatalogo}>Catálogo</Text></Pressable>
               </Link>
               
+              {!esAdmin && (
+                <View style={styles.contenedorRelativo}>
+                  <Pressable style={styles.contenedorIconoConBadge} onPress={toggleNotificaciones}>
+                    <Image 
+                      source={require('@/assets/images/iconoCampana.png')} 
+                      style={styles.iconoAccionImagen} 
+                      resizeMode="contain" 
+                    />
+                    {cantidadNoLeidas > 0 ? (
+                      <View style={styles.badgeCarrito}>
+                        <Text style={styles.textoBadge}>
+                          {cantidadNoLeidas > 99 ? '99+' : cantidadNoLeidas}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+
+                  {notificacionesAbiertas && (
+                    <View style={styles.menuDesplegableCampana}>
+                      <View style={styles.cabeceraNotificaciones}>
+                        <Text style={styles.tituloNotificaciones}>Notificaciones</Text>
+                        {notificaciones.length > 0 && (
+                          <Pressable onPress={limpiarNotificaciones}>
+                            <Text style={styles.textoLimpiarNotificaciones}>Limpiar</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                      <ScrollView style={styles.scrollNotificaciones}>
+                        {notificaciones.length > 0 ? (
+                          notificaciones.map((notif) => (
+                            <Pressable 
+                              key={notif.id} 
+                              style={[styles.itemNotificacion, !notif.leida && styles.itemNotificacionNueva]}
+                              onPress={() => irAlPedido(notif.pedido_id)}
+                            >
+                              <Text style={styles.textoNotificacionTitulo}>{notif.titulo}</Text>
+                              <Text style={styles.textoNotificacionMensaje}>{notif.mensaje}</Text>
+                              <Text style={styles.textoNotificacionFecha}>{formatearFecha(notif.fecha_creacion)}</Text>
+                            </Pressable>
+                          ))
+                        ) : (
+                          <Text style={styles.textoSinNotificaciones}>No tienes notificaciones.</Text>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              {!esAdmin && (
+                <Link href="/carrito" asChild>
+                  <Pressable style={styles.contenedorIconoConBadge} onPress={() => setNotificacionesAbiertas(false)}>
+                    <Image 
+                      source={require('@/assets/images/iconoCarrito.png')} 
+                      style={styles.iconoAccionImagen} 
+                      resizeMode="contain" 
+                    />
+                    {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
+                      <View style={styles.badgeCarrito}>
+                        <Text style={styles.textoBadge}>
+                          {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                </Link>
+              )}
+
               <View style={styles.contenedorRelativo}>
-                <Pressable style={styles.contenedorIconoConBadge} onPress={toggleNotificaciones}>
+                <Pressable style={styles.botonUsuario} onPress={toggleMenu}>
+                  <Text style={styles.textoUsuario}>Hola, {auth?.usuario?.nombre || 'Usuario'}</Text>
+                  <Ionicons name={menuAbierto ? "chevron-up" : "chevron-down"} size={20} color="#000" />
+                </Pressable>
+
+                {menuAbierto && (
+                  <View style={styles.menuDesplegable}>
+                    <Link href="/perfil-usuario" asChild>
+                      <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
+                        <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
+                      </Pressable>
+                    </Link>
+                    {!esAdmin && (
+                      <Link href="/historial-compra" asChild>
+                        <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
+                          <Text style={styles.textoItemMenu}>Historial de compra</Text>
+                        </Pressable>
+                      </Link>
+                    )}
+                    <Pressable style={[styles.itemMenu, styles.itemMenuUltimo]} onPress={handleCerrarSesion}>
+                      <Text style={styles.textoItemMenu}>Cerrar sesión</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            </View>
+          </>
+        ) : (
+          <View style={styles.contenedorAccionesMovil}>
+            {!esAdmin && (
+              <View style={styles.contenedorRelativo}>
+                <Pressable style={styles.contenedorIconoConBadgeMovil} onPress={toggleNotificaciones}>
                   <Image 
                     source={require('@/assets/images/iconoCampana.png')} 
-                    style={styles.iconoAccionImagen} 
+                    style={styles.iconoAccionImagenMovil} 
                     resizeMode="contain" 
                   />
                   {cantidadNoLeidas > 0 ? (
@@ -262,7 +363,7 @@ export default function NavbarPrivado() {
                 </Pressable>
 
                 {notificacionesAbiertas && (
-                  <View style={styles.menuDesplegableCampana}>
+                  <View style={styles.menuDesplegableCampanaMovil}>
                     <View style={styles.cabeceraNotificaciones}>
                       <Text style={styles.tituloNotificaciones}>Notificaciones</Text>
                       {notificaciones.length > 0 && (
@@ -291,98 +392,7 @@ export default function NavbarPrivado() {
                   </View>
                 )}
               </View>
-              
-              <Link href="/carrito" asChild>
-                <Pressable style={styles.contenedorIconoConBadge} onPress={() => setNotificacionesAbiertas(false)}>
-                  <Image 
-                    source={require('@/assets/images/iconoCarrito.png')} 
-                    style={styles.iconoAccionImagen} 
-                    resizeMode="contain" 
-                  />
-                  {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
-                    <View style={styles.badgeCarrito}>
-                      <Text style={styles.textoBadge}>
-                        {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
-                      </Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-              </Link>
-
-              <View style={styles.contenedorRelativo}>
-                <Pressable style={styles.botonUsuario} onPress={toggleMenu}>
-                  <Text style={styles.textoUsuario}>Hola, {auth?.usuario?.nombre || 'Usuario'}</Text>
-                  <Ionicons name={menuAbierto ? "chevron-up" : "chevron-down"} size={20} color="#000" />
-                </Pressable>
-
-                {menuAbierto && (
-                  <View style={styles.menuDesplegable}>
-                    <Link href="/perfil-usuario" asChild>
-                      <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
-                        <Text style={styles.textoItemMenu}>Perfil de usuario</Text>
-                      </Pressable>
-                    </Link>
-                    <Link href="/historial-compra" asChild>
-                      <Pressable style={styles.itemMenu} onPress={() => { setMenuAbierto(false); }}>
-                        <Text style={styles.textoItemMenu}>Historial de compra</Text>
-                      </Pressable>
-                    </Link>
-                    <Pressable style={[styles.itemMenu, styles.itemMenuUltimo]} onPress={handleCerrarSesion}>
-                      <Text style={styles.textoItemMenu}>Cerrar sesión</Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-            </View>
-          </>
-        ) : (
-          <View style={styles.contenedorAccionesMovil}>
-            <View style={styles.contenedorRelativo}>
-              <Pressable style={styles.contenedorIconoConBadgeMovil} onPress={toggleNotificaciones}>
-                <Image 
-                  source={require('@/assets/images/iconoCampana.png')} 
-                  style={styles.iconoAccionImagenMovil} 
-                  resizeMode="contain" 
-                />
-                {cantidadNoLeidas > 0 ? (
-                  <View style={styles.badgeCarrito}>
-                    <Text style={styles.textoBadge}>
-                      {cantidadNoLeidas > 99 ? '99+' : cantidadNoLeidas}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-
-              {notificacionesAbiertas && (
-                <View style={styles.menuDesplegableCampanaMovil}>
-                  <View style={styles.cabeceraNotificaciones}>
-                    <Text style={styles.tituloNotificaciones}>Notificaciones</Text>
-                    {notificaciones.length > 0 && (
-                      <Pressable onPress={limpiarNotificaciones}>
-                        <Text style={styles.textoLimpiarNotificaciones}>Limpiar</Text>
-                      </Pressable>
-                    )}
-                  </View>
-                  <ScrollView style={styles.scrollNotificaciones}>
-                    {notificaciones.length > 0 ? (
-                      notificaciones.map((notif) => (
-                        <Pressable 
-                          key={notif.id} 
-                          style={[styles.itemNotificacion, !notif.leida && styles.itemNotificacionNueva]}
-                          onPress={() => irAlPedido(notif.pedido_id)}
-                        >
-                          <Text style={styles.textoNotificacionTitulo}>{notif.titulo}</Text>
-                          <Text style={styles.textoNotificacionMensaje}>{notif.mensaje}</Text>
-                          <Text style={styles.textoNotificacionFecha}>{formatearFecha(notif.fecha_creacion)}</Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.textoSinNotificaciones}>No tienes notificaciones.</Text>
-                    )}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+            )}
             <Pressable onPress={toggleMenu}>
               <Image source={require('@/assets/images/iconoMenu.png')} style={styles.iconoMenu} />
             </Pressable>
@@ -406,11 +416,13 @@ export default function NavbarPrivado() {
             </Pressable>
           </Link>
           
-          <Link href="/historial-compra" asChild>
-            <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
-              <Text style={styles.textoItemMenu}>Historial de compra</Text>
-            </Pressable>
-          </Link>
+          {!esAdmin && (
+            <Link href="/historial-compra" asChild>
+              <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
+                <Text style={styles.textoItemMenu}>Historial de compra</Text>
+              </Pressable>
+            </Link>
+          )}
           
           <Pressable style={[styles.itemMenuMovil, styles.itemMenuUltimo]} onPress={handleCerrarSesion}>
             <Text style={styles.textoItemMenu}>Cerrar sesión</Text>
@@ -464,20 +476,22 @@ export default function NavbarPrivado() {
             <Image source={require('@/assets/images/iconoBusqueda.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
           </Pressable>
 
-          <Link href="/carrito" asChild>
-            <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); setNotificacionesAbiertas(false); }}>
-              <View style={styles.contenedorIconoConBadge}>
-                <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
-                {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
-                  <View style={styles.badgeCarrito}>
-                    <Text style={styles.textoBadge}>
-                      {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
-          </Link>
+          {!esAdmin && (
+            <Link href="/carrito" asChild>
+              <Pressable style={styles.itemBarraInferior} onPress={() => { setMenuAbierto(false); setBusquedaAbierta(false); setNotificacionesAbiertas(false); }}>
+                <View style={styles.contenedorIconoConBadge}>
+                  <Image source={require('@/assets/images/iconoCarrito.png')} style={styles.iconoBarraInferior} resizeMode="contain" />
+                  {auth?.cantidadCesta && auth.cantidadCesta > 0 ? (
+                    <View style={styles.badgeCarrito}>
+                      <Text style={styles.textoBadge}>
+                        {auth.cantidadCesta > 99 ? '99+' : auth.cantidadCesta}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Pressable>
+            </Link>
+          )}
         </View>
       )}
     </>

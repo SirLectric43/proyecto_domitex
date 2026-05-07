@@ -62,6 +62,8 @@ export default function PerfilPage() {
   const [repetirContrasena, setRepetirContrasena] = useState('');
   const [cargandoPassword, setCargandoPassword] = useState(false);
 
+  const esAdmin = auth?.usuario?.rol === 'admin';
+
   useEffect(() => {
     const obtenerDatos = async () => {
       if (!auth?.usuario?.usuario_id || !auth?.usuario?.token) return;
@@ -107,7 +109,7 @@ export default function PerfilPage() {
     try {
       const urlApi = `${BASE_URL}/api/usuarios/${auth?.usuario?.usuario_id}`;
       
-      await fetch(urlApi, {
+      const respuesta = await fetch(urlApi, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -116,8 +118,13 @@ export default function PerfilPage() {
         body: JSON.stringify({ nombre, apellidos, telefono, direccion })
       });
 
-      if (auth?.iniciarSesionContext && auth.usuario?.token && auth.usuario?.usuario_id && auth.usuario?.rol) {
-        await auth.iniciarSesionContext(nombre, auth.usuario.token, auth.usuario.usuario_id, auth.usuario.rol);
+      if (respuesta.ok) {
+        if (auth?.iniciarSesionContext && auth.usuario?.token && auth.usuario?.usuario_id && auth.usuario?.rol) {
+          await auth.iniciarSesionContext(nombre, auth.usuario.token, auth.usuario.usuario_id, auth.usuario.rol);
+        }
+        alerta?.mostrarAlerta("Éxito", "Perfil actualizado correctamente.");
+      } else {
+        alerta?.mostrarAlerta("Error", "No se pudo actualizar el perfil.");
       }
     } catch {
       alerta?.mostrarAlerta("Error al guardar", "Comprueba tu conexión.");
@@ -199,13 +206,15 @@ export default function PerfilPage() {
           </View>
 
           <View style={[styles.columnaDerecha, esMovil && styles.columnaDerechaMovil]}>
-            <Link href="/historial-compra" asChild>
-              <Pressable style={styles.botonAccion}>
-                <Text style={styles.textoBotonSecundario}>Historial de compra</Text>
-              </Pressable>
-            </Link>
+            {!esAdmin && (
+              <Link href="/historial-compra" asChild>
+                <Pressable style={styles.botonAccion}>
+                  <Text style={styles.textoBotonSecundario}>Historial de compra</Text>
+                </Pressable>
+              </Link>
+            )}
 
-            <Pressable style={[styles.botonAccion, styles.espacioBotonIntermedio]} onPress={() => setModalVisible(true)}>
+            <Pressable style={[styles.botonAccion, !esAdmin ? styles.espacioBotonIntermedio : null]} onPress={() => setModalVisible(true)}>
               <Text style={styles.textoBotonSecundario}>Cambiar contraseña</Text>
             </Pressable>
             
@@ -226,17 +235,17 @@ export default function PerfilPage() {
               <Text style={styles.tituloModal}>CAMBIAR{'\n'}CONTRASEÑA</Text>
               <View style={styles.grupoInputModal}>
                 <Text style={styles.label}>Contraseña actual</Text>
-                <TextInput style={styles.inputModal} value={contrasenaActual} onChangeText={setContrasenaActual} secureTextEntry />
+                <TextInput style={[styles.inputModal, { fontFamily: undefined }]} value={contrasenaActual} onChangeText={setContrasenaActual} secureTextEntry />
               </View>
 
               <View style={styles.grupoInputModal}>
                 <Text style={styles.label}>Nueva contraseña</Text>
-                <TextInput style={styles.inputModal} value={nuevaContrasena} onChangeText={setNuevaContrasena} secureTextEntry />
+                <TextInput style={[styles.inputModal, { fontFamily: undefined }]} value={nuevaContrasena} onChangeText={setNuevaContrasena} secureTextEntry />
               </View>
 
               <View style={styles.grupoInputModal}>
                 <Text style={styles.label}>Repetir Contraseña</Text>
-                <TextInput style={styles.inputModal} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry />
+                <TextInput style={[styles.inputModal, { fontFamily: undefined }]} value={repetirContrasena} onChangeText={setRepetirContrasena} secureTextEntry />
               </View>
 
               <Pressable style={styles.botonAceptarModal} onPress={manejarCambiarContrasena} disabled={cargandoPassword}>
