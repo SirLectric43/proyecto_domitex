@@ -1,17 +1,20 @@
 ### 📝 Descripción
-**Resumen de cambios:**
-* **Bugfixes críticos (Android):** Eliminación de etiquetas HTML nativas y propiedades `gap` en `ScrollView` que provocaban crasheos fatales. Solucionado el error de los "puntos invisibles" en los campos de contraseña en Android anulando el `fontFamily`.
-* **Paginación global:** Adaptación de las vistas (`catalogo`, `historial-compra`, `gestion-usuarios`, `gestion-pedidos`) para procesar el nuevo formato de respuesta del backend (`{ data, total_pages }`).
-* **Soft Delete (Catálogo):** Se ha sustituido la eliminación física de artículos por la función "Descatalogar" para proteger la integridad referencial de los pedidos. Los artículos descatalogados (agotados) desaparecen para los clientes pero siguen visibles para los administradores.
-* **Sistema de Alertas (Toast):** Refactorizado `alerta-context.tsx` para usar notificaciones flotantes animadas y no bloqueantes, con bordes laterales dinámicos según el tipo de mensaje (Éxito, Error, Info).
-* **Mejoras de UI/UX y Layout:** * El Footer ahora se mantiene siempre al fondo de la pantalla durante las cargas (`minHeight` dinámico).
-  * Auto-scroll a la parte superior de la página (`y: 0`) al navegar entre rutas.
-  * Añadida máscara visual (DD/MM/YYYY) para los filtros de fecha, con conversión automática para la API (YYYY-MM-DD).
-  * Estilos de "cápsula" dinámicos en las tarjetas de historial de pedidos según el estado del pedido.
-* **Control de accesos (Roles):** Se han ocultado elementos exclusivos de cliente (Carrito, Notificaciones, Historial de compra) en el Navbar y el Perfil cuando el usuario logueado es Administrador.
+Se ha implementado la funcionalidad de **generación y descarga de albaranes en formato PDF** para los pedidos realizados, accesible directamente desde el historial de compras del usuario.
+
+**Frontend (`historial-compra.tsx`):**
+- **Botón de Acción:** Incorporación de un nuevo botón "Descargar albarán" en cada tarjeta de pedido, con un indicador de carga (`ActivityIndicator`) integrado para dar feedback mientras se procesa el documento.
+- **Recuperación de Datos:** Desarrollo de una lógica que consulta el endpoint `/api/pedidos/{id}` para obtener el desglose completo de líneas antes de la generación.
+- **Plantilla Corporativa:** Diseño de un documento HTML independiente con los colores corporativos (#29166F), que incluye el logo, los datos fiscales de Domitex (extraídos del footer) y los datos del cliente.
+- **Lógica Multiplataforma:**
+  - **Móvil (Android/iOS):** Generación de archivo PDF en memoria compartible mediante el menú nativo del sistema operativo.
+  - **Web:** Implementación de un sistema de impresión mediante un `iframe` oculto para garantizar que se imprima únicamente el albarán y no la interfaz de la web.
+
+**Estructura del Albarán:**
+- Desglose automático de **Base Imponible** e **IVA (21%)** a partir del total del pedido.
+- Tabla detallada con cantidad, descripción del artículo (nombre + medida), precio unitario y total por línea.
 
 ## 🔗 Issue relacionado
-Closes #67
+Closes #80
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -22,8 +25,7 @@ Closes #67
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-|  ---  |   ---   |
-
+|  ---  |  ![alt text](albaran.png)   |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [X] He revisado mi propio código línea por línea antes de abrir esta PR.
@@ -34,5 +36,4 @@ Closes #67
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **Integridad Referencial:** Se ha optado por implementar un *Soft Delete* ("Descatalogar") en los artículos en lugar de un borrado en cascada para evitar que los historiales de compra de los clientes fallen o queden huérfanos. Si un admin descataloga un artículo, la API filtra automáticamente esos datos para los clientes.
-* **TypeScript en el contexto de alertas:** Se ha utilizado `ReturnType<typeof setTimeout>` en `alerta-context.tsx` para evitar advertencias de tipado estrictas al compilar en diferentes entornos (Web vs Native).
+Es necesaria la instalación de `expo-print` y `expo-sharing`. Se ha dejado preparada la constante `URL_LOGO` para enlazar el recurso gráfico definitivo desde el servidor de almacenamiento.
