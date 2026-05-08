@@ -1,20 +1,18 @@
 ### 📝 Descripción
-Se ha implementado la funcionalidad de **generación y descarga de albaranes en formato PDF** para los pedidos realizados, accesible directamente desde el historial de compras del usuario.
+Se ha implementado el marco legal obligatorio para la plataforma mediante la creación de tres vistas independientes, garantizando el cumplimiento de la normativa española (LSSI-CE, RGPD y Ley de Consumidores y Usuarios).
 
-**Frontend (`historial-compra.tsx`):**
-- **Botón de Acción:** Incorporación de un nuevo botón "Descargar albarán" en cada tarjeta de pedido, con un indicador de carga (`ActivityIndicator`) integrado para dar feedback mientras se procesa el documento.
-- **Recuperación de Datos:** Desarrollo de una lógica que consulta el endpoint `/api/pedidos/{id}` para obtener el desglose completo de líneas antes de la generación.
-- **Plantilla Corporativa:** Diseño de un documento HTML independiente con los colores corporativos (#29166F), que incluye el logo, los datos fiscales de Domitex (extraídos del footer) y los datos del cliente.
-- **Lógica Multiplataforma:**
-  - **Móvil (Android/iOS):** Generación de archivo PDF en memoria compartible mediante el menú nativo del sistema operativo.
-  - **Web:** Implementación de un sistema de impresión mediante un `iframe` oculto para garantizar que se imprima únicamente el albarán y no la interfaz de la web.
+**Componentes desarrollados:**
+- **`aviso-legal.tsx`**: Expone los datos identificativos de **Domitex Hogar S.L.**, incluyendo dirección fiscal en El Cuervo de Sevilla y datos de contacto, además de las cláusulas de propiedad intelectual.
+- **`privacidad.tsx`**: Describe el tratamiento de datos personales conforme al RGPD, los derechos de acceso, rectificación y supresión, y la política de cookies técnicas necesarias para el funcionamiento del carrito y la sesión.
+- **`terminos-condiciones.tsx`**: Regula el proceso de compraventa, detallando la política de precios (IVA 21% incluido), el derecho de desistimiento de 14 días y la garantía legal de 3 años para productos textiles.
 
-**Estructura del Albarán:**
-- Desglose automático de **Base Imponible** e **IVA (21%)** a partir del total del pedido.
-- Tabla detallada con cantidad, descripción del artículo (nombre + medida), precio unitario y total por línea.
+**Detalles técnicos y de diseño:**
+- **Consistencia Visual:** Uso de las tipografías corporativas (Montserrat para títulos y Inter para cuerpo de texto) y la paleta de colores oficial (#29166F).
+- **Responsividad:** Implementación de layouts adaptables mediante `useWindowDimensions` para asegurar una lectura cómoda tanto en dispositivos móviles como en escritorio.
+- **SEO y Navegación:** Integración de componentes `Head` para títulos de página dinámicos y estructuras de `ScrollView` para facilitar el acceso a textos extensos.
 
 ## 🔗 Issue relacionado
-Closes #80
+Closes #83
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -25,7 +23,9 @@ Closes #80
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-|  ---  |  ![alt text](albaran.png)   |
+|  ---  |  ![alt text](terminos.png)   |
+|  ---  |  ![alt text](politica.png)   |
+|  ---  |  ![alt text](aviso.png)   |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [X] He revisado mi propio código línea por línea antes de abrir esta PR.
@@ -36,4 +36,4 @@ Closes #80
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-Es necesaria la instalación de `expo-print` y `expo-sharing`. Se ha dejado preparada la constante `URL_LOGO` para enlazar el recurso gráfico definitivo desde el servidor de almacenamiento.
+La información de contacto y ubicación se ha sincronizado con la declarada previamente en el componente `Footer` para mantener la coherencia informativa en toda la aplicación. Se recomienda al administrador de la base de datos verificar los NIF definitivos antes del despliegue final.
