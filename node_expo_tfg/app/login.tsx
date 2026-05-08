@@ -237,7 +237,7 @@ export default function LoginPage() {
                             </>
                         ) : (
                             <>
-                                <Text style={styles.textoInstruccion}>Introduce el código de 6 dígitos que hemos enviado a tu correo y establece tu nueva contraseña.</Text>
+                                <Text style={styles.textoInstruccion}>Introduce el código de 8 dígitos que hemos enviado a tu correo y establece tu nueva contraseña.</Text>
                                 <View style={styles.grupoInput}>
                                     <Text style={styles.label}>Código de seguridad</Text>
                                     <TextInput 
