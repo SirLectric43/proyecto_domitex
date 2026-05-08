@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 12,
         fontSize: 16,
+        color: "#000",
         fontFamily: 'Inter_400Regular',
         backgroundColor: '#FFFFFF',
         width: '100%',
