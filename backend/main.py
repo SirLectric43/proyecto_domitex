@@ -115,6 +115,14 @@ class LineaPedidoActualizar(BaseModel):
 
 class ActualizarLineasPedido(BaseModel):
     lineas: List[LineaPedidoActualizar]
+    
+class SolicitarRecuperacion(BaseModel):
+    correo: str
+
+class VerificarRecuperacion(BaseModel):
+    correo: str
+    codigo: str
+    nueva_contrasena: str
 
 @api_router.get("/")
 def read_root():
@@ -1020,5 +1028,36 @@ def limpiar_notificaciones(authorization: str = Header(None)):
         return {"exito": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/recuperar-contrasena")
+def solicitar_recuperacion(datos: SolicitarRecuperacion):
+    try:
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        auth_client.auth.reset_password_for_email(datos.correo)
+        return {"exito": True, "mensaje": "Código enviado al correo"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/verificar-recuperacion")
+def verificar_recuperacion(datos: VerificarRecuperacion):
+    try:
+        auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        
+        auth_client.auth.verify_otp({
+            "email": datos.correo,
+            "token": datos.codigo,
+            "type": "recovery"
+        })
+        
+        auth_client.auth.update_user({"password": datos.nueva_contrasena})
+        
+        try:
+            auth_client.auth.sign_out()
+        except:
+            pass
+            
+        return {"exito": True, "mensaje": "Contraseña actualizada correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="El código es incorrecto o ha caducado.")
 
 app.include_router(api_router)

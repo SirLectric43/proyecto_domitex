@@ -39,17 +39,15 @@ export default function Footer() {
             <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Explorar catálogo</Link>
             <Link href="/perfil-usuario" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mi cuenta</Link>
             <Link href="/historial-compra" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mis pedidos</Link>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Preguntas Frecuentes (FAQ)</Text>
           </View>
         </View>
 
         <View style={[styles.columnaCentralDerecha, esMovil && { alignItems: 'center' }]}>
           <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, textAlign: 'center' }]}>Legal y Soporte</Text>
           <View style={[styles.contenedorLinks, esMovil && { alignItems: 'center' }]}>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Términos y Condiciones{"\n"}de Venta</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Política de Privacidad y{"\n"}Cookies</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Aviso Legal</Text>
-            <Text style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Soporte Técnico</Text>
+            <Link href="/terminos-condiciones" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Términos y Condiciones{"\n"}de Venta</Link>
+            <Link href="/politica-cookies" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Política de Privacidad y{"\n"}Cookies</Link>
+            <Link href="/aviso-legal" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Aviso Legal</Link>
           </View>
         </View>
 
@@ -57,14 +55,6 @@ export default function Footer() {
       <View style={styles.lineaDivisoria} />
       <View style={styles.bottomContainer}>
         <Text style={[styles.textoCopyright, esMovil && { fontSize: 16 }]}>Copyright©2026 Domitex</Text>
-        
-        <View style={[styles.metodosPago, esMovil && { flexWrap: 'wrap' }]}>
-          <Image source={require('@/assets/images/visa.png')} style={styles.iconoPago} />
-          <Image source={require('@/assets/images/mastercard.png')} style={styles.iconoPago} />
-          <Image source={require('@/assets/images/maestro.png')} style={styles.iconoPago} />
-          <Image source={require('@/assets/images/amex.png')} style={styles.iconoPago} />
-          <Image source={require('@/assets/images/unionpay.png')} style={styles.iconoPago} />
-        </View>
       </View>
     </View>
   );

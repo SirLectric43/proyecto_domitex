@@ -150,7 +150,7 @@ export default function RegistroPage() {
             <View style={styles.checkbox}>
               {aceptaTerminos && <View style={styles.checkboxMarcado} />}
             </View>
-            <Text style={styles.textoCheckbox}>Acepto los Términos y Condiciones y la Política de Privacidad.</Text>
+            <Text style={styles.textoCheckbox}>Acepto los <Link href="/terminos-condiciones" style={styles.linkInfo}>Términos y Condiciones</Link> y la <Link href="/politica-cookies" style={styles.linkInfo}>Política de Privacidad</Link>.</Text>
           </Pressable>
 
           <Pressable style={styles.botonRegistrarse} onPress={manejarRegistro} disabled={cargando}>
@@ -319,6 +319,12 @@ const styles = StyleSheet.create({
   linkLogin: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
+    color: '#29166F',
+    textDecorationLine: 'underline',
+  },
+  linkInfo: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
     color: '#29166F',
     textDecorationLine: 'underline',
   }

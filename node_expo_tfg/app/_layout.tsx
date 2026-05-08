@@ -34,7 +34,7 @@ function EnrutadorPrincipal() {
   useEffect(() => {
     if (auth?.cargando) return;
 
-    const rutasPublicas = ['index', '', 'login', 'registro', 'catalogo', 'vista-articulo'];
+    const rutasPublicas = ['index', '', 'login', 'registro', 'catalogo', 'vista-articulo', 'terminos-condiciones', 'aviso-legal', 'politica-cookies'];
     const rutasAdmin = ['panel-administrador', 'agregar-articulo', 'gestion-usuarios', 'crear-usuario', 'administrar-usuario', 'gestion-pedidos', 'ver-pedido-admin'];    
     const rutaActual = segments[0] || 'index';
 
