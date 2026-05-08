@@ -19,7 +19,7 @@ Closes #80
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
