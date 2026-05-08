@@ -18,7 +18,7 @@ import { traducirError } from "@/utils/errores";
 import { AlertaContext } from "./alerta-context";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export default function HistorialCompra() {
   const { width } = useWindowDimensions();
@@ -145,8 +145,8 @@ export default function HistorialCompra() {
         </tr>
       `).join("");
 
-      const URL_LOGO = "AQUI_TU_URL_DE_SUPABASE";
-      const logoHTML = URL_LOGO !== "AQUI_TU_URL_DE_SUPABASE" 
+      const URL_LOGO = "https://xebkeeoavmhaxwftzlvm.supabase.co/storage/v1/object/public/articulos/logo_domitex.jpg";
+      const logoHTML = URL_LOGO !== "https://xebkeeoavmhaxwftzlvm.supabase.co/storage/v1/object/public/articulos/logo_domitex.jpg" 
         ? `<img src="${URL_LOGO}" style="max-width: 250px; max-height: 80px;" />`
         : `<h1 style="color: #29166F; margin: 0; font-size: 40px;">DOMITEX</h1>`;
 
