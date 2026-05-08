@@ -25,25 +25,23 @@ export default function Carrito() {
   const alerta = useContext(AlertaContext);
   const [items, setItems] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
+  const [tipoEntrega, setTipoEntrega] = useState("recogida");
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "";
 
   useEffect(() => {
     const obtenerCarrito = async () => {
       if (!auth?.usuario?.token) return;
       try {
         const urlApi = `${BASE_URL}/api/carrito`;
-
         const respuesta = await fetch(urlApi, {
           headers: { Authorization: `Bearer ${auth.usuario.token}` },
         });
-
         if (respuesta.ok) {
           const datos = await respuesta.json();
           setItems(datos);
         }
       } catch (e: any) {
-        const mensajeError = traducirError(e.message);
-        alerta?.mostrarAlerta("Error", mensajeError);
+        alerta?.mostrarAlerta("Error", traducirError(e.message));
       } finally {
         setCargando(false);
       }
@@ -53,10 +51,8 @@ export default function Carrito() {
 
   const cambiarCantidad = async (itemId: string, nuevaCantidad: number) => {
     if (nuevaCantidad < 0) return;
-
-    const itemActual = items.find(i => i.id === itemId);
+    const itemActual = items.find((i) => i.id === itemId);
     const diferencia = nuevaCantidad - (itemActual?.cantidad || 0);
-
     setItems((prevItems) =>
       nuevaCantidad === 0
         ? prevItems.filter((item) => item.id !== itemId)
@@ -64,14 +60,11 @@ export default function Carrito() {
             item.id === itemId ? { ...item, cantidad: nuevaCantidad } : item,
           ),
     );
-
     if (auth?.setCantidadCesta) {
       auth.setCantidadCesta((prev: number) => Math.max(0, prev + diferencia));
     }
-
     try {
       const urlApi = `${BASE_URL}/api/carrito/items/${itemId}`;
-
       const respuesta = await fetch(urlApi, {
         method: "PUT",
         headers: {
@@ -80,14 +73,11 @@ export default function Carrito() {
         },
         body: JSON.stringify({ cantidad: nuevaCantidad }),
       });
-
       if (respuesta.ok && auth?.refrescarCarrito) {
         auth.refrescarCarrito();
       }
-
     } catch (e: any) {
-        const mensajeError = traducirError(e.message);
-        alerta?.mostrarAlerta("Error", mensajeError);
+      alerta?.mostrarAlerta("Error", traducirError(e.message));
     }
   };
 
@@ -100,41 +90,38 @@ export default function Carrito() {
 
   const confirmarPedido = async () => {
     if (items.length === 0) return;
-
     try {
       const urlApi = `${BASE_URL}/api/pedidos/confirmar`;
-
       const respuesta = await fetch(urlApi, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${auth?.usuario?.token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth?.usuario?.token}`,
         },
+        body: JSON.stringify({ tipo_entrega: tipoEntrega }),
       });
-
       if (respuesta.ok) {
         const datos = await respuesta.json();
-        
         setItems([]);
-        if (auth?.setCantidadCesta) {
-          auth.setCantidadCesta(0);
-        }
-        
-        alerta?.mostrarAlerta("Éxito", `¡Pedido ${datos.referencia} confirmado con éxito!`);
+        if (auth?.setCantidadCesta) auth.setCantidadCesta(0);
+        alerta?.mostrarAlerta(
+          "Éxito",
+          `¡Pedido ${datos.referencia} confirmado con éxito!`,
+        );
         router.push("/historial-compra");
       } else {
         const error = await respuesta.json();
         alerta?.mostrarAlerta("Error", error.detail);
       }
     } catch (e: any) {
-        const mensajeError = traducirError(e.message);
-        alerta?.mostrarAlerta("Error", mensajeError);
+      alerta?.mostrarAlerta("Error", traducirError(e.message));
     }
   };
 
-  const precioTotal = items.reduce((total, item) => {
-    return total + item.cantidad * item.articulos_medidas.precio;
-  }, 0);
-  
+  const precioTotal = items.reduce(
+    (total, item) => total + item.cantidad * item.articulos_medidas.precio,
+    0,
+  );
   const subtotal = precioTotal / 1.21;
   const iva = precioTotal - subtotal;
 
@@ -142,7 +129,7 @@ export default function Carrito() {
     return (
       <View style={styles.contenedorCentro}>
         <Head>
-            <title>Carrito | Domitex</title>
+          <title>Carrito | Domitex</title>
         </Head>
         <ActivityIndicator size="large" color="#29166F" />
       </View>
@@ -153,10 +140,9 @@ export default function Carrito() {
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scrollContenido}>
         <Head>
-            <title>Carrito | Domitex</title>
+          <title>Carrito | Domitex</title>
         </Head>
         <Text style={styles.tituloPagina}>Mi Cesta</Text>
-
         {items.length === 0 ? (
           <View style={styles.contenedorVacio}>
             <Text style={styles.textoVacio}>Tu cesta está vacía.</Text>
@@ -168,111 +154,183 @@ export default function Carrito() {
             </Pressable>
           </View>
         ) : (
-          <View style={[styles.contenedorListaYResumen, esMovil && styles.contenedorListaYResumenMovil]}>
-            
-            <View style={[styles.listaProductos, !esMovil && { flex: 1, marginRight: 30 }]}>
-              {items.map((item) => {
-                const articulo = item.articulos_medidas.articulos;
-                const precioUnidad = item.articulos_medidas.precio;
-
-                return (
-                  <View
-                    key={item.id}
+          <View
+            style={[
+              styles.contenedorListaYResumen,
+              esMovil && styles.contenedorListaYResumenMovil,
+            ]}
+          >
+            <View
+              style={[
+                styles.listaProductos,
+                !esMovil && { flex: 1, marginRight: 30 },
+              ]}
+            >
+              {items.map((item) => (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.tarjetaProducto,
+                    esMovil && styles.tarjetaProductoMovil,
+                  ]}
+                >
+                  <Pressable
+                    style={styles.botonEliminarX}
+                    onPress={() => cambiarCantidad(item.id, 0)}
+                  >
+                    <Text style={styles.textoX}>✕</Text>
+                  </Pressable>
+                  <Image
+                    source={{
+                      uri: item.articulos_medidas.articulos.imagen_url,
+                    }}
                     style={[
-                      styles.tarjetaProducto,
-                      esMovil && styles.tarjetaProductoMovil,
+                      styles.imagenProducto,
+                      esMovil && styles.imagenProductoMovil,
                     ]}
-                  >  
-                    <Pressable style={styles.botonEliminarX} onPress={() => cambiarCantidad(item.id, 0)}>
-                        <Text style={styles.textoX}>✕</Text>
-                    </Pressable>
-                    <Image
-                      source={{ uri: articulo.imagen_url }}
-                      style={[styles.imagenProducto, esMovil && styles.imagenProductoMovil]}
-                      resizeMode="contain"
-                    />
-                    <View style={[styles.infoProducto, esMovil && styles.infoProductoMovil]}>
-                      <Text style={[styles.nombreProducto, esMovil && styles.textoCentradoMovil]} numberOfLines={2}>
-                        {articulo.nombre}
-                      </Text>
-                      <Text style={[styles.textoMedida, esMovil && styles.textoCentradoMovil]}>
-                        Medida: {item.articulos_medidas.medida}
-                      </Text>
-                      <Text style={[styles.precioUnitario, esMovil && styles.textoCentradoMovil]}>
-                        {precioUnidad.toFixed(2).replace(".", ",")} € / Ud
-                      </Text>
-                    </View>
-
-                    <View
+                    resizeMode="contain"
+                  />
+                  <View
+                    style={[
+                      styles.infoProducto,
+                      esMovil && styles.infoProductoMovil,
+                    ]}
+                  >
+                    <Text
                       style={[
-                        styles.contenedorCantidadDerecha,
-                        esMovil && styles.contenedorCantidadMovil,
+                        styles.nombreProducto,
+                        esMovil && styles.textoCentradoMovil,
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {item.articulos_medidas.articulos.nombre}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.textoMedida,
+                        esMovil && styles.textoCentradoMovil,
                       ]}
                     >
-                      <View style={styles.selectorCantidad}>
-                        <Pressable
-                          onPress={() =>
-                            cambiarCantidad(item.id, item.cantidad - 1)
-                          }
-                        >
-                          <Image
-                            source={require("@/assets/images/iconoMenos.png")}
-                            style={styles.iconoCantidad}
-                          />
-                        </Pressable>
-
-                        <TextInput
-                          style={styles.inputCantidad}
-                          value={String(item.cantidad)}
-                          onChangeText={(texto) =>
-                            manejarInputTexto(item.id, texto)
-                          }
-                          keyboardType="numeric"
+                      Medida: {item.articulos_medidas.medida}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.precioUnitario,
+                        esMovil && styles.textoCentradoMovil,
+                      ]}
+                    >
+                      {item.articulos_medidas.precio
+                        .toFixed(2)
+                        .replace(".", ",")}{" "}
+                      € / Ud
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.contenedorCantidadDerecha,
+                      esMovil && styles.contenedorCantidadMovil,
+                    ]}
+                  >
+                    <View style={styles.selectorCantidad}>
+                      <Pressable
+                        onPress={() =>
+                          cambiarCantidad(item.id, item.cantidad - 1)
+                        }
+                      >
+                        <Image
+                          source={require("@/assets/images/iconoMenos.png")}
+                          style={styles.iconoCantidad}
                         />
-
-                        <Pressable
-                          onPress={() =>
-                            cambiarCantidad(item.id, item.cantidad + 1)
-                          }
-                        >
-                          <Image
-                            source={require("@/assets/images/iconoMas.png")}
-                            style={styles.iconoCantidad}
-                          />
-                        </Pressable>
-                      </View>
+                      </Pressable>
+                      <TextInput
+                        style={styles.inputCantidad}
+                        value={String(item.cantidad)}
+                        onChangeText={(texto) =>
+                          manejarInputTexto(item.id, texto)
+                        }
+                        keyboardType="numeric"
+                      />
+                      <Pressable
+                        onPress={() =>
+                          cambiarCantidad(item.id, item.cantidad + 1)
+                        }
+                      >
+                        <Image
+                          source={require("@/assets/images/iconoMas.png")}
+                          style={styles.iconoCantidad}
+                        />
+                      </Pressable>
                     </View>
                   </View>
-                );
-              })}
+                </View>
+              ))}
             </View>
-
-            <View style={[
-              styles.tarjetaResumen, 
-              esMovil && styles.tarjetaResumenMovil,
-              Platform.OS === 'web' && !esMovil && { position: 'sticky', top: 20 } as any
-            ]}>
+            <View
+              style={[
+                styles.tarjetaResumen,
+                esMovil && styles.tarjetaResumenMovil,
+                Platform.OS === "web" &&
+                  !esMovil &&
+                  ({ position: "sticky", top: 20 } as any),
+              ]}
+            >
               <Text style={styles.tituloResumen}>Resumen de compra</Text>
-
+              <View style={styles.contenedorEntrega}>
+                <Text style={styles.tituloEntrega}>Método de entrega</Text>
+                <View style={styles.filaOpcionesEntrega}>
+                  <Pressable
+                    style={[
+                      styles.botonEntrega,
+                      tipoEntrega === "recogida" && styles.botonEntregaActivo,
+                    ]}
+                    onPress={() => setTipoEntrega("recogida")}
+                  >
+                    <Text
+                      style={[
+                        styles.textoEntrega,
+                        tipoEntrega === "recogida" && styles.textoEntregaActivo,
+                      ]}
+                    >
+                      Recogida
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.botonEntrega,
+                      tipoEntrega === "envio" && styles.botonEntregaActivo,
+                    ]}
+                    onPress={() => setTipoEntrega("envio")}
+                  >
+                    <Text
+                      style={[
+                        styles.textoEntrega,
+                        tipoEntrega === "envio" && styles.textoEntregaActivo,
+                      ]}
+                    >
+                      Envío
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
               <View style={styles.filaResumen}>
                 <Text style={styles.textoFilaResumen}>Subtotal</Text>
-                <Text style={styles.valorFilaResumen}>{subtotal.toFixed(2).replace(".", ",")} €</Text>
+                <Text style={styles.valorFilaResumen}>
+                  {subtotal.toFixed(2).replace(".", ",")} €
+                </Text>
               </View>
-
               <View style={styles.filaResumen}>
                 <Text style={styles.textoFilaResumen}>IVA (21%)</Text>
-                <Text style={styles.valorFilaResumen}>{iva.toFixed(2).replace(".", ",")} €</Text>
+                <Text style={styles.valorFilaResumen}>
+                  {iva.toFixed(2).replace(".", ",")} €
+                </Text>
               </View>
-
               <View style={styles.lineaSeparadora} />
-
               <View style={styles.filaTotal}>
                 <Text style={styles.textoTotalLabel}>Total</Text>
                 <Text style={styles.textoTotalPrecio}>
                   {precioTotal.toFixed(2).replace(".", ",")} €
                 </Text>
               </View>
-
               <Pressable
                 style={styles.botonConfirmar}
                 onPress={confirmarPedido}
@@ -280,7 +338,6 @@ export default function Carrito() {
                 <Text style={styles.textoBotonConfirmar}>Confirmar pedido</Text>
               </Pressable>
             </View>
-
           </View>
         )}
       </ScrollView>
@@ -289,246 +346,223 @@ export default function Carrito() {
 }
 
 const styles = StyleSheet.create({
-    contenedorCentro: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#FAFAFA",
-    },
-    contenedorFondo: { 
-        flex: 1, 
-        backgroundColor: "#FAFAFA" 
-    },
-    scrollContenido: { 
-        padding: 20, 
-        alignItems: "center", 
-        paddingBottom: 100 
-    },
-    tituloPagina: {
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 32,
-        color: "#000",
-        marginBottom: 30,
-        width: "100%",
-        maxWidth: 1200, 
-        textAlign: "left",
-    },
-    contenedorVacio: { 
-        alignItems: "center", 
-        marginTop: 50 
-    },
-    textoVacio: {
-        fontFamily: "Inter_400Regular",
-        fontSize: 18,
-        color: "#666",
-        marginBottom: 20,
-    },
-    botonVolver: {
-      backgroundColor: '#29166F',
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    textoBotonVolver: {
-      color: '#FFFFFF',
-      fontFamily: 'Inter_700Bold',
-      fontSize: 16,
-    },
-    contenedorListaYResumen: {
-        flexDirection: "row",
-        width: "100%",
-        maxWidth: 1200,
-        alignItems: "flex-start", 
-    },
-    contenedorListaYResumenMovil: {
-        flexDirection: "column",
-    },
-    listaProductos: {
-        width: "100%",
-    },
-    tarjetaProducto: {
-        flexDirection: "row",
-        backgroundColor: "#FFFFFF",
-        borderRadius: 12,
-        padding: 15,
-        marginBottom: 15,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: "#EAEAEA",
-    },
-    tarjetaProductoMovil: {
-        flexDirection: "column",
-        alignItems: "center",
-    },
-    imagenProducto: {
-        width: 100,
-        height: 100,
-        marginRight: 20,
-    },
-    imagenProductoMovil: {
-        marginRight: 0,
-        marginBottom: 15,
-    },
-    infoProducto: {
-        flex: 1,
-        justifyContent: "center",
-    },
-    infoProductoMovil: {
-        width: '100%',
-        alignItems: 'center',
-    },
-    nombreProducto: {
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 18,
-        color: "#000",
-        marginBottom: 5,
-    },
-    textoMedida: {
-        fontFamily: "Inter_400Regular",
-        fontSize: 14,
-        color: "#666",
-        marginBottom: 5,
-    },
-    precioUnitario: {
-        fontFamily: "Inter_700Bold",
-        fontSize: 20,
-        color: "#DB3632",
-    },
-    textoCentradoMovil: {
-        textAlign: 'center',
-    },
-    contenedorCantidadDerecha: {
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: 20,
-        paddingLeft: 20,
-        borderLeftWidth: 1,
-        borderLeftColor: "#EEEEEE",
-    },
-    contenedorCantidadMovil: {
-        marginLeft: 0,
-        paddingLeft: 0,
-        borderLeftWidth: 0,
-        borderTopWidth: 1,
-        borderTopColor: "#EEEEEE",
-        width: "100%",
-        marginTop: 15,
-        paddingTop: 15,
-        flexDirection: "row",
-        justifyContent: "center",
-    },
-    selectorCantidad: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-    },
-    iconoCantidad: {
-        width: 32,
-        height: 32,
-    },
-    inputCantidad: {
-        borderWidth: 1,
-        borderColor: "#29166F",
-        borderRadius: 6,
-        width: 50,
-        height: 40,
-        textAlign: "center",
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 16,
-        color: "#DB3632",
-        paddingVertical: 0,
-        paddingHorizontal: 0,
-    },
-    botonEliminarX: {
-        position: 'absolute',
-        top: 10,
-        right: 15,
-        zIndex: 10,
-        padding: 5, 
-    },
-    textoX: {
-        fontFamily: 'Montserrat_700Bold',
-        fontSize: 20,
-        color: '#DB3632', 
-    },
-    tarjetaResumen: {
-        backgroundColor: "#FFF",
-        padding: 25,
-        borderRadius: 12,
-        width: 350,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 5,
-        borderWidth: 1,
-        borderColor: "#EAEAEA",
-    },
-    tarjetaResumenMovil: {
-        width: "100%",
-        marginTop: 10,
-    },
-    tituloResumen: {
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 20,
-        color: "#000",
-        marginBottom: 20,
-    },
-    filaResumen: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 12,
-    },
-    textoFilaResumen: {
-        fontFamily: "Inter_400Regular",
-        fontSize: 16,
-        color: "#666",
-    },
-    valorFilaResumen: {
-        fontFamily: "Inter_400Regular",
-        fontSize: 16,
-        color: "#000",
-    },
-    lineaSeparadora: {
-        height: 1,
-        backgroundColor: "#EAEAEA",
-        marginVertical: 15,
-    },
-    filaTotal: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 25,
-    },
-    textoTotalLabel: {
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 22,
-        color: "#000",
-    },
-    textoTotalPrecio: {
-        fontFamily: "Montserrat_700Bold",
-        fontSize: 26,
-        color: "#DB3632",
-    },
-    botonConfirmar: {
-      backgroundColor: '#29166F',
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent: 'center',
-      width: "100%",
-    },
-    textoBotonConfirmar: {
-      color: '#FFFFFF',
-      fontFamily: 'Inter_700Bold',
-      fontSize: 18,
-    },
+  contenedorCentro: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+  },
+  contenedorFondo: { flex: 1, backgroundColor: "#FAFAFA" },
+  scrollContenido: { padding: 20, alignItems: "center", paddingBottom: 100 },
+  tituloPagina: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 32,
+    color: "#000",
+    marginBottom: 30,
+    width: "100%",
+    maxWidth: 1200,
+    textAlign: "left",
+  },
+  contenedorVacio: { alignItems: "center", marginTop: 50 },
+  textoVacio: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 18,
+    color: "#666",
+    marginBottom: 20,
+  },
+  botonVolver: {
+    backgroundColor: "#29166F",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textoBotonVolver: {
+    color: "#FFFFFF",
+    fontFamily: "Inter_700Bold",
+    fontSize: 16,
+  },
+  contenedorListaYResumen: {
+    flexDirection: "row",
+    width: "100%",
+    maxWidth: 1200,
+    alignItems: "flex-start",
+  },
+  contenedorListaYResumenMovil: { flexDirection: "column" },
+  listaProductos: { width: "100%" },
+  tarjetaProducto: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+  },
+  tarjetaProductoMovil: { flexDirection: "column", alignItems: "center" },
+  imagenProducto: { width: 100, height: 100, marginRight: 20 },
+  imagenProductoMovil: { marginRight: 0, marginBottom: 15 },
+  infoProducto: { flex: 1, justifyContent: "center" },
+  infoProductoMovil: { width: "100%", alignItems: "center" },
+  nombreProducto: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 18,
+    color: "#000",
+    marginBottom: 5,
+  },
+  textoMedida: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+  },
+  precioUnitario: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 20,
+    color: "#DB3632",
+  },
+  textoCentradoMovil: { textAlign: "center" },
+  contenedorCantidadDerecha: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 20,
+    paddingLeft: 20,
+    borderLeftWidth: 1,
+    borderLeftColor: "#EEEEEE",
+  },
+  contenedorCantidadMovil: {
+    marginLeft: 0,
+    paddingLeft: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: "#EEEEEE",
+    width: "100%",
+    marginTop: 15,
+    paddingTop: 15,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  selectorCantidad: { flexDirection: "row", alignItems: "center", gap: 10 },
+  iconoCantidad: { width: 32, height: 32 },
+  inputCantidad: {
+    borderWidth: 1,
+    borderColor: "#29166F",
+    borderRadius: 6,
+    width: 50,
+    height: 40,
+    textAlign: "center",
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 16,
+    color: "#DB3632",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  botonEliminarX: {
+    position: "absolute",
+    top: 10,
+    right: 15,
+    zIndex: 10,
+    padding: 5,
+  },
+  textoX: { fontFamily: "Montserrat_700Bold", fontSize: 20, color: "#DB3632" },
+  tarjetaResumen: {
+    backgroundColor: "#FFF",
+    padding: 25,
+    borderRadius: 12,
+    width: 350,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
+  },
+  tarjetaResumenMovil: { width: "100%", marginTop: 10 },
+  tituloResumen: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 20,
+    color: "#000",
+    marginBottom: 20,
+  },
+  contenedorEntrega: { marginBottom: 25 },
+  tituloEntrega: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 16,
+    marginBottom: 10,
+    color: "#000",
+  },
+  filaOpcionesEntrega: { flexDirection: "row", gap: 10 },
+  botonEntrega: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  botonEntregaActivo: { borderColor: "#29166F", backgroundColor: "#F0F0FF" },
+  textoEntrega: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: "#666",
+  },
+  textoEntregaActivo: { color: "#29166F" },
+  filaResumen: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  textoFilaResumen: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+    color: "#666",
+  },
+  valorFilaResumen: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+    color: "#000",
+  },
+  lineaSeparadora: {
+    height: 1,
+    backgroundColor: "#EAEAEA",
+    marginVertical: 15,
+  },
+  filaTotal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  textoTotalLabel: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 22,
+    color: "#000",
+  },
+  textoTotalPrecio: {
+    fontFamily: "Montserrat_700Bold",
+    fontSize: 26,
+    color: "#DB3632",
+  },
+  botonConfirmar: {
+    backgroundColor: "#29166F",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  textoBotonConfirmar: {
+    color: "#FFFFFF",
+    fontFamily: "Inter_700Bold",
+    fontSize: 18,
+  },
 });
