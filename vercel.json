@@ -16,6 +16,10 @@
       "destination": "backend/main.py" 
     },
     { 
+      "source": "/([^.]*)", 
+      "destination": "/node_expo_tfg/index.html" 
+    },
+    { 
       "source": "/(.*)", 
       "destination": "/node_expo_tfg/$1" 
     }

@@ -6,6 +6,10 @@ export default function Footer() {
   const { width } = useWindowDimensions();
   const esMovil = width < 768;
 
+  if (esMovil) {
+    return null; 
+  }
+
   return (
     <View style={styles.footerContainer} id="contacto">
       <View style={styles.logoContainer}>
