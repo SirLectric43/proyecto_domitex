@@ -34,7 +34,7 @@ export default function Footer() {
         </View>
 
         <View style={[styles.columnaCentralDerecha, esMovil && { alignItems: 'center' }]}>
-          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, marginTop: 60, textAlign: 'center' }]}>Clientes</Text>
+          <Text style={[styles.tituloColumna, esMovil && { fontSize: 24, textAlign: 'center' }]}>Clientes</Text>
           <View style={[styles.contenedorLinks, esMovil && { alignItems: 'center' }]}>
             <Link href="/catalogo" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Explorar catálogo</Link>
             <Link href="/perfil-usuario" style={[styles.linkFooter, esMovil && { fontSize: 16, textAlign: 'center' }]}>Mi cuenta</Link>
