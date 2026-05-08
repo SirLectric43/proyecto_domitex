@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
   },
   tituloCategoria: {
     fontFamily: "Montserrat_700Bold",
-    fontSize: 32,
+    fontSize: 22,
     color: "#000000",
   },
   textoVerTodo: {

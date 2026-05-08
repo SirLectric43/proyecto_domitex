@@ -370,12 +370,6 @@ export default function HistorialCompra() {
             <Pressable style={styles.botonLimpiar} onPress={limpiarFiltros}>
               <Text style={styles.textoBotonLimpiar}>Limpiar</Text>
             </Pressable>
-            <Pressable
-              style={[styles.botonBuscar, { marginLeft: 10 }]}
-              onPress={cargarPedidos}
-            >
-              <Text style={styles.textoBotonBuscar}>Buscar</Text>
-            </Pressable>
           </View>
         </View>
 
