@@ -60,20 +60,23 @@ export default function NavbarPublico() {
             </View>
 
             {esMovil && menuAbierto && (
-                <View style={styles.desplegable}>
-                    <View style={styles.contenedorBotonesMovil}>
-                        <Link href="/login" asChild>
-                            <Pressable style={styles.botonLoginMovil}>
-                                <Text style={styles.textoBotonLogin}>Iniciar Sesión</Text>
-                            </Pressable>
-                        </Link>
-                        <Link href="/registro" asChild>
-                            <Pressable style={styles.botonRegistroMovil}>
-                                <Text style={styles.textoBotonRegistro}>Registrarse</Text>
-                            </Pressable>
-                        </Link>
+                <>
+                    <Pressable style={styles.overlayCerrar} onPress={() => setMenuAbierto(false)} />
+                    <View style={styles.desplegable}>
+                        <View style={styles.contenedorBotonesMovil}>
+                            <Link href="/login" asChild>
+                                <Pressable style={styles.botonLoginMovil}>
+                                    <Text style={styles.textoBotonLogin}>Iniciar Sesión</Text>
+                                </Pressable>
+                            </Link>
+                            <Link href="/registro" asChild>
+                                <Pressable style={styles.botonRegistroMovil}>
+                                    <Text style={styles.textoBotonRegistro}>Registrarse</Text>
+                                </Pressable>
+                            </Link>
+                        </View>
                     </View>
-                </View>
+                </>
             )}
         </View>
     );
@@ -155,6 +158,14 @@ const styles = StyleSheet.create({
     height: 40,
     resizeMode: 'contain',
   },
+  overlayCerrar: {
+    position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+    top: -2000,
+    bottom: -2000,
+    left: -2000,
+    right: -2000,
+    zIndex: 900,
+  } as any,
   desplegable: {
     position: 'absolute',
     top: 82,
@@ -164,6 +175,7 @@ const styles = StyleSheet.create({
     borderColor: '#29166F',
     borderWidth: 2,
     borderBottomWidth: 0,
+    zIndex: 1000,
   },
   itemDesplegable: {
     paddingVertical: 20,
