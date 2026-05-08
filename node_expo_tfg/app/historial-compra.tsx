@@ -18,7 +18,6 @@ import { traducirError } from "@/utils/errores";
 import { AlertaContext } from "./alerta-context";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import { Inter_400Regular } from "@expo-google-fonts/inter";
 
 export default function HistorialCompra() {
   const { width } = useWindowDimensions();
