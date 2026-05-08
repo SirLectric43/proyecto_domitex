@@ -20,8 +20,10 @@ export const AlertaProvider = ({ children }: { children: ReactNode }) => {
     
     if (tLower.includes('éxito') || tLower.includes('exito')) {
       tipo = 'exito';
-    } else if (tLower.includes('error') || tLower.includes('atención')) {
+    } else if (tLower.includes('error')) {
       tipo = 'error';
+    } else if (tLower.includes('atención')) {
+      tipo = 'info';
     }
 
     setAlerta({ titulo, mensaje, tipo });
@@ -65,6 +67,7 @@ export const AlertaProvider = ({ children }: { children: ReactNode }) => {
     switch (tipo) {
       case 'exito': return '#4CAF50';
       case 'error': return '#DB3632';
+      case 'info': return '#FF9D1D';
       default: return '#29166F';
     }
   };
