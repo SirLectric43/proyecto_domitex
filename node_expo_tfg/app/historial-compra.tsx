@@ -124,6 +124,27 @@ export default function HistorialCompra() {
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   };
 
+  const getColorEstado = (estado: string) => {
+    switch (estado?.toLowerCase()) {
+      case "completado":
+      case "entregado":
+        return "#4CAF50";
+      case "validado":
+        return "#009688";
+      case "en preparación":
+      case "preparando":
+        return "#FF9800";
+      case "pendiente":
+        return "#2196F3";
+      case "pausado":
+        return "#607D8B";
+      case "cancelado":
+        return "#DB3632";
+      default:
+        return "#666666";
+    }
+  };
+
   const generarAlbaranPDF = async (pedidoId: string, referencia: string, fechaIso: string, total: number) => {
     setDescargandoId(pedidoId);
     try {
@@ -376,7 +397,7 @@ export default function HistorialCompra() {
                     style={[
                       styles.valorEstado,
                       {
-                        color: p.estado === "Pendiente" ? "#2196F3" : "#4CAF50",
+                        color: getColorEstado(p.estado),
                       },
                     ]}
                   >

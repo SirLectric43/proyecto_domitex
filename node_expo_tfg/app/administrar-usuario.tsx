@@ -125,7 +125,13 @@ export default function AdministrarUsuarioPage() {
     }
   };
 
-  if (cargando) return <ActivityIndicator size="large" color="#29166F" style={{ flex: 1, marginTop: 100 }} />;
+  if (cargando) {
+    return (
+      <View style={[styles.contenedorFondo, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#29166F" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.contenedorFondo}>
