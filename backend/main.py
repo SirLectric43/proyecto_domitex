@@ -124,6 +124,9 @@ class VerificarRecuperacion(BaseModel):
     codigo: str
     nueva_contrasena: str
 
+class ConfirmarPedido(BaseModel):
+    tipo_entrega: str = "recogida"
+
 @api_router.get("/")
 def read_root():
     return {"mensaje": "API de Domitex funcionando correctamente"}
@@ -552,7 +555,7 @@ def anadir_al_carrito(datos: AnadirItem, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=str(e))
     
 @api_router.post("/pedidos/confirmar")
-def confirmar_pedido(authorization: str = Header(None)):
+def confirmar_pedido(datos: ConfirmarPedido, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No autorizado")
     
@@ -560,6 +563,12 @@ def confirmar_pedido(authorization: str = Header(None)):
         token = authorization.split(" ")[1]
         user_auth = supabase.auth.get_user(token)
         usuario_id = user_auth.user.id
+
+        if datos.tipo_entrega.lower() == "envio":
+            resp_usuario = supabase.table("usuarios").select("direccion").eq("id", usuario_id).execute()
+            direccion = resp_usuario.data[0].get("direccion") if resp_usuario.data else None
+            if not direccion or str(direccion).strip() == "":
+                raise HTTPException(status_code=400, detail="Debes configurar una dirección en 'Perfil de usuario' para solicitar envíos a domicilio.")
 
         resp_carrito = supabase.table("carritos").select("id").eq("usuario_id", usuario_id).execute()
         if not resp_carrito.data:
@@ -617,7 +626,8 @@ def confirmar_pedido(authorization: str = Header(None)):
             "usuario_id": usuario_id,
             "referencia": referencia,
             "estado": "Pendiente",
-            "total": total_pedido
+            "total": total_pedido,
+            "tipo_entrega": datos.tipo_entrega.lower()
         }).execute()
         
         pedido_id = resp_pedido.data[0]["id"]
@@ -640,7 +650,6 @@ def confirmar_pedido(authorization: str = Header(None)):
             supabase.table("articulos_medidas").update(datos_medida).eq("id", item["articulo_medida_id"]).execute()
             
         supabase.table("lineas_pedido").insert(lineas).execute()
-
         supabase.table("carrito_items").delete().eq("carrito_id", carrito_id).execute()
 
         return {"exito": True, "referencia": referencia}
@@ -666,6 +675,7 @@ def obtener_detalle_pedido(pedido_id: str, authorization: str = Header(None)):
 
         consulta = supabase.table("pedidos").select(
             "id, referencia, fecha_pedido, estado, total, "
+            "usuarios(nombre, apellidos), "
             "lineas_pedido(id, cantidad, cantidad_servida, precio_unitario, articulos_medidas(medida, articulos(nombre, imagen_url)))"
         ).eq("id", pedido_id)
 

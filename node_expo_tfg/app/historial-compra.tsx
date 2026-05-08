@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "react-native";
 import { AuthContext } from "./auth-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import { traducirError } from "@/utils/errores";
 import { AlertaContext } from "./alerta-context";
@@ -24,6 +24,7 @@ export default function HistorialCompra() {
   const esMovil = width < 768;
   const auth = useContext(AuthContext);
   const router = useRouter();
+  const { usuarioId } = useLocalSearchParams();
   const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "";
   const alerta = useContext(AlertaContext);
 
@@ -74,6 +75,7 @@ export default function HistorialCompra() {
     if (!auth?.usuario?.token) return;
     try {
       let urlApi = `${BASE_URL}/api/pedidos/historial?page=${paginaActual}&limit=15`;
+      if (usuarioId) urlApi += `&usuario_id=${usuarioId}`;
       if (fechaInicio.length === 10)
         urlApi += `&fecha_inicio=${formatForAPI(fechaInicio)}`;
       if (fechaFin.length === 10)
@@ -84,15 +86,13 @@ export default function HistorialCompra() {
       const respuesta = await fetch(urlApi, {
         headers: { Authorization: `Bearer ${auth.usuario.token}` },
       });
-
       if (respuesta.ok) {
         const datos = await respuesta.json();
         setPedidos(datos.data ? datos.data : Array.isArray(datos) ? datos : []);
         setTotalPaginas(datos.total_pages || 1);
       }
     } catch (e: any) {
-      const mensajeError = traducirError(e.message);
-      alerta?.mostrarAlerta("Error", mensajeError);
+      alerta?.mostrarAlerta("Error", traducirError(e.message));
     } finally {
       setCargando(false);
     }
@@ -103,6 +103,7 @@ export default function HistorialCompra() {
     fechaFin,
     filtroEstado,
     auth?.usuario?.token,
+    usuarioId,
     alerta
   ]);
 
@@ -118,9 +119,9 @@ export default function HistorialCompra() {
   };
 
   const formatearFecha = (fechaISO: string) => {
-    const fecha = new Date(fechaISO);
+    const d = new Date(fechaISO);
     const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${pad(fecha.getDate())}/${pad(fecha.getMonth() + 1)}/${fecha.getFullYear()}`;
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   };
 
   const generarAlbaranPDF = async (pedidoId: string, referencia: string, fechaIso: string, total: number) => {
@@ -136,6 +137,10 @@ export default function HistorialCompra() {
       const lineas = detallePedido.lineas_pedido || [];
       const subtotal = total / 1.21;
       const iva = total - subtotal;
+      
+      const nombreCliente = detallePedido.usuarios?.nombre 
+        ? `${detallePedido.usuarios.nombre} ${detallePedido.usuarios.apellidos || ''}`.trim()
+        : "Cliente";
 
       const filasHTML = lineas.map((linea: any) => `
         <tr>
@@ -185,13 +190,11 @@ export default function HistorialCompra() {
             </div>
             <div class="datos-cliente">
               <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">DATOS DEL CLIENTE</h3>
-              <strong>${auth?.usuario?.nombre || "Cliente"}</strong>
+              <strong>${nombreCliente}</strong>
             </div>
           </div>
-
           <div class="titulo">ALBARÁN DE PEDIDO</div>
           <p style="margin-bottom: 30px; font-size: 16px;">Referencia: <strong>${referencia}</strong> | Fecha: <strong>${formatearFecha(fechaIso)}</strong></p>
-
           <table>
             <thead>
               <tr>
@@ -203,7 +206,6 @@ export default function HistorialCompra() {
             </thead>
             <tbody>${filasHTML}</tbody>
           </table>
-
           <div class="totales-caja">
             <table class="totales-tabla">
               <tr><td>Subtotal</td><td style="text-align: right;">${subtotal.toFixed(2).replace('.', ',')} €</td></tr>
@@ -222,19 +224,15 @@ export default function HistorialCompra() {
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
-        
         iframe.contentDocument?.write(htmlContent);
         iframe.contentDocument?.close();
-        
         setTimeout(() => {
           iframe.contentWindow?.focus();
           iframe.contentWindow?.print(); 
-          
           setTimeout(() => {
             document.body.removeChild(iframe);
           }, 2000);
         }, 500);
-
       } else {
         const { uri } = await Print.printToFileAsync({ html: htmlContent, base64: false });
         await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: `Albaran_${referencia}` });
@@ -246,27 +244,6 @@ export default function HistorialCompra() {
     }
   };
 
-  const getColorEstado = (estado: string) => {
-    switch (estado?.toLowerCase()) {
-      case "completado":
-      case "entregado":
-        return "#4CAF50";
-      case "validado":
-        return "#009688";
-      case "en preparación":
-      case "preparando":
-        return "#FF9800";
-      case "pendiente":
-        return "#2196F3";
-      case "pausado":
-        return "#607D8B";
-      case "cancelado":
-        return "#DB3632";
-      default:
-        return "#666666";
-    }
-  };
-
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView
@@ -274,10 +251,9 @@ export default function HistorialCompra() {
         keyboardShouldPersistTaps="handled"
       >
         <Head>
-          <title>Historial de compra | Domitex</title>
+          <title>Historial | Domitex</title>
         </Head>
         <Text style={styles.tituloPagina}>Historial de Compras</Text>
-
         <View style={styles.cajaFiltros}>
           <View
             style={[
@@ -372,7 +348,6 @@ export default function HistorialCompra() {
             </Pressable>
           </View>
         </View>
-
         {cargando ? (
           <ActivityIndicator
             size="large"
@@ -385,9 +360,9 @@ export default function HistorialCompra() {
           </View>
         ) : (
           <View style={styles.listaPedidos}>
-            {pedidos.map((pedido) => (
+            {pedidos.map((p) => (
               <View
-                key={pedido.id}
+                key={p.id}
                 style={[
                   styles.tarjetaPedido,
                   esMovil && styles.tarjetaPedidoMovil,
@@ -396,19 +371,19 @@ export default function HistorialCompra() {
                 <View
                   style={[styles.infoPedido, esMovil && styles.infoPedidoMovil]}
                 >
-                  <Text style={styles.tituloPedido}>
-                    Pedido {pedido.referencia}
-                  </Text>
+                  <Text style={styles.tituloPedido}>Pedido {p.referencia}</Text>
                   <Text
                     style={[
                       styles.valorEstado,
-                      { color: getColorEstado(pedido.estado) },
+                      {
+                        color: p.estado === "Pendiente" ? "#2196F3" : "#4CAF50",
+                      },
                     ]}
                   >
-                    {pedido.estado}
+                    {p.estado}
                   </Text>
                   <Text style={styles.totalPedido}>
-                    Total: {(pedido.total || 0).toFixed(2).replace(".", ",")} €
+                    Total: {(p.total || 0).toFixed(2).replace(".", ",")} €
                   </Text>
                 </View>
                 <View
@@ -418,22 +393,22 @@ export default function HistorialCompra() {
                   ]}
                 >
                   <Text style={styles.fechaPedido}>
-                    {formatearFecha(pedido.fecha_pedido)}
+                    {formatearFecha(p.fecha_pedido)}
                   </Text>
                   <View style={styles.contenedorBotonesTarjeta}>
                     <Pressable
                       style={styles.botonSecundario}
-                      disabled={descargandoId === pedido.id}
+                      disabled={descargandoId === p.id}
                       onPress={() =>
                         generarAlbaranPDF(
-                          pedido.id,
-                          pedido.referencia,
-                          pedido.fecha_pedido,
-                          pedido.total || 0,
+                          p.id,
+                          p.referencia,
+                          p.fecha_pedido,
+                          p.total || 0,
                         )
                       }
                     >
-                      {descargandoId === pedido.id ? (
+                      {descargandoId === p.id ? (
                         <ActivityIndicator size="small" color="#29166F" />
                       ) : (
                         <Text style={styles.textoBotonSecundario}>
@@ -446,7 +421,7 @@ export default function HistorialCompra() {
                       onPress={() =>
                         router.push({
                           pathname: "/ver-pedido",
-                          params: { pedidoId: pedido.id },
+                          params: { pedidoId: p.id },
                         })
                       }
                     >
@@ -587,7 +562,12 @@ const styles = StyleSheet.create({
     width: 160,
     alignItems: "center",
   },
-  textoBotonSecundario: { color: "#29166F", fontWeight: "bold", fontSize: 13, fontFamily: "Inter_400Regular"  },
+  textoBotonSecundario: {
+    color: "#29166F",
+    fontWeight: "bold",
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
   botonDetalles: {
     backgroundColor: "#29166F",
     padding: 10,
