@@ -241,7 +241,9 @@ export default function NavbarPrivado() {
             <View style={styles.contenedorAcciones}>
               {(auth?.usuario?.rol === 'admin' || auth?.usuario?.rol === 'empleado') && (
                 <Link href="/panel-administrador" asChild>
-                  <Pressable><Text style={styles.textoCatalogo}>Panel Admin</Text></Pressable>
+                  <Pressable style={styles.botonPanelAdmin}>
+                    <Text style={styles.textoBotonPanelAdmin}>Panel Admin</Text>
+                  </Pressable>
                 </Link>
               )}
               
@@ -405,11 +407,13 @@ export default function NavbarPrivado() {
       {esMovil && menuAbierto && (
         <View style={styles.desplegableMovil}>
           {(auth?.usuario?.rol === 'admin' || auth?.usuario?.rol === 'empleado') && (
-            <Link href="/panel-administrador" asChild>
-              <Pressable style={styles.itemMenuMovil} onPress={() => setMenuAbierto(false)}>
-                <Text style={styles.textoItemMenu}>Panel Admin</Text>
-              </Pressable>
-            </Link>
+            <View style={styles.contenedorBotonAdminMovil}>
+              <Link href="/panel-administrador" asChild>
+                <Pressable style={styles.botonPanelAdminMovil} onPress={() => setMenuAbierto(false)}>
+                  <Text style={styles.textoBotonPanelAdmin}>Panel Admin</Text>
+                </Pressable>
+              </Link>
+            </View>
           )}
           
           <Link href="/perfil-usuario" asChild>
@@ -589,6 +593,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#000',
   },
+  botonPanelAdmin: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#29166F',
+    borderWidth: 2,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textoBotonPanelAdmin: {
+    color: '#29166F',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+  },
   iconoAccion: {
     padding: 5,
   },
@@ -762,6 +781,21 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
     zIndex: 1000,
+  },
+  contenedorBotonAdminMovil: {
+    padding: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#29166F',
+  },
+  botonPanelAdminMovil: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#29166F',
+    borderWidth: 2,
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   itemMenuMovil: {
     paddingVertical: 15,

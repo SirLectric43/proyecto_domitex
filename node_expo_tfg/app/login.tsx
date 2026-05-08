@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ImageBackground, Pressable, useWindowDimensions, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { Link, useRouter} from 'expo-router';
 import Head from "expo-router/head";
 import { AuthContext } from './auth-context';
@@ -15,6 +15,14 @@ export default function LoginPage() {
     const [contrasena, setContrasena] = useState('');
     const [recordarme, setRecordarme] = useState(false);
     const [cargando, setCargando] = useState(false);
+    
+    const [modalRecuperar, setModalRecuperar] = useState(false);
+    const [faseRecuperacion, setFaseRecuperacion] = useState(1);
+    const [correoRecuperar, setCorreoRecuperar] = useState('');
+    const [codigoRecuperar, setCodigoRecuperar] = useState('');
+    const [nuevaPassRecuperar, setNuevaPassRecuperar] = useState('');
+    const [cargandoRecuperar, setCargandoRecuperar] = useState(false);
+
     const auth = useContext(AuthContext);
     const alerta = useContext(AlertaContext);
     const BASE_URL = process.env.EXPO_PUBLIC_API_URL || '';
@@ -71,6 +79,70 @@ export default function LoginPage() {
         }
     };
 
+    const solicitarCodigo = async () => {
+        if (!correoRecuperar) {
+            alerta?.mostrarAlerta("Error", "Introduce el correo electrónico de tu cuenta.");
+            return;
+        }
+        setCargandoRecuperar(true);
+        try {
+            const res = await fetch(`${BASE_URL}/api/recuperar-contrasena`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo: correoRecuperar })
+            });
+            if (res.ok) {
+                setFaseRecuperacion(2);
+                alerta?.mostrarAlerta("Éxito", "Código enviado. Revisa tu bandeja de entrada.");
+            } else {
+                const error = await res.json();
+                alerta?.mostrarAlerta("Error", error.detail || "No se pudo enviar el código.");
+            }
+        } catch (e: any) {
+            alerta?.mostrarAlerta("Error", "Error de conexión con el servidor: " + e);
+        } finally {
+            setCargandoRecuperar(false);
+        }
+    };
+
+    const verificarYCambiar = async () => {
+        if (!codigoRecuperar || !nuevaPassRecuperar) {
+            alerta?.mostrarAlerta("Error", "Rellena el código y la nueva contraseña.");
+            return;
+        }
+        setCargandoRecuperar(true);
+        try {
+            const res = await fetch(`${BASE_URL}/api/verificar-recuperacion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    correo: correoRecuperar,
+                    codigo: codigoRecuperar,
+                    nueva_contrasena: nuevaPassRecuperar
+                })
+            });
+            if (res.ok) {
+                alerta?.mostrarAlerta("Éxito", "Contraseña cambiada con éxito. Ya puedes iniciar sesión.");
+                cerrarModalRecuperacion();
+            } else {
+                const error = await res.json();
+                alerta?.mostrarAlerta("Error", error.detail || "Código incorrecto o caducado.");
+            }
+        } catch (e: any) {
+            alerta?.mostrarAlerta("Error", "Error de conexión con el servidor: " + e);
+        } finally {
+            setCargandoRecuperar(false);
+        }
+    };
+
+    const cerrarModalRecuperacion = () => {
+        setModalRecuperar(false);
+        setFaseRecuperacion(1);
+        setCorreoRecuperar('');
+        setCodigoRecuperar('');
+        setNuevaPassRecuperar('');
+    };
+
     return (
         <ScrollView style={styles.contenedor} keyboardShouldPersistTaps="handled">
             <Head>
@@ -125,7 +197,7 @@ export default function LoginPage() {
                             <Text style={styles.textoCheckbox}>Recordarme</Text>
                         </Pressable>
 
-                        <Pressable onPress={() => alerta?.mostrarAlerta("Info", "Próximamente implementaremos la recuperación.")}>
+                        <Pressable onPress={() => setModalRecuperar(true)}>
                             <Text style={styles.linkRecuperar}>¿Has olvidado tu contraseña?</Text>
                         </Pressable>
                     </View>
@@ -140,6 +212,67 @@ export default function LoginPage() {
                     </View>
                 </View>
             </View>
+
+            <Modal visible={modalRecuperar} transparent animationType="fade">
+                <View style={styles.fondoModal}>
+                    <View style={styles.contenedorModalRecuperar}>
+                        <Text style={styles.tituloModalRecuperar}>RECUPERAR CONTRASEÑA</Text>
+                        
+                        {faseRecuperacion === 1 ? (
+                            <>
+                                <Text style={styles.textoInstruccion}>Introduce tu correo electrónico para recibir un código numérico de seguridad.</Text>
+                                <View style={styles.grupoInput}>
+                                    <Text style={styles.label}>Correo electrónico</Text>
+                                    <TextInput 
+                                        style={styles.input} 
+                                        value={correoRecuperar} 
+                                        onChangeText={setCorreoRecuperar} 
+                                        keyboardType="email-address" 
+                                        autoCapitalize="none" 
+                                    />
+                                </View>
+                                <Pressable style={styles.botonLogin} onPress={solicitarCodigo} disabled={cargandoRecuperar}>
+                                    {cargandoRecuperar ? <ActivityIndicator color="#FFF" /> : <Text style={styles.textoBotonLogin}>Enviar código</Text>}
+                                </Pressable>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.textoInstruccion}>Introduce el código de 6 dígitos que hemos enviado a tu correo y establece tu nueva contraseña.</Text>
+                                <View style={styles.grupoInput}>
+                                    <Text style={styles.label}>Código de seguridad</Text>
+                                    <TextInput 
+                                        style={styles.input} 
+                                        value={codigoRecuperar} 
+                                        onChangeText={setCodigoRecuperar} 
+                                        keyboardType="number-pad"
+                                        maxLength={8}
+                                    />
+                                </View>
+                                <View style={styles.grupoInput}>
+                                    <Text style={styles.label}>Nueva contraseña</Text>
+                                    <TextInput 
+                                        style={[styles.input, {fontFamily: undefined}]} 
+                                        value={nuevaPassRecuperar} 
+                                        onChangeText={setNuevaPassRecuperar} 
+                                        secureTextEntry={true} 
+                                    />
+                                </View>
+                                <Pressable style={styles.botonLogin} onPress={verificarYCambiar} disabled={cargandoRecuperar}>
+                                    {cargandoRecuperar ? <ActivityIndicator color="#FFF" /> : <Text style={styles.textoBotonLogin}>Cambiar contraseña</Text>}
+                                </Pressable>
+
+                                <Pressable onPress={solicitarCodigo} style={{ marginTop: 20, alignItems: 'center' }}>
+                                    <Text style={styles.linkReenviar}>No he recibido el código. Reenviar.</Text>
+                                </Pressable>
+                            </>
+                        )}
+
+                        <Pressable style={styles.botonCancelarModal} onPress={cerrarModalRecuperacion}>
+                            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -308,5 +441,55 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#29166F',
         textDecorationLine: 'underline',
+    },
+    fondoModal: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    contenedorModalRecuperar: {
+        width: '100%',
+        maxWidth: 450,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 30,
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+    },
+    tituloModalRecuperar: {
+        fontFamily: 'Inter_700Bold',
+        fontSize: 24,
+        color: '#29166F',
+        textAlign: 'center',
+        marginBottom: 15,
+    },
+    textoInstruccion: {
+        fontFamily: 'Inter_400Regular',
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    linkReenviar: {
+        fontFamily: 'Inter_600SemiBold',
+        fontSize: 14,
+        color: '#DB3632',
+        textDecorationLine: 'underline',
+    },
+    botonCancelarModal: {
+        marginTop: 15,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    textoBotonCancelar: {
+        fontFamily: 'Inter_600SemiBold',
+        fontSize: 16,
+        color: '#666',
     }
 });
