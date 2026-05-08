@@ -1,24 +1,20 @@
 ### 📝 Descripción
-Se ha implementado el flujo completo de **recuperación de contraseña mediante código numérico (OTP)** para la aplicación Domitex, integrando tanto el backend, el frontend y la personalización del correo.
+Se ha implementado la funcionalidad de **generación y descarga de albaranes en formato PDF** para los pedidos realizados, accesible directamente desde el historial de compras del usuario.
 
-**Backend (`main.py`):**
-- Añadidos modelos Pydantic `SolicitarRecuperacion` y `VerificarRecuperacion`.
-- Creado el endpoint `/api/recuperar-contrasena` que hace uso de `auth.reset_password_for_email` de Supabase para enviar el OTP.
-- Creado el endpoint `/api/verificar-recuperacion` que valida el OTP de 6 dígitos con `auth.verify_otp` y actualiza la contraseña del usuario.
+**Frontend (`historial-compra.tsx`):**
+- **Botón de Acción:** Incorporación de un nuevo botón "Descargar albarán" en cada tarjeta de pedido, con un indicador de carga (`ActivityIndicator`) integrado para dar feedback mientras se procesa el documento.
+- **Recuperación de Datos:** Desarrollo de una lógica que consulta el endpoint `/api/pedidos/{id}` para obtener el desglose completo de líneas antes de la generación.
+- **Plantilla Corporativa:** Diseño de un documento HTML independiente con los colores corporativos (#29166F), que incluye el logo, los datos fiscales de Domitex (extraídos del footer) y los datos del cliente.
+- **Lógica Multiplataforma:**
+  - **Móvil (Android/iOS):** Generación de archivo PDF en memoria compartible mediante el menú nativo del sistema operativo.
+  - **Web:** Implementación de un sistema de impresión mediante un `iframe` oculto para garantizar que se imprima únicamente el albarán y no la interfaz de la web.
 
-**Frontend (`login.tsx`):**
-- Añadido un enlace "¿Has olvidado tu contraseña?" en la pantalla de login.
-- Creado un modal interactivo de dos fases:
-  - **Fase 1:** Solicita el correo electrónico del usuario.
-  - **Fase 2:** Solicita el código OTP de 8 dígitos recibido en el correo y la nueva contraseña.
-- Se ha aplicado el fix de `fontFamily: undefined` en el input de la nueva contraseña para evitar el bug de los "puntos invisibles" (secureTextEntry) en Android.
-- Añadidos indicadores de carga (`ActivityIndicator`) en los botones del modal para dar feedback visual al usuario mientras espera respuesta de la API.
-
-**Correo Electrónico (Supabase):**
-- Se ha diseñado una plantilla HTML completamente responsiva y adaptada a la identidad corporativa de Domitex (colores #29166F y #DB3632) para los correos de recuperación de Supabase.
+**Estructura del Albarán:**
+- Desglose automático de **Base Imponible** e **IVA (21%)** a partir del total del pedido.
+- Tabla detallada con cantidad, descripción del artículo (nombre + medida), precio unitario y total por línea.
 
 ## 🔗 Issue relacionado
-Closes #79
+Closes #80
 
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
@@ -29,7 +25,7 @@ Closes #79
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-|  ---  |  ![alt text](enviarCodigo.png)   |
+|  ---  |  ![alt text](albaran.png)   |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [X] He revisado mi propio código línea por línea antes de abrir esta PR.
@@ -40,3 +36,4 @@ Closes #79
 - [X] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
+Es necesaria la instalación de `expo-print` y `expo-sharing`. Se ha dejado preparada la constante `URL_LOGO` para enlazar el recurso gráfico definitivo desde el servidor de almacenamiento.
