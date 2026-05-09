@@ -5,8 +5,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import NavbarPublico from "@/app/navbar-publico";
 import NavbarPrivado from "@/app/navbar-privado"; 
 import Footer from "./footer";
-import { AuthProvider, AuthContext } from './auth-context';
-import { AlertaProvider } from './alerta-context';
+import { AuthProvider, AuthContext } from '../context/auth-context';
+import { AlertaProvider } from '../context/alerta-context';
 
 import { 
   useFonts, 

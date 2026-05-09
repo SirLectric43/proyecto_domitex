@@ -3,8 +3,8 @@ import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Platfo
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import Head from 'expo-router/head';
-import { AuthContext } from './auth-context';
-import { AlertaContext } from './alerta-context';
+import { AuthContext } from '../context/auth-context';
+import { AlertaContext } from '../context/alerta-context';
 import { traducirError } from '@/utils/errores';
 
 export default function AgregarArticuloPage() {

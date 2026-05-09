@@ -15,8 +15,8 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import * as ImagePicker from "expo-image-picker";
-import { AuthContext } from "./auth-context";
-import { AlertaContext } from "./alerta-context";
+import { AuthContext } from "../context/auth-context";
+import { AlertaContext } from "../context/alerta-context";
 import { traducirError } from "@/utils/errores";
 
 export default function VistaArticuloPage() {

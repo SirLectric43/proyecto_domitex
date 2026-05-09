@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { AuthContext } from "./auth-context";
-import { AlertaContext } from "./alerta-context";
+import { AuthContext } from "../context/auth-context";
+import { AlertaContext } from "../context/alerta-context";
 import { traducirError } from "@/utils/errores";
 
 export default function CrearUsuarioPage() {

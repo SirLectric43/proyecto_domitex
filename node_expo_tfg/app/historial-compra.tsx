@@ -11,11 +11,11 @@ import {
   Platform,
   TextInput,
 } from "react-native";
-import { AuthContext } from "./auth-context";
+import { AuthContext } from "../context/auth-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import { traducirError } from "@/utils/errores";
-import { AlertaContext } from "./alerta-context";
+import { AlertaContext } from "../context/alerta-context";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 

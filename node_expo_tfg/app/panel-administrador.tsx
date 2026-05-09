@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Head from 'expo-router/head';
-import { AuthContext } from './auth-context';
+import { AuthContext } from '../context/auth-context';
 
 export default function PanelAdmin() {
   const { width } = useWindowDimensions();

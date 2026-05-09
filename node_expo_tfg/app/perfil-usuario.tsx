@@ -2,8 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Modal, Image, useWindowDimensions, ScrollView } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import Head from 'expo-router/head';
-import { AuthContext } from './auth-context';
-import { AlertaContext } from './alerta-context';
+import { AuthContext } from '../context/auth-context';
+import { AlertaContext } from '../context/alerta-context';
 import { traducirError } from '@/utils/errores';
 
 const InputConLapiz = ({ label, valor, setValor, editable, setEditable, esCorreo = false, toggleEdicion }: any) => (

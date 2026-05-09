@@ -2,9 +2,9 @@ import { useState, useEffect, useContext, useCallback } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, Image, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, usePathname } from 'expo-router';
-import { AuthContext } from './auth-context';
+import { AuthContext } from '../context/auth-context';
 import { traducirError } from '@/utils/errores';
-import { AlertaContext } from './alerta-context';
+import { AlertaContext } from '../context/alerta-context';
 
 export default function NavbarPrivado() {
   const auth = useContext(AuthContext);

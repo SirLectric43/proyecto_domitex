@@ -2,7 +2,7 @@ import { Text, View, Image, StyleSheet, ImageBackground, Pressable, useWindowDim
 import { Link, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useContext } from "react";
-import { AuthContext } from './auth-context';
+import { AuthContext } from '../context/auth-context';
 
 
 export default function LandingPage() {

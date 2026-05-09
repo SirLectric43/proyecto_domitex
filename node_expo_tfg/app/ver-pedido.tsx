@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
-import { AuthContext } from "./auth-context";
+import { AuthContext } from "../context/auth-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 
