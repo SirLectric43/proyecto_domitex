@@ -7,13 +7,12 @@ const config: Config = {
   tagline: 'Documentación técnica y de mantenimiento',
   favicon: 'img/icon.png',
 
-  // URL de tu sitio de producción
   url: 'https://SirLectric43.github.io',
-  baseUrl: '/',
-
-  // Datos actualizados de tu GitHub
-  organizationName: 'SirLectric43', 
-  projectName: 'proyecto_domitex', 
+  baseUrl: '/proyecto_domitex/',
+  organizationName: 'SirLectric43',
+  projectName: 'proyecto_domitex',
+  deploymentBranch: 'gh-pages',
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
