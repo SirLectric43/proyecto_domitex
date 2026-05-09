@@ -1,0 +1,8 @@
+**/node_modules
+**/expo-env.d.ts
+**/.expo
+**/__pycache__
+**/.vscode
+**/comandos.txt
+**/.env
+**/android
