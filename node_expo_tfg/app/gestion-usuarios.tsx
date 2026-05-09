@@ -148,6 +148,13 @@ export default function GestionUsuariosPage() {
         </Head>
         <Text style={styles.tituloPagina}>Gestión de usuarios</Text>
 
+        <Pressable
+          style={[styles.botonCrearUsuario, { marginTop: 0, marginBottom: 20 }]}
+          onPress={() => router.push("/crear-usuario")}
+        >
+          <Text style={styles.textoBotonCrear}>Crear nuevo usuario</Text>
+        </Pressable>
+
         <View style={styles.cajaFiltros}>
           <TextInput
             style={[styles.inputBusqueda, { marginBottom: 15 }]}
@@ -267,13 +274,6 @@ export default function GestionUsuariosPage() {
             )}
           </View>
         )}
-
-        <Pressable
-          style={styles.botonCrearUsuario}
-          onPress={() => router.push("/crear-usuario")}
-        >
-          <Text style={styles.textoBotonCrear}>Crear nuevo usuario</Text>
-        </Pressable>
       </ScrollView>
 
       {modalVisible && (

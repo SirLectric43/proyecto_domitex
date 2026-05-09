@@ -333,6 +333,7 @@ export default function HistorialCompra() {
               <TextInput
                 style={styles.inputFiltro}
                 placeholder="DD/MM/YYYY"
+                placeholderTextColor="#999"
                 value={fechaInicio}
                 onChangeText={(t) => handleFechaChange(t, setFechaInicio)}
                 keyboardType="numeric"
@@ -350,6 +351,7 @@ export default function HistorialCompra() {
               <TextInput
                 style={styles.inputFiltro}
                 placeholder="DD/MM/YYYY"
+                placeholderTextColor="#999"
                 value={fechaFin}
                 onChangeText={(t) => handleFechaChange(t, setFechaFin)}
                 keyboardType="numeric"

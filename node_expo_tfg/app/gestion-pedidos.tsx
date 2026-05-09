@@ -247,12 +247,14 @@ export default function GestionPedidosPage() {
                   esMovil && { marginBottom: 15 },
                 ]}
                 placeholder="Nº Referencia..."
+                placeholderTextColor="#999"
                 value={busquedaRef}
                 onChangeText={setBusquedaRef}
               />
               <TextInput
                 style={styles.inputFiltro}
                 placeholder="Nombre del cliente..."
+                placeholderTextColor="#999"
                 value={busquedaCliente}
                 onChangeText={setBusquedaCliente}
               />
@@ -269,6 +271,7 @@ export default function GestionPedidosPage() {
                 <TextInput
                   style={styles.inputFiltro}
                   placeholder="DD/MM/YYYY"
+                  placeholderTextColor="#999"
                   value={fechaInicio}
                   onChangeText={(t) => handleFechaChange(t, setFechaInicio)}
                   keyboardType="numeric"
@@ -286,6 +289,7 @@ export default function GestionPedidosPage() {
                 <TextInput
                   style={styles.inputFiltro}
                   placeholder="DD/MM/YYYY"
+                  placeholderTextColor="#999"
                   value={fechaFin}
                   onChangeText={(t) => handleFechaChange(t, setFechaFin)}
                   keyboardType="numeric"
