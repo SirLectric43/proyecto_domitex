@@ -316,6 +316,17 @@ def eliminar_usuario(id_borrar: str, authorization: str = Header(None)):
         if not db_user.data or db_user.data[0].get("rol") != "admin":
             raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar usuarios")
             
+        db_target = supabase.table("usuarios").select("rol").eq("id", id_borrar).execute()
+        
+        if db_target.data and db_target.data[0].get("rol") == "admin":
+            resp_admins = supabase.table("usuarios").select("id", count="exact").eq("rol", "admin").execute()
+            
+            if resp_admins.count <= 1:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Operación denegada. No puedes eliminar al único administrador que queda en el sistema."
+                )
+            
         try:
             auth_client = create_client(SUPABASE_URL, SUPABASE_KEY)
             auth_client.auth.admin.delete_user(id_borrar)
@@ -324,6 +335,8 @@ def eliminar_usuario(id_borrar: str, authorization: str = Header(None)):
             
         supabase.table("usuarios").delete().eq("id", id_borrar).execute()
         return {"exito": True, "mensaje": "Usuario eliminado correctamente"}
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -844,11 +857,24 @@ def borrar_usuario(usuario_id_borrar: str, authorization: str = Header(None)):
         if not db_admin.data or db_admin.data[0].get("rol") != "admin":
             raise HTTPException(status_code=403, detail="Solo administradores pueden borrar usuarios")
 
+        db_target = supabase.table("usuarios").select("rol").eq("id", usuario_id_borrar).execute()
+        
+        if db_target.data and db_target.data[0].get("rol") == "admin":
+            resp_admins = supabase.table("usuarios").select("id", count="exact").eq("rol", "admin").execute()
+            
+            if resp_admins.count <= 1:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Operación denegada. No puedes eliminar al único administrador que queda en el sistema."
+                )
+
         supabase.table("usuarios").delete().eq("id", usuario_id_borrar).execute()
         
         auth_client.auth.admin.delete_user(usuario_id_borrar)
         
         return {"exito": True, "mensaje": "Usuario eliminado correctamente"}
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

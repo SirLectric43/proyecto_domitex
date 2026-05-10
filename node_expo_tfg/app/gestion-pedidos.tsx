@@ -522,9 +522,11 @@ export default function GestionPedidosPage() {
 const styles = StyleSheet.create({
   contenedorFondo: { flex: 1, backgroundColor: "#FAFAFA" },
   scrollContenido: {
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    alignItems: "center",
+    paddingTop: 50,
+    paddingBottom: Platform.OS === "web" ? 50 : 80,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    flexGrow: 1,
   },
   tarjetaContenedora: {
     width: "100%",

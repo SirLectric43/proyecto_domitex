@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Modal, Image, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Modal, Image, useWindowDimensions, ScrollView, Platform } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import Head from 'expo-router/head';
 import { AuthContext } from '../context/auth-context';
@@ -277,7 +277,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContenido: {
-    paddingVertical: 50,
+    paddingTop: 50,
+    paddingBottom: Platform.OS === "web" ? 50 : 80,
     paddingHorizontal: 30,
     alignItems: 'center',
     flexGrow: 1,

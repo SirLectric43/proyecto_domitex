@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Platform,
   Image,
   useWindowDimensions,
   TextInput,
@@ -301,7 +302,9 @@ const styles = StyleSheet.create({
   contenedorBotones: {
     flexDirection: "row",
     justifyContent: "center",
-    padding: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === "web" ? 20 : 100,
     gap: 15,
     width: "100%",
     maxWidth: 1000,

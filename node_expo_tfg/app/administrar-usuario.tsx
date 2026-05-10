@@ -324,7 +324,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   scrollContenido: {
-    paddingVertical: 50,
+    paddingTop: 50,
+    paddingBottom: Platform.OS === "web" ? 50 : 80,
     paddingHorizontal: 20,
     alignItems: 'center',
   },

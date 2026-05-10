@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "Domitex",
-    "slug": "node_expo_tfg",
+    "slug": "domitex_proyect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "nodeexpotfg",
+    "scheme": "domitexproyect",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sirlectric43.domitex"
+      "bundleIdentifier": "com.domi43.domitex"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.sirlectric43.domitex"
+      "package": "com.domi43.domitex"
     },
     "web": {
       "output": "static",
@@ -48,8 +48,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c27ba1ff-40d6-46b8-ab4b-f281b8a2a3ca"
+        "projectId": "373c90aa-0d47-41a3-97a7-87f81d0474da"
       }
-    }
+    },
+    "owner": "domi43"
   }
 }
