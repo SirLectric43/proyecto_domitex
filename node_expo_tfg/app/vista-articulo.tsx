@@ -407,6 +407,7 @@ export default function VistaArticuloPage() {
       <ScrollView
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={Platform.OS !== 'web' ? true : !mostrarCategorias}
       >
         <Head>
             <title>{articulo.nombre} | Domitex</title>
@@ -493,7 +494,7 @@ export default function VistaArticuloPage() {
                     />
                   </View>
 
-                  <View style={[styles.grupoInputEdit, { zIndex: 10 }]}>
+                  <View style={[styles.grupoInputEdit, { zIndex: 10, elevation: Platform.OS === 'android' && mostrarCategorias ? 10 : 0 }]}>
                     <Text style={styles.labelEdit}>Categoría</Text>
                     <TextInput
                       style={[
@@ -535,9 +536,10 @@ export default function VistaArticuloPage() {
                         />
                         <View style={styles.cajaOpcionesCategoria}>
                           <ScrollView
-                            style={{ maxHeight: 180 }}
+                            style={!esMovil ? { maxHeight: 180 } : undefined}
                             nestedScrollEnabled={true}
                             keyboardShouldPersistTaps="handled"
+                            scrollEnabled={!esMovil}
                           >
                             {categoriasFiltradas.map((cat) => (
                               <Pressable

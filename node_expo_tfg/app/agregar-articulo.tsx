@@ -176,7 +176,11 @@ export default function AgregarArticuloPage() {
 
   return (
     <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scrollContenido} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        contentContainerStyle={styles.scrollContenido} 
+        keyboardShouldPersistTaps="handled" 
+        scrollEnabled={Platform.OS !== 'web' ? true : !mostrarCategorias} 
+      >
         <Head>
             <title>Añadir un artículo | Domitex</title>
         </Head>
@@ -210,7 +214,7 @@ export default function AgregarArticuloPage() {
                 />
               </View>
 
-              <View style={[styles.grupoInput, { zIndex: 10 }]}>
+              <View style={[styles.grupoInput, { zIndex: 10, elevation: Platform.OS === 'android' && mostrarCategorias ? 10 : 0 }]}>
                 <Text style={styles.label}>Categoría</Text>
                 <TextInput 
                   style={[styles.input, mostrarCategorias && { zIndex: 101, position: 'relative' }]} 
@@ -237,12 +241,8 @@ export default function AgregarArticuloPage() {
                         setBusquedaCategoria(categoria ? (categoriasLista.find(c => c.id === categoria)?.nombre || '') : '');
                       }}
                     />
-                    <View style={styles.cajaOpcionesCategoria}>
-                      <ScrollView 
-                        style={{maxHeight: 180}} 
-                        nestedScrollEnabled={true} 
-                        keyboardShouldPersistTaps="handled"
-                      >
+                    <View style={[styles.cajaOpcionesCategoria, esMovil && styles.cajaOpcionesMovil, !esMovil && { maxHeight: 220 }]}>
+                      <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled" scrollEnabled={!esMovil}>
                         {categoriasFiltradas.map(cat => (
                           <Pressable 
                             key={cat.id} 
@@ -531,6 +531,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
+  },
+  cajaOpcionesMovil: {
+    position: 'relative',
+    top: 0,
+    marginTop: 5,
+    borderTopWidth: 1,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   opcionCategoria: {
     paddingVertical: 12,

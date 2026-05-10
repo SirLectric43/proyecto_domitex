@@ -40,7 +40,7 @@ export default function GestionPedidosPage() {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
 
-  const roles = ["Todos", "Admin", "Empleado", "Cliente"];
+  const roles = ["Todos", "Empleado", "Cliente"];
   const filtros = [
     "Todos",
     "Pendiente",
@@ -175,6 +175,7 @@ export default function GestionPedidosPage() {
       <ScrollView
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={Platform.OS !== 'web' ? true : pedidoAbierto === null}
       >
         <Head>
           <title>Gestión de pedidos | Domitex</title>
@@ -381,6 +382,7 @@ export default function GestionPedidosPage() {
                       style={{
                         zIndex: pedidoAbierto === pedido.id ? 1001 : 1,
                         width: "100%",
+                        elevation: Platform.OS === 'android' && pedidoAbierto === pedido.id ? 10 : 0
                       }}
                     >
                       {pedido.estado === "Pendiente" ? (
@@ -423,7 +425,8 @@ export default function GestionPedidosPage() {
                                 <ScrollView
                                   nestedScrollEnabled={true}
                                   keyboardShouldPersistTaps="handled"
-                                  style={{ maxHeight: 200 }}
+                                  style={!esMovil ? { maxHeight: 200 } : undefined}
+                                  scrollEnabled={!esMovil}
                                 >
                                   {estadosParaSelect.map((est) => (
                                     <Pressable

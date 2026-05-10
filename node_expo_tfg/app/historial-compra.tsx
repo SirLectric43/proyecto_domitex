@@ -270,6 +270,7 @@ export default function HistorialCompra() {
       <ScrollView
         contentContainerStyle={styles.scrollContenido}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={Platform.OS !== 'web' ? true : !dropdownAbierto}
       >
         <Head>
           <title>Historial | Domitex</title>
@@ -283,7 +284,7 @@ export default function HistorialCompra() {
               { zIndex: 1000 },
             ]}
           >
-            <View style={[styles.grupoFiltro, { zIndex: 1000 }]}>
+            <View style={[styles.grupoFiltro, { zIndex: 1000, elevation: Platform.OS === 'android' && dropdownAbierto ? 10 : 0 }]}>
               <Text style={styles.labelFiltro}>Estado:</Text>
               <View style={{ flex: 1 }}>
                 <Pressable
@@ -301,7 +302,8 @@ export default function HistorialCompra() {
                     <ScrollView
                       nestedScrollEnabled
                       keyboardShouldPersistTaps="handled"
-                      style={{ maxHeight: 200 }}
+                      style={!esMovil ? { maxHeight: 200 } : undefined}
+                      scrollEnabled={!esMovil}
                     >
                       {estadosFiltro.map((est) => (
                         <Pressable
