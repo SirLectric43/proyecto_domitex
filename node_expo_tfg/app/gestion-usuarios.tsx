@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Platform,
   ScrollView,
   ActivityIndicator,
   TextInput,
   Image,
+  Modal,
 } from "react-native";
 import { AuthContext } from "../context/auth-context";
 import { router } from "expo-router";
@@ -276,7 +276,12 @@ export default function GestionUsuariosPage() {
         )}
       </ScrollView>
 
-      {modalVisible && (
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.overlayModal}>
           <View style={styles.cajaModal}>
             <Text style={styles.textoModal}>
@@ -298,7 +303,7 @@ export default function GestionUsuariosPage() {
             </View>
           </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
@@ -444,16 +449,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   overlayModal: {
-    position: Platform.OS === "web" ? "fixed" : "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+    flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
-  } as any,
+  },
   cajaModal: {
     backgroundColor: "#FFFFFF",
     padding: 30,
