@@ -238,7 +238,11 @@ export default function AgregarArticuloPage() {
                       }}
                     />
                     <View style={styles.cajaOpcionesCategoria}>
-                      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                      <ScrollView 
+                        style={{maxHeight: 180}} 
+                        nestedScrollEnabled={true} 
+                        keyboardShouldPersistTaps="handled"
+                      >
                         {categoriasFiltradas.map(cat => (
                           <Pressable 
                             key={cat.id} 
@@ -325,6 +329,7 @@ export default function AgregarArticuloPage() {
                   value={item.medida} 
                   onChangeText={(texto) => actualizarMedida(item.id, 'medida', texto)} 
                   placeholder="Ej: Cama 90cm"
+                  placeholderTextColor="#999"
                 />
                 <TextInput 
                   style={[styles.input, esMovil ? styles.inputMovilMitad : { flex: 1 }]} 
@@ -332,6 +337,7 @@ export default function AgregarArticuloPage() {
                   onChangeText={(texto) => actualizarMedida(item.id, 'precio', texto)} 
                   placeholder="0.00"
                   keyboardType="numeric"
+                  placeholderTextColor="#999"
                 />
                 <TextInput 
                   style={[styles.input, esMovil ? styles.inputMovilMitad : { flex: 1 }]} 
@@ -339,6 +345,7 @@ export default function AgregarArticuloPage() {
                   onChangeText={(texto) => actualizarMedida(item.id, 'stock', texto)} 
                   placeholder="0"
                   keyboardType="numeric"
+                  placeholderTextColor="#999"
                 />
                 
                 <View style={styles.filaAccionesVariante}>
