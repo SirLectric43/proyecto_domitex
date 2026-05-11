@@ -596,18 +596,6 @@ def confirmar_pedido(datos: ConfirmarPedido, authorization: str = Header(None)):
         if not items:
             raise HTTPException(status_code=400, detail="El carrito está vacío")
 
-        for item in items:
-            stock_actual = item["articulos_medidas"]["stock"]
-            cantidad_pedida = item["cantidad"]
-            
-            if cantidad_pedida > stock_actual:
-                nombre_art = item["articulos_medidas"]["articulos"]["nombre"]
-                medida_art = item["articulos_medidas"]["medida"]
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Sin stock suficiente para: {nombre_art} ({medida_art}). Quedan {stock_actual} uds."
-                )
-
         total_pedido = sum(item["cantidad"] * item["articulos_medidas"]["precio"] for item in items)
         
         resp_ultimo = supabase.table("pedidos") \
@@ -654,7 +642,7 @@ def confirmar_pedido(datos: ConfirmarPedido, authorization: str = Header(None)):
                 "precio_unitario": item["articulos_medidas"]["precio"]
             })
             
-            nuevo_stock = item["articulos_medidas"]["stock"] - item["cantidad"]
+            nuevo_stock = max(0, item["articulos_medidas"]["stock"] - item["cantidad"])
             datos_medida = {"stock": nuevo_stock}
             
             if nuevo_stock <= 0:
